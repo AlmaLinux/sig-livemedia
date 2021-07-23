@@ -1,4 +1,8 @@
-#version=DEVEL
+# Live ISO Image
+# NOTE: This example is for creating a live-iso, eg.
+#       livemedia-creator --project Almalinux --releasever 8 --make-iso --ks=almalinux-8-livemedia.ks --no-virt
+# NOTE: This example does not include Anaconda and cannot be installed to a harddrive.
+
 # X Window System configuration information
 xconfig  --startxonboot
 # Keyboard layouts
@@ -19,7 +23,7 @@ network  --bootproto=dhcp --device=link --activate
 selinux --enforcing
 
 # System services
-services --disabled="network,sshd" --enabled="NetworkManager,ModemManager"
+services --disabled="sshd" --enabled="NetworkManager,ModemManager"
 
 # livemedia-creator modifications.
 shutdown
@@ -29,7 +33,6 @@ bootloader --location=none
 clearpart --all --initlabel
 rootpw rootme
 # Disk partitioning information
-reqpart
 part / --size=6656
 
 %post
@@ -143,7 +146,7 @@ if [ -n "\$configdone" ]; then
   exit 0
 fi
 
-# add fedora user with no passwd
+# add liveuser with no passwd
 action "Adding live user" useradd \$USERADDARGS -c "Live System User" liveuser
 passwd -d liveuser > /dev/null
 usermod -aG wheel liveuser > /dev/null
@@ -175,10 +178,6 @@ systemctl --no-reload disable crond.service 2> /dev/null || :
 systemctl --no-reload disable atd.service 2> /dev/null || :
 systemctl stop crond.service 2> /dev/null || :
 systemctl stop atd.service 2> /dev/null || :
-
-# turn off abrtd on a live image
-systemctl --no-reload disable abrtd.service 2> /dev/null || :
-systemctl stop abrtd.service 2> /dev/null || :
 
 # Don't sync the system clock when running live (RHBZ #1018162)
 sed -i 's/rtcsync//' /etc/chrony.conf
@@ -270,7 +269,8 @@ EOF
 rm -f /var/lib/rpm/__db*
 releasever=$(rpm -q --qf '%{version}\n' --whatprovides system-release)
 basearch=$(uname -i)
-rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-$releasever-$basearch
+# import AlmaLinux PGP key
+rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux
 echo "Packages within this LiveCD"
 rpm -qa
 # Note that running rpm recreates the rpm db files which aren't needed or wanted
@@ -294,14 +294,17 @@ rm /var/lib/systemd/random-seed
 # Remove the rescue kernel and image to save space
 # Installation will recreate these on the target
 rm -f /boot/*-rescue*
+
+# Remove machine-id on pre generated images
+rm -f /etc/machine-id
+touch /etc/machine-id
 %end
 
 %post
 
 cat >> /etc/rc.d/init.d/livesys << EOF
 
-
-# disable updates plugin
+# disable gnome-software automatically downloading updates
 cat >> /usr/share/glib-2.0/schemas/org.gnome.software.gschema.override << FOE
 [org.gnome.software]
 download-updates=false
@@ -319,6 +322,18 @@ FOE
 mkdir ~liveuser/.config
 touch ~liveuser/.config/gnome-initial-setup-done
 
+# suppress anaconda spokes redundant with gnome-initial-setup
+cat >> /etc/sysconfig/anaconda << FOE
+[NetworkSpoke]
+visited=1
+
+[PasswordSpoke]
+visited=1
+
+[UserSpoke]
+visited=1
+FOE
+
 # make the installer show up
 if [ -f /usr/share/applications/liveinst.desktop ]; then
   # Show harddisk install in shell dash
@@ -332,10 +347,10 @@ favorite-apps=['firefox.desktop', 'evolution.desktop', 'rhythmbox.desktop', 'sho
 FOE
 
   # Make the welcome screen show up
-  if [ -f /usr/share/anaconda/gnome/fedora-welcome.desktop ]; then
+  if [ -f /usr/share/anaconda/gnome/rhel-welcome.desktop ]; then
     mkdir -p ~liveuser/.config/autostart
-    cp /usr/share/anaconda/gnome/fedora-welcome.desktop /usr/share/applications/
-    cp /usr/share/anaconda/gnome/fedora-welcome.desktop ~liveuser/.config/autostart/
+    cp /usr/share/anaconda/gnome/rhel-welcome.desktop /usr/share/applications/
+    cp /usr/share/anaconda/gnome/rhel-welcome.desktop ~liveuser/.config/autostart/
   fi
 
   # Copy Anaconda branding in place
@@ -369,39 +384,33 @@ EOF
 
 %packages
 @base-x
-@core
 @fonts
 @guest-desktop-agents
 @hardware-support
-@multimedia
+-@multimedia
 @networkmanager-submodules
-@workstation-product
+-@workstation-product
+@gnome-desktop
+firefox
 gnome-terminal
 aajohan-comfortaa-fonts
 dracut-config-generic
 dracut-live
-system-logos
 glibc-all-langpacks
+grub2-efi
+grub2-pc-modules
 kernel
 # Make sure that DNF doesn't pull in debug kernel to satisfy kmod() requires
 kernel-modules
 kernel-modules-extra
 memtest86+
+nano
 syslinux
 -@dial-up
 -@input-methods
--@standard
 -gfs2-utils
--reiserfs-utils
-
-# This package is needed to boot the iso on UEFI
-shim
-shim-ia32
-grub2
-grub2-efi
-grub2-efi-*-cdboot
-grub2-efi-ia32
-efibootmgr
+-dracut-config-rescue
+-gnome-calculator
 
 # no longer in @core since 2018-10, but needed for livesys script
 initscripts
