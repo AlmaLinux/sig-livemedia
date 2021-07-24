@@ -1,7 +1,5 @@
-# Live ISO Image
-# NOTE: This example is for creating a live-iso, eg.
-#       livemedia-creator --project Almalinux --releasever 8 --make-iso --ks=almalinux-8-livemedia.ks --no-virt
-# NOTE: This example does not include Anaconda and cannot be installed to a harddrive.
+# AlmaLinux Live Media (Beta - experimental), with optional install option.
+# Build: livemedia-creator --project Almalinux --releasever 8 --make-iso --ks=almalinux-8-live-gnome.ks --no-virt
 
 # X Window System configuration information
 xconfig  --startxonboot
@@ -16,6 +14,7 @@ lang en_US.UTF-8
 firewall --enabled --service=mdns
 url --url="https://repo.almalinux.org/almalinux/8/BaseOS/x86_64/os/"
 repo --name=appstream --baseurl="https://repo.almalinux.org/almalinux/8/AppStream/x86_64/os/"
+repo --name=devel --baseurl="https://repo.almalinux.org/almalinux/8/devel/x86_64/os/"
 # Network information
 network  --bootproto=dhcp --device=link --activate
 
@@ -145,6 +144,10 @@ fi
 if [ -n "\$configdone" ]; then
   exit 0
 fi
+
+### TODO: Review and finalize the location of anaconda-live package, experimental - starts
+# dnf install https://dfw.mirror.rackspace.com/almalinux/8/devel/x86_64/os/Packages/anaconda-live-33.16.4.15-1.el8.alma.x86_64.rpm
+### TODO: ends
 
 # add liveuser with no passwd
 action "Adding live user" useradd \$USERADDARGS -c "Live System User" liveuser
@@ -387,10 +390,16 @@ EOF
 @fonts
 @guest-desktop-agents
 @hardware-support
--@multimedia
+@multimedia
 @networkmanager-submodules
--@workstation-product
+@workstation-product
 @gnome-desktop
+anaconda-core
+anaconda-gui
+anaconda-live
+anaconda-tui
+anaconda-user-help
+anaconda-widgets
 firefox
 gnome-terminal
 aajohan-comfortaa-fonts
@@ -405,12 +414,13 @@ kernel-modules
 kernel-modules-extra
 memtest86+
 nano
+open-vm-tools
 syslinux
 -@dial-up
 -@input-methods
 -gfs2-utils
 -dracut-config-rescue
--gnome-calculator
+# gnome-calculator
 
 # no longer in @core since 2018-10, but needed for livesys script
 initscripts
