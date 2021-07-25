@@ -1,5 +1,8 @@
-# AlmaLinux Live Media (Beta - experimental), with optional install option.
-# Build: livemedia-creator --project Almalinux --releasever 8 --make-iso --ks=almalinux-8-live-gnome.ks --no-virt
+# Live ISO Image
+# NOTE: This example is for creating a live-iso, eg.
+#       livemedia-creator --project Almalinux --releasever 8 --make-iso --ks=almalinux-8-livemedia.ks --no-virt
+# NOTE: This example does not include Anaconda and cannot be installed to a harddrive.
+
 # X Window System configuration information
 xconfig  --startxonboot
 # Keyboard layouts
@@ -390,10 +393,10 @@ EOF
 @fonts
 @guest-desktop-agents
 @hardware-support
-@multimedia
 @networkmanager-submodules
-@workstation-product
+# @workstation-product
 @gnome-desktop
+# @multimedia
 anaconda-core
 anaconda-gui
 anaconda-live
@@ -415,6 +418,11 @@ kernel-modules-extra
 memtest86+
 nano
 open-vm-tools
+rsync
+rsyslog
+rsyslog-gnutls
+rsyslog-gssapi
+rsyslog-relp
 syslinux
 -@dial-up
 -@input-methods
