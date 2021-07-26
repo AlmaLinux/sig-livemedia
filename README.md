@@ -12,19 +12,34 @@ Building ISO using `livemedia-creator` command, fewer options.
 sudo livemedia-creator --project AlmaLinux --releasever 8 --make-iso --ks=kickstarts/almalinux-8-live-gnome.ks --no-virt
 ```
 
-Build with more options
+Build with extended options, building `gnome live media`
 
-```sh 
+```sh
 sudo livemedia-creator \
-    --ks almalinux-8-live-minimal.ks \
-    --no-virt --resultdir  ./iso1 \
-    --project AlmaLinux-8-live \
+    --ks almalinux-8-live-gnome.ks \
+    --no-virt --resultdir  ./iso \
+    --project "AlmaLinux 8 live" \
     --make-iso \
     --iso-only \
-    --iso-name almalinux-8-minimal.iso \
+    --iso-name almalinux-8-live-gnome.iso \
     --releasever 8 \
     --volid AlmaLinux-8-live \
-    --title AlmaLinux-live
+    --title "AlmaLinux 8 live"
+```
+
+Building `mini live media`
+
+```sh
+sudo livemedia-creator \
+    --ks almalinux-8-live-mini.ks \
+    --no-virt --resultdir  ./iso \
+    --project "AlmaLinux 8 mini live" \
+    --make-iso \
+    --iso-only \
+    --iso-name almalinux-8-live-mini.iso \
+    --releasever 8 \
+    --volid AlmaLinux-8-live-mini \
+    --title "AlmaLinux 8 live"
 ```
 
 ### Full live media
