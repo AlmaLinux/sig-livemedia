@@ -7,7 +7,8 @@ Build requries AlmaLinux installed on a physical system `anaconda` and `lorax` p
 
 ### Build ISO
 
-Building ISO using `livemedia-creator` command, fewer options.
+Building ISO using `livemedia-creator` command, fewer options. The build output will be available at `/var/tmp/lmc-XXXX`, check build output for folder name. 
+
 ```sh
 sudo livemedia-creator --project AlmaLinux --releasever 8 --make-iso --ks=kickstarts/almalinux-8-live-gnome.ks --no-virt
 ```
@@ -16,7 +17,7 @@ Build with extended options, building `gnome live media`
 
 ```sh
 sudo livemedia-creator \
-    --ks almalinux-8-live-gnome.ks \
+    --ks=kickstarts/almalinux-8-live-gnome.ks \
     --no-virt --resultdir  ./iso \
     --project "AlmaLinux 8 live" \
     --make-iso \
@@ -31,7 +32,7 @@ Building `mini live media`
 
 ```sh
 sudo livemedia-creator \
-    --ks almalinux-8-live-mini.ks \
+    --ks=kickstarts/almalinux-8-live-mini.ks \
     --no-virt --resultdir  ./iso \
     --project "AlmaLinux 8 mini live" \
     --make-iso \
