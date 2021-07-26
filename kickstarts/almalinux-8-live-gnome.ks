@@ -418,7 +418,7 @@ syslinux
 -@dial-up
 -@input-methods
 -gfs2-utils
--dracut-config-rescue
+# -dracut-config-rescue
 # gnome-calculator
 
 # no longer in @core since 2018-10, but needed for livesys script

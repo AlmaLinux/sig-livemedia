@@ -1,7 +1,7 @@
 # SIG - AlmaLinux Live Media
 
-This git repository contains Kickstarts and other scripts
-needed to produce the AlmaLinux LiveCD/DVD. 
+This git repository contains Kickstarts and other scripts needed to produce the AlmaLinux LiveCD/DVD.
+
 ## Local Build
 
 Live media ISO's can be build locall using a `AlmaLinux` system installed on a physical or vitual system with `anaconda` and `lorax` packages installed for build process.
@@ -44,7 +44,7 @@ sudo livemedia-creator \
     --title "AlmaLinux 8 live"
 ```
 
-### Full live media 
+### Full live media
 
 ![image](https://user-images.githubusercontent.com/1273137/126790113-42c76349-cb33-4e21-a55a-fe59ff49459f.png)
 
