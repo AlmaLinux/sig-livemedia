@@ -47,12 +47,20 @@ sudo livemedia-creator \
 
 ![image](https://user-images.githubusercontent.com/1273137/126790113-42c76349-cb33-4e21-a55a-fe59ff49459f.png)
 
-
 ### Minimal live media
 
 ![image](https://user-images.githubusercontent.com/1273137/126832606-52fc45c6-7bf2-4df0-b9c5-408e0b38af95.png)
 
 ### Live Media installer
+
 ![image](https://user-images.githubusercontent.com/1273137/126913694-e0f4ad15-e405-4764-a24c-8c63f5d5799c.png)
+
+### Installer options
+
+![image](https://user-images.githubusercontent.com/1273137/127050590-d52c0da5-320d-4489-8fcf-0059bc52d05d.png)
+
+### Installer in progress
+
+![image](https://user-images.githubusercontent.com/1273137/127050781-b9fb8284-bb7e-42f5-aa24-d7dfd7490965.png)
 
 
