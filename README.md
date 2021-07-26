@@ -70,3 +70,12 @@ Make adjustment to install options and start the install process.
 
 ![image](https://user-images.githubusercontent.com/1273137/127052376-2a8f88c9-a77e-4236-a721-6d502e35e0a7.png)
 
+### Post install
+
+Reboot the system, accept the license. Now system is ready to use.
+
+![image](https://user-images.githubusercontent.com/1273137/127054222-2a94b1b5-b7ed-408c-9567-37dd105ddc91.png)
+
+![image](https://user-images.githubusercontent.com/1273137/127054274-45668685-48c2-4dcb-800a-ccd7f8d4b2bd.png)
+
+
