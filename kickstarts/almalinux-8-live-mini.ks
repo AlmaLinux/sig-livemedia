@@ -16,9 +16,9 @@ lang en_US.UTF-8
 firewall --enabled --service=mdns
 url --url="https://repo.almalinux.org/almalinux/8/BaseOS/x86_64/os/"
 repo --name=appstream --baseurl="https://repo.almalinux.org/almalinux/8/AppStream/x86_64/os/"
-repo --name=devel --baseurl="https://repo.almalinux.org/almalinux/8/devel/x86_64/os/"
+repo --name=extras --baseurl="https://repo.almalinux.org/almalinux/8/extras/x86_64/os/"
 # Network information
-network  --bootproto=dhcp --device=link --activate
+network --activate --bootproto=dhcp --device=link --onboot=on
 
 # SELinux configuration
 selinux --enforcing
@@ -353,7 +353,7 @@ FOE
 
   # Make the welcome screen show up
   if [ -f /usr/share/anaconda/gnome/rhel-welcome.desktop ]; then
-    sed -i -e 's/RHEL/AlmaLinux/' /usr/share/anaconda/gnome/rhel-welcome ""
+  #  sed -i -e 's/RHEL/AlmaLinux/' /usr/share/anaconda/gnome/rhel-welcome ""
     mkdir -p ~liveuser/.config/autostart
     cp /usr/share/anaconda/gnome/rhel-welcome.desktop /usr/share/applications/
     cp /usr/share/anaconda/gnome/rhel-welcome.desktop ~liveuser/.config/autostart/
@@ -427,8 +427,7 @@ syslinux
 -@dial-up
 -@input-methods
 -gfs2-utils
--dracut-config-rescue
-# gnome-calculator
+# -dracut-config-rescue
 
 # no longer in @core since 2018-10, but needed for livesys script
 initscripts
