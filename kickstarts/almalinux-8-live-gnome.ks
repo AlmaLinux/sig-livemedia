@@ -350,7 +350,6 @@ FOE
 
   # Make the welcome screen show up
   if [ -f /usr/share/anaconda/gnome/rhel-welcome.desktop ]; then
-    sed -i -e 's/RHEL/AlmaLinux/' /usr/share/anaconda/gnome/rhel-welcome ""
     mkdir -p ~liveuser/.config/autostart
     cp /usr/share/anaconda/gnome/rhel-welcome.desktop /usr/share/applications/
     cp /usr/share/anaconda/gnome/rhel-welcome.desktop ~liveuser/.config/autostart/
