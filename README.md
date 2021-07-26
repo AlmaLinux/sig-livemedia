@@ -2,8 +2,9 @@
 
 This git repository contains Kickstarts and other scripts
 needed to produce the AlmaLinux LiveCD/DVD. 
+## Local Build
 
-Build requries AlmaLinux installed on a physical system `anaconda` and `lorax` packages installed
+Live media ISO's can be build locall using a `AlmaLinux` system installed on a physical or vitual system with `anaconda` and `lorax` packages installed for build process.
 
 ### Build ISO
 
