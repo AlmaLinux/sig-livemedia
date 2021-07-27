@@ -4,11 +4,31 @@ This git repository contains Kickstarts and other scripts needed to produce the 
 
 ## Local Build
 
-Live media ISO's can be build locall using a `AlmaLinux` system installed on a physical or vitual system with `anaconda` and `lorax` packages installed for build process.
+### Build Environment
+
+This project contains number of `KickStart` files to build live media for AlmaLiux. It uses `anaconda` and `lorax` packages for ISO file build process.
+
+`AlmaLinux` system installed on a physical or vitual system is prefered. following additional packages are required. Please make note `hfsplus-tools` is available only in `elrepo`, make sure enable prior to isntall it.
+
+```sh
+anaconda`
+lorax
+hfsplus-tools
+efibootmgr 
+efi-filesystem 
+efi-srpm-macros 
+efivar-libs 
+grub2-efi-ia32 
+grub2-efi-ia32-cdboot 
+grub2-efi-x64 
+grub2-efi-x64-cdboot 
+grub2-tools-efi 
+shim-x64
+```
 
 ### Build ISO
 
-Building ISO using `livemedia-creator` command, fewer options. The build output will be available at `/var/tmp/lmc-XXXX`, check build output for folder name. 
+Building ISO using `livemedia-creator` command, fewer options. The build output will be available at `/var/tmp/lmc-XXXX`, check build output for folder name.
 
 ```sh
 sudo livemedia-creator --project AlmaLinux --releasever 8 --make-iso --ks=kickstarts/almalinux-8-live-gnome.ks --no-virt
@@ -20,13 +40,13 @@ Build with extended options, building `gnome live media`
 sudo livemedia-creator \
     --ks=kickstarts/almalinux-8-live-gnome.ks \
     --no-virt --resultdir  ./iso \
-    --project "AlmaLinux 8 live" \
+    --project "AlmaLinux 8 live gnome" \
     --make-iso \
     --iso-only \
     --iso-name almalinux-8-live-gnome.iso \
     --releasever 8 \
-    --volid AlmaLinux-8-live \
-    --title "AlmaLinux 8 live"
+    --volid "AlmaLinux 8 live" \
+    --title "AlmaLinux 8"
 ```
 
 Building `mini live media`
@@ -35,13 +55,13 @@ Building `mini live media`
 sudo livemedia-creator \
     --ks=kickstarts/almalinux-8-live-mini.ks \
     --no-virt --resultdir  ./iso \
-    --project "AlmaLinux 8 mini live" \
+    --project "AlmaLinux 8 live mini" \
     --make-iso \
     --iso-only \
     --iso-name almalinux-8-live-mini.iso \
     --releasever 8 \
-    --volid AlmaLinux-8-live-mini \
-    --title "AlmaLinux 8 live"
+    --volid "AlmaLinux 8 live" \
+    --title "AlmaLinux 8"
 ```
 
 ### Full live media
@@ -77,5 +97,3 @@ Reboot the system, accept the license. Now system is ready to use.
 ![image](https://user-images.githubusercontent.com/1273137/127054222-2a94b1b5-b7ed-408c-9567-37dd105ddc91.png)
 
 ![image](https://user-images.githubusercontent.com/1273137/127054274-45668685-48c2-4dcb-800a-ccd7f8d4b2bd.png)
-
-
