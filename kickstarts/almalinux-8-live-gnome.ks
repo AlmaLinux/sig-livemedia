@@ -13,6 +13,7 @@ lang en_US.UTF-8
 firewall --enabled --service=mdns
 url --url="https://repo.almalinux.org/almalinux/8/BaseOS/x86_64/os/"
 repo --name=appstream --baseurl="https://repo.almalinux.org/almalinux/8/AppStream/x86_64/os/"
+repo --name=powertools --baseurl="https://repo.almalinux.org/almalinux/8/PowerTools/x86_64/os/"
 repo --name=extras --baseurl="https://repo.almalinux.org/almalinux/8/extras/x86_64/os/"
 # Network information
 network --activate --bootproto=dhcp --device=link --onboot=on
@@ -391,17 +392,8 @@ EOF
 @hardware-support
 @multimedia
 @networkmanager-submodules
-@workstation-product
-@gnome-desktop
-anaconda-core
-anaconda-gui
+@workstation-product-environment
 anaconda-live
-anaconda-tui
-anaconda-user-help
-anaconda-widgets
-firefox
-gnome-terminal
-aajohan-comfortaa-fonts
 dracut-config-generic
 dracut-live
 glibc-all-langpacks
@@ -411,15 +403,22 @@ kernel
 # Make sure that DNF doesn't pull in debug kernel to satisfy kmod() requires
 kernel-modules
 kernel-modules-extra
+libreoffice-calc 
+libreoffice-impress 
+libreoffice-writer
+liberation-fonts
+liberation-fonts-common
+liberation-mono-fonts
+liberation-sans-fonts
+liberation-serif-fonts
 memtest86+
 nano
-open-vm-tools
 syslinux
+thunderbird
 -@dial-up
 -@input-methods
 -gfs2-utils
 # -dracut-config-rescue
-# gnome-calculator
 
 # no longer in @core since 2018-10, but needed for livesys script
 initscripts

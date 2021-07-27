@@ -16,6 +16,7 @@ lang en_US.UTF-8
 firewall --enabled --service=mdns
 url --url="https://repo.almalinux.org/almalinux/8/BaseOS/x86_64/os/"
 repo --name=appstream --baseurl="https://repo.almalinux.org/almalinux/8/AppStream/x86_64/os/"
+repo --name=powertools --baseurl="https://repo.almalinux.org/almalinux/8/PowerTools/x86_64/os/"
 repo --name=extras --baseurl="https://repo.almalinux.org/almalinux/8/extras/x86_64/os/"
 # Network information
 network --activate --bootproto=dhcp --device=link --onboot=on
