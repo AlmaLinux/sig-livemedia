@@ -11,7 +11,7 @@ This project contains number of `KickStart` files to build live media for AlmaLi
 `AlmaLinux` system installed on a physical or vitual system is prefered. following additional packages are required. Please make note `hfsplus-tools` is available only in `elrepo`, make sure enable prior to isntall it.
 
 ```sh
-anaconda`
+anaconda
 lorax
 hfsplus-tools
 efibootmgr 
