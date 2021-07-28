@@ -18,8 +18,6 @@ efibootmgr
 efi-filesystem 
 efi-srpm-macros 
 efivar-libs 
-grub2-efi-ia32 
-grub2-efi-ia32-cdboot 
 grub2-efi-x64 
 grub2-efi-x64-cdboot 
 grub2-tools-efi 
@@ -46,7 +44,8 @@ sudo livemedia-creator \
     --iso-name almalinux-8-live-gnome.iso \
     --releasever 8 \
     --volid "AlmaLinux 8 live" \
-    --title "AlmaLinux 8"
+    --title "AlmaLinux 8" \
+    --nomacboot 
 ```
 
 Building `mini live media`
@@ -61,7 +60,8 @@ sudo livemedia-creator \
     --iso-name almalinux-8-live-mini.iso \
     --releasever 8 \
     --volid "AlmaLinux 8 live" \
-    --title "AlmaLinux 8"
+    --title "AlmaLinux 8" \
+    --nomacboot 
 ```
 
 ### Full live media
