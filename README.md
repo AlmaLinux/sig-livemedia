@@ -40,7 +40,7 @@ Build with extended options, building `gnome live media`
 sudo livemedia-creator \
     --ks=kickstarts/almalinux-8-live-gnome.ks \
     --no-virt --resultdir  ./iso \
-    --project "AlmaLinux 8 live gnome" \
+    --project "AlmaLinux live gnome" \
     --make-iso \
     --iso-only \
     --iso-name almalinux-8-live-gnome.iso \
@@ -55,7 +55,7 @@ Building `mini live media`
 sudo livemedia-creator \
     --ks=kickstarts/almalinux-8-live-mini.ks \
     --no-virt --resultdir  ./iso \
-    --project "AlmaLinux 8 live mini" \
+    --project "AlmaLinux live mini" \
     --make-iso \
     --iso-only \
     --iso-name almalinux-8-live-mini.iso \
