@@ -18,8 +18,6 @@ efibootmgr
 efi-filesystem 
 efi-srpm-macros 
 efivar-libs 
-grub2-efi-ia32 
-grub2-efi-ia32-cdboot 
 grub2-efi-x64 
 grub2-efi-x64-cdboot 
 grub2-tools-efi 
@@ -40,13 +38,14 @@ Build with extended options, building `gnome live media`
 sudo livemedia-creator \
     --ks=kickstarts/almalinux-8-live-gnome.ks \
     --no-virt --resultdir  ./iso \
-    --project "AlmaLinux 8 live gnome" \
+    --project "AlmaLinux live gnome" \
     --make-iso \
     --iso-only \
     --iso-name almalinux-8-live-gnome.iso \
     --releasever 8 \
     --volid "AlmaLinux 8 live" \
-    --title "AlmaLinux 8"
+    --title "AlmaLinux 8" \
+    --nomacboot 
 ```
 
 Building `mini live media`
@@ -55,13 +54,14 @@ Building `mini live media`
 sudo livemedia-creator \
     --ks=kickstarts/almalinux-8-live-mini.ks \
     --no-virt --resultdir  ./iso \
-    --project "AlmaLinux 8 live mini" \
+    --project "AlmaLinux live mini" \
     --make-iso \
     --iso-only \
     --iso-name almalinux-8-live-mini.iso \
     --releasever 8 \
     --volid "AlmaLinux 8 live" \
-    --title "AlmaLinux 8"
+    --title "AlmaLinux 8" \
+    --nomacboot 
 ```
 
 ### Full live media

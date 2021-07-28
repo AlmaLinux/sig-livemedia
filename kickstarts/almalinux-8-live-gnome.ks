@@ -399,6 +399,7 @@ dracut-live
 glibc-all-langpacks
 grub2-efi
 grub2-pc-modules
+grub2-efi-x64-cdboot
 kernel
 # Make sure that DNF doesn't pull in debug kernel to satisfy kmod() requires
 kernel-modules
@@ -413,6 +414,7 @@ liberation-sans-fonts
 liberation-serif-fonts
 memtest86+
 nano
+shim-x64
 syslinux
 thunderbird
 -@dial-up
