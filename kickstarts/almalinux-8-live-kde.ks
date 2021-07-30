@@ -308,7 +308,7 @@ rm -f /boot/*-rescue*
 
 # Disable network service here, as doing it in the services line
 # fails due to RHBZ #1369794
-/sbin/chkconfig network off
+##/sbin/chkconfig network off  #fails
 
 # Remove machine-id on pre generated images
 rm -f /etc/machine-id
