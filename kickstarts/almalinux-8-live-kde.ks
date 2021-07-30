@@ -13,12 +13,12 @@ lang en_US.UTF-8
 firewall --enabled --service=mdns
 
 # Repos
-url --url="https://repo.almalinux.org/almalinux/8/BaseOS/x86_64/os/"
-repo --name=appstream --baseurl="https://repo.almalinux.org/almalinux/8/AppStream/x86_64/os/"
-repo --name=powertools --baseurl="https://repo.almalinux.org/almalinux/8/PowerTools/x86_64/os/"
-repo --name=extras --baseurl="https://repo.almalinux.org/almalinux/8/extras/x86_64/os/"
+url --mirrorlist="https://mirrors.almalinux.org/mirrorlist/$releasever/baseos"
+repo --name=appstream --mirrorlist="https://mirrors.almalinux.org/mirrorlist/$releasever/appstream"
+repo --name=powertools --mirrorlist="https://mirrors.almalinux.org/mirrorlist/$releasever/powertools"
+repo --name=extras --mirrorlist="https://mirrors.almalinux.org/mirrorlist/$releasever/extras"
 # repo --name=epel --baseurl="https://dl.fedoraproject.org/pub/epel/8/Everything/x86_64/"
-repo --name=epel --baseurl="https://mirrors.fedoraproject.org/mirrorlist?repo=epel-8&arch=x86_64"
+repo --name=epel --mirrorlist="https://mirrors.fedoraproject.org/mirrorlist?repo=epel-8&arch=x86_64"
 
 # Network information
 network --activate --bootproto=dhcp --device=link --onboot=on
@@ -405,14 +405,28 @@ fi
 
 # Packages
 %packages
-
+@base-x
+@fonts
+@guest-desktop-agents
 @kde-desktop-environment
- 
+dracut-config-generic
+dracut-live 
 @firefox
 @kde-apps
-@kde-media
-@libreoffice
- 
+@kde-media  
+# @libreoffice  #not found
+libreoffice-calc 
+libreoffice-impress 
+libreoffice-writer
+liberation-fonts
+liberation-fonts-common
+liberation-mono-fonts
+liberation-sans-fonts
+liberation-serif-fonts
+memtest86+
+nano 
+syslinux
+thunderbird
 #  fedora-release-kde
  
 -@admin-tools
@@ -425,8 +439,8 @@ mariadb-embedded
 mariadb-connector-c
 mariadb-server
 # minimal localization support - allows installing the kde-l10n-* packages
-system-config-language
-kde-l10n
+# system-config-language  #not found
+# kde-l10n #not found
 # unwanted packages from @kde-desktop
 # don't include these for now to fit on a cd
 -desktop-backgrounds-basic
@@ -440,7 +454,7 @@ kde-l10n
 # Additional packages that are not default in kde-* groups, but useful
 #kdeartwork			# only include some parts of kdeartwork
 fuse
-mediawriter
+# mediawriter   #not found
 ### space issues
 # admin-tools
 -gnome-disk-utility
@@ -460,14 +474,14 @@ kernel-modules-extra
 # This was added a while ago, I think it falls into the category of
 # "Diagnosis/recovery tool useful from a Live OS image".  Leaving this untouched
 # for now.
-#memtest86+
-@x86-baremetal-tools # memtest86+ is included
+# memtest86+
+# @x86-baremetal-tools # memtest86+ is included   # not found
  
 # The point of a live image is to install
-anaconda
-anaconda-install-env-deps
+# anaconda
+# anaconda-install-env-deps
 anaconda-live
-@anaconda-tools
+# @anaconda-tools
 # Anaconda has a weak dep on this and we don't want it on livecds, see
 # https://fedoraproject.org/wiki/Changes/RemoveDeviceMapperMultipathFromWorkstationLiveCD
 -fcoe-utils
@@ -486,8 +500,9 @@ glibc-all-langpacks
 # no longer in @core since 2018-10, but needed for livesys script
 initscripts
 chkconfig
-
-
+grub2-efi
+grub2-pc-modules
+shim-x64
 # save some space
 -mpage
 -hplip
