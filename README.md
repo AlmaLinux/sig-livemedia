@@ -64,6 +64,22 @@ sudo livemedia-creator \
     --nomacboot 
 ```
 
+Building `KDE live media`
+
+```sh
+sudo livemedia-creator \
+    --ks=kickstarts/almalinux-8-live-kde.ks \
+    --no-virt --resultdir  ./iso \
+    --project "AlmaLinux KDE Live" \
+    --make-iso \
+    --iso-only \
+    --iso-name almalinux-8-live-kde.iso \
+    --releasever 8 \
+    --volid "AlmaLinux 8 live" \
+    --title "AlmaLinux 8" \
+    --nomacboot 
+```
+
 ### Full live media
 
 ![image](https://user-images.githubusercontent.com/1273137/126790113-42c76349-cb33-4e21-a55a-fe59ff49459f.png)
