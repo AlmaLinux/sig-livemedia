@@ -38,7 +38,7 @@ zerombr
 clearpart --all --initlabel
 rootpw rootme
 # Disk partitioning information
-part / --size=10240
+part / --size=7200
 
 %post
 # FIXME: it'd be better to get this installed from a package
@@ -281,7 +281,9 @@ EOF
 rm -f /var/lib/rpm/__db*
 releasever=$(rpm -q --qf '%{version}\n' --whatprovides system-release)
 basearch=$(uname -i)
-rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-$releasever-$basearch
+# rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-$releasever-$basearch
+# import AlmaLinux PGP key
+rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux
 echo "Packages within this LiveCD"
 rpm -qa
 # Note that running rpm recreates the rpm db files which aren't needed or wanted
@@ -409,12 +411,16 @@ fi
 @fonts
 @guest-desktop-agents
 @kde-desktop-environment
-dracut-config-generic
-dracut-live 
-@firefox
 @kde-apps
 @kde-media  
-# @libreoffice  #not found
+@networkmanager-submodules
+# Need aajohan-comfortaa-fonts for the SVG rnotes images
+aajohan-comfortaa-fonts
+firefox
+# Additional packages that are not default in kde-* groups, but useful
+#kdeartwork			# only include some parts of kdeartwork
+fuse
+# @libreoffice # group package not found, install by members
 libreoffice-calc 
 libreoffice-impress 
 libreoffice-writer
@@ -423,21 +429,59 @@ liberation-fonts-common
 liberation-mono-fonts
 liberation-sans-fonts
 liberation-serif-fonts
-memtest86+
 nano 
-syslinux
 thunderbird
-#  fedora-release-kde
+
+  
+# The point of a live image is to install
+anaconda
+anaconda-install-env-deps
+anaconda-live
+@anaconda-tools
+dracut-config-generic
+dracut-live
+glibc-all-langpacks
+grub2-efi
+grub2-pc-modules
+grub2-efi-x64-cdboot
+kernel
+kernel-modules
+kernel-modules-extra
+memtest86+
+syslinux 
+# anaconda needs the locales available to run for different locales
+glibc-all-langpacks
+shim-x64
  
+# no longer in @core since 2018-10, but needed for livesys script
+initscripts
+chkconfig
+
+# save some space
+# Anaconda has a weak dep on this and we don't want it on livecds, see
+# https://fedoraproject.org/wiki/Changes/RemoveDeviceMapperMultipathFromWorkstationLiveCD
+# -fcoe-utils  # donot filter, anaconda needs it
+# -device-mapper-multipath # donot filter, anaconda needs it
+
+-mpage
+-hplip
+-isdn4k-utils
+-gfs2-utils
+-xsane
+-xsane-gimp
+-sane-backends
 -@admin-tools
 ### The KDE-Desktop
 ### fixes
 # use kde-print-manager instead of system-config-printer
 -system-config-printer
-# make sure mariadb lands instead of MySQL (hopefully a temporary hack)
-mariadb-embedded
-mariadb-connector-c
-mariadb-server
+
+# TODO: check mariadb required
+## make sure mariadb lands instead of MySQL (hopefully a temporary hack)
+#mariadb-embedded
+#mariadb-connector-c
+#mariadb-server
+
 # minimal localization support - allows installing the kde-l10n-* packages
 # system-config-language  #not found
 # kde-l10n #not found
@@ -451,9 +495,6 @@ mariadb-server
 -krusader			# ~4 megs
 -k3b				# ~15 megs
 #-kdeplasma-addons		# ~16 megs
-# Additional packages that are not default in kde-* groups, but useful
-#kdeartwork			# only include some parts of kdeartwork
-fuse
 # mediawriter   #not found
 ### space issues
 # admin-tools
@@ -464,52 +505,5 @@ fuse
 -system-config-services
 # prefer/use kusers
 -system-config-users
-
-# Explicitly specified here:
-# <notting> walters: because otherwise dependency loops cause yum issues.
-kernel
-kernel-modules
-kernel-modules-extra
- 
-# This was added a while ago, I think it falls into the category of
-# "Diagnosis/recovery tool useful from a Live OS image".  Leaving this untouched
-# for now.
-# memtest86+
-# @x86-baremetal-tools # memtest86+ is included   # not found
- 
-# The point of a live image is to install
-# anaconda
-# anaconda-install-env-deps
-anaconda-live
-# @anaconda-tools
-# Anaconda has a weak dep on this and we don't want it on livecds, see
-# https://fedoraproject.org/wiki/Changes/RemoveDeviceMapperMultipathFromWorkstationLiveCD
--fcoe-utils
--device-mapper-multipath
- 
-# Need aajohan-comfortaa-fonts for the SVG rnotes images
-aajohan-comfortaa-fonts
- 
-# Without this, initramfs generation during live image creation fails: #1242586
-dracut-live
-# syslinux is in @x86-baremetal-tools
- 
-# anaconda needs the locales available to run for different locales
-glibc-all-langpacks
- 
-# no longer in @core since 2018-10, but needed for livesys script
-initscripts
-chkconfig
-grub2-efi
-grub2-pc-modules
-shim-x64
-# save some space
--mpage
--hplip
--isdn4k-utils
-# scanning takes quite a bit of space :/
--xsane
--xsane-gimp
--sane-backends
 
 %end
