@@ -1,5 +1,5 @@
 # AlmaLinux Live Media (Beta - experimental), with optional install option.
-# Build: livemedia-creator --project Almalinux --releasever 8 --make-iso --ks=almalinux-8-live-kde.ks --no-virt
+# Build: livemedia-creator --project Almalinux --releasever 8 --make-iso --ks=almalinux-8-live-xfce.ks --no-virt
 # X Window System configuration information
 xconfig  --startxonboot
 # Keyboard layouts
@@ -38,9 +38,12 @@ zerombr
 clearpart --all --initlabel
 rootpw rootme
 # Disk partitioning information
-part / --size=7200
+part / --size=7198
 
 %post
+# Enable sddm since it is disabled by the packager by default
+# systemctl enable --force sddm.service
+
 # FIXME: it'd be better to get this installed from a package
 cat > /etc/rc.d/init.d/livesys << EOF
 #!/bin/bash
@@ -264,9 +267,6 @@ chmod 755 /etc/rc.d/init.d/livesys-late
 /sbin/restorecon /etc/rc.d/init.d/livesys-late
 /sbin/chkconfig --add livesys-late
 
-# Enable sddm since EPEL packages it disabled by default
-systemctl enable sddm.service
-
 # enable tmpfs for /tmp
 systemctl enable tmp.mount
 
@@ -310,85 +310,71 @@ rm -f /boot/*-rescue*
 
 # Disable network service here, as doing it in the services line
 # fails due to RHBZ #1369794
-##/sbin/chkconfig network off  #fails
+# /sbin/chkconfig network off
 
 # Remove machine-id on pre generated images
 rm -f /etc/machine-id
 touch /etc/machine-id
 
-# set default GTK+ theme for root (see #683855, #689070, #808062)
-cat > /root/.gtkrc-2.0 << EOF
-include "/usr/share/themes/Adwaita/gtk-2.0/gtkrc"
-include "/etc/gtk-2.0/gtkrc"
-gtk-theme-name="Adwaita"
-EOF
-mkdir -p /root/.config/gtk-3.0
-cat > /root/.config/gtk-3.0/settings.ini << EOF
-[Settings]
-gtk-theme-name = Adwaita
+# xfce configuration
+
+# create /etc/sysconfig/desktop (needed for installation)
+
+cat > /etc/sysconfig/desktop <<EOF
+PREFERRED=/usr/bin/startxfce4
+DISPLAYMANAGER=/usr/bin/sddm
 EOF
 
-# add initscript
 cat >> /etc/rc.d/init.d/livesys << EOF
+
+mkdir -p /home/liveuser/.config/xfce4
+
+cat > /home/liveuser/.config/xfce4/helpers.rc << FOE
+MailReader=sylpheed-claws
+FileManager=Thunar
+WebBrowser=firefox
+FOE
+
+# disable screensaver locking (#674410)
+cat >> /home/liveuser/.xscreensaver << FOE
+mode:           off
+lock:           False
+dpmsEnabled:    False
+FOE
+
+# deactivate xfconf-migration (#683161)
+rm -f /etc/xdg/autostart/xfconf-migration-4.6.desktop || :
+
+# deactivate xfce4-panel first-run dialog (#693569)
+mkdir -p /home/liveuser/.config/xfce4/xfconf/xfce-perchannel-xml
+cp /etc/xdg/xfce4/panel/default.xml /home/liveuser/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml
 
 # set up autologin for user liveuser
 if [ -f /etc/sddm.conf ]; then
 sed -i 's/^#User=.*/User=liveuser/' /etc/sddm.conf
-sed -i 's/^#Session=.*/Session=plasma.desktop/' /etc/sddm.conf
+sed -i 's/^#Session=.*/Session=xfce.desktop/' /etc/sddm.conf
 else
 cat > /etc/sddm.conf << SDDM_EOF
 [Autologin]
 User=liveuser
-Session=plasma.desktop
+Session=xfce.desktop
 SDDM_EOF
 fi
 
-# add liveinst.desktop to favorites menu
-mkdir -p /home/liveuser/.config/
-cat > /home/liveuser/.config/kickoffrc << MENU_EOF
-[Favorites]
-FavoriteURLs=/usr/share/applications/firefox.desktop,/usr/share/applications/org.kde.dolphin.desktop,/usr/share/applications/systemsettings.desktop,/usr/share/applications/org.kde.konsole.desktop,/usr/share/applications/liveinst.desktop
-MENU_EOF
-
-# show liveinst.desktop on desktop and in menu
-sed -i 's/NoDisplay=true/NoDisplay=false/' /usr/share/applications/liveinst.desktop
-# set executable bit disable KDE security warning
-chmod +x /usr/share/applications/liveinst.desktop
+# Show harddisk install on the desktop
+sed -i -e 's/NoDisplay=true/NoDisplay=false/' /usr/share/applications/liveinst.desktop
 mkdir /home/liveuser/Desktop
 cp -a /usr/share/applications/liveinst.desktop /home/liveuser/Desktop/
 
-# Set akonadi backend
-mkdir -p /home/liveuser/.config/akonadi
-cat > /home/liveuser/.config/akonadi/akonadiserverrc << AKONADI_EOF
-[%General]
-Driver=QSQLITE3
-AKONADI_EOF
+# no updater applet in live environment
+rm -f /etc/xdg/autostart/org.mageia.dnfdragora-updater.desktop
 
-# Disable plasma-pk-updates (bz #1436873 and 1206760)
-echo "Removing plasma-pk-updates package."
-rpm -e plasma-pk-updates
+# and mark it as executable (new Xfce security feature)
+chmod +x /home/liveuser/Desktop/liveinst.desktop
 
-# Disable baloo
-cat > /home/liveuser/.config/baloofilerc << BALOO_EOF
-[Basic Settings]
-Indexing-Enabled=false
-BALOO_EOF
-
-# Disable kres-migrator
-cat > /home/liveuser/.kde/share/config/kres-migratorrc << KRES_EOF
-[Migration]
-Enabled=false
-KRES_EOF
-
-# Disable kwallet migrator
-cat > /home/liveuser/.config/kwalletrc << KWALLET_EOL
-[Migration]
-alreadyMigrated=true
-KWALLET_EOL
-
-# make sure to set the right permissions and selinux contexts
-chown -R liveuser:liveuser /home/liveuser/
-restorecon -R /home/liveuser/
+# this goes at the end after all other changes. 
+chown -R liveuser:liveuser /home/liveuser
+restorecon -R /home/liveuser
 
 EOF
 
@@ -408,19 +394,20 @@ fi
 # Packages
 %packages
 @base-x
+@minimal-environment
 @fonts
 @guest-desktop-agents
-@kde-desktop-environment
-@kde-apps
-@kde-media  
+@hardware-support
+@Xfce
+# @multimedia
 @networkmanager-submodules
 # Need aajohan-comfortaa-fonts for the SVG rnotes images
 aajohan-comfortaa-fonts
 firefox
-# Additional packages that are not default in kde-* groups, but useful
-#kdeartwork			# only include some parts of kdeartwork
-# fuse
-# @libreoffice # group package not found, install by members
+kernel
+# Make sure that DNF doesn't pull in debug kernel to satisfy kmod() requires
+kernel-modules
+kernel-modules-extra
 libreoffice-calc 
 libreoffice-impress 
 libreoffice-writer
@@ -430,80 +417,52 @@ liberation-mono-fonts
 liberation-sans-fonts
 liberation-serif-fonts
 nano 
+open-vm-tools
+rsync
+#rsyslog
+#rsyslog-gnutls
+#rsyslog-gssapi
+#rsyslog-relp
 thunderbird
 
-  
+# sddm and its deps
+sddm
+pcre2-utf16
+qt5-qtbase
+qt5-qtbase-common
+qt5-qtbase-gui
+qt5-qtdeclarative
+xcb-util-image
+xcb-util-keysyms
+xcb-util-renderutil
+xcb-util-wm
+
+
 # The point of a live image is to install
-anaconda
-anaconda-install-env-deps
+anaconda-core
+anaconda-gui
 anaconda-live
-@anaconda-tools
+anaconda-tui
+anaconda-user-help
+anaconda-widgets
 dracut-config-generic
 dracut-live
+efibootmgr 
+efi-filesystem 
+efi-srpm-macros 
+efivar-libs 
 glibc-all-langpacks
 grub2-efi
 grub2-pc-modules
-grub2-efi-x64-cdboot
-kernel
-kernel-modules
-kernel-modules-extra
+grub2-efi-x64 
+grub2-efi-x64-cdboot 
+grub2-tools-efi
 memtest86+
-syslinux 
-# anaconda needs the locales available to run for different locales
-glibc-all-langpacks
 shim-x64
+syslinux
  
 # no longer in @core since 2018-10, but needed for livesys script
 initscripts
 chkconfig
-
-# save some space
-# Anaconda has a weak dep on this and we don't want it on livecds, see
-# https://fedoraproject.org/wiki/Changes/RemoveDeviceMapperMultipathFromWorkstationLiveCD
-# -fcoe-utils  # donot filter, anaconda needs it
-# -device-mapper-multipath # donot filter, anaconda needs it
-
--mpage
--hplip
--isdn4k-utils
--gfs2-utils
--xsane
--xsane-gimp
--sane-backends
--@admin-tools
-### The KDE-Desktop
-### fixes
-# use kde-print-manager instead of system-config-printer
--system-config-printer
-
-# TODO: check mariadb required
-## make sure mariadb lands instead of MySQL (hopefully a temporary hack)
-#mariadb-embedded
-#mariadb-connector-c
-#mariadb-server
-
-# minimal localization support - allows installing the kde-l10n-* packages
-# system-config-language  #not found
-# kde-l10n #not found
-# unwanted packages from @kde-desktop
-# don't include these for now to fit on a cd
--desktop-backgrounds-basic
--kdeaccessibility*
--ktorrent			# kget has also basic torrent features (~3 megs)
--digikam			# digikam has duplicate functionality with gwenview (~28 megs)
--kipi-plugins			# ~8 megs + drags in Marble
--krusader			# ~4 megs
--k3b				# ~15 megs
-#-kdeplasma-addons		# ~16 megs
-# mediawriter   #not found
-### space issues
-# admin-tools
--gnome-disk-utility
-# kcm_clock still lacks some features, so keep system-config-date around
-#-system-config-date
-# prefer kcm_systemd
--system-config-services
-# prefer/use kusers
--system-config-users
 
 %end
