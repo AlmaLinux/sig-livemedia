@@ -399,7 +399,8 @@ EOF
 @hardware-support
 @multimedia
 @networkmanager-submodules
-@workstation-product-environment
+@gnome-desktop
+#@workstation-product-environment
 anaconda-live
 dracut-config-generic
 dracut-live
