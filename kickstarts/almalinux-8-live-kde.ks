@@ -1,5 +1,5 @@
 # AlmaLinux Live Media (Beta - experimental), with optional install option.
-# Build: livemedia-creator --project Almalinux --releasever 8 --make-iso --ks=almalinux-8-live-kde.ks --no-virt
+# Build: sudo livecd-creator --cache=~/livecd-creator/package-cache -c almalinux-8-live-xfce.ks -f AlmaLinux-8-Live-XFCE
 # X Window System configuration information
 xconfig  --startxonboot
 # Keyboard layouts
@@ -13,12 +13,15 @@ lang en_US.UTF-8
 firewall --enabled --service=mdns
 
 # Repos
-url --mirrorlist="https://mirrors.almalinux.org/mirrorlist/$releasever/baseos"
-repo --name=appstream --mirrorlist="https://mirrors.almalinux.org/mirrorlist/$releasever/appstream"
-repo --name=powertools --mirrorlist="https://mirrors.almalinux.org/mirrorlist/$releasever/powertools"
-repo --name=extras --mirrorlist="https://mirrors.almalinux.org/mirrorlist/$releasever/extras"
-# repo --name=epel --baseurl="https://dl.fedoraproject.org/pub/epel/8/Everything/x86_64/"
-repo --name=epel --mirrorlist="https://mirrors.fedoraproject.org/mirrorlist?repo=epel-8&arch=x86_64"
+# AlmaLinux repos, use https://mirros.almalinux.org to find and change different mirror
+repo --name=baseos --baseurl="https://ord.mirror.rackspace.com/almalinux/8.4/BaseOS/x86_64/os/"
+repo --name=appstream --baseurl="https://ord.mirror.rackspace.com/almalinux/8.4/AppStream/x86_64/os/"
+repo --name=extras --baseurl="https://ord.mirror.rackspace.com/almalinux/8.4/extras/x86_64/os/"
+repo --name=powertools --baseurl="https://ord.mirror.rackspace.com/almalinux/8.4/PowerTools/x86_64/os/"
+# epel repo, use https://mirrors.fedoraproject.org/mirrorlist?repo=epel-8&arch=x86_64 for mirror list
+repo --name=epel --baseurl="https://dl.fedoraproject.org/pub/epel/8/Everything/x86_64/"
+# elrepo use https://mirrors.elrepo.org/mirrors-elrepo.el8 for mirror list
+repo --name=elrepo --baseurl="https://mirror.rackspace.com/elrepo/elrepo/el8/x86_64/"
 
 # Network information
 network --activate --bootproto=dhcp --device=link --onboot=on
@@ -38,7 +41,7 @@ zerombr
 clearpart --all --initlabel
 rootpw rootme
 # Disk partitioning information
-part / --size=7200
+part / --size=10238
 
 %post
 # FIXME: it'd be better to get this installed from a package
@@ -310,7 +313,7 @@ rm -f /boot/*-rescue*
 
 # Disable network service here, as doing it in the services line
 # fails due to RHBZ #1369794
-##/sbin/chkconfig network off  #fails
+sbin/chkconfig network off  #fails
 
 # Remove machine-id on pre generated images
 rm -f /etc/machine-id
@@ -407,103 +410,5 @@ fi
 
 # Packages
 %packages
-@base-x
-@fonts
-@guest-desktop-agents
-@kde-desktop-environment
-@kde-apps
-@kde-media  
-@networkmanager-submodules
-# Need aajohan-comfortaa-fonts for the SVG rnotes images
-aajohan-comfortaa-fonts
-firefox
-# Additional packages that are not default in kde-* groups, but useful
-#kdeartwork			# only include some parts of kdeartwork
-# fuse
-# @libreoffice # group package not found, install by members
-libreoffice-calc 
-libreoffice-impress 
-libreoffice-writer
-liberation-fonts
-liberation-fonts-common
-liberation-mono-fonts
-liberation-sans-fonts
-liberation-serif-fonts
-nano 
-thunderbird
-
-  
-# The point of a live image is to install
-anaconda
-anaconda-install-env-deps
-anaconda-live
-@anaconda-tools
-dracut-config-generic
-dracut-live
-glibc-all-langpacks
-grub2-efi
-grub2-pc-modules
-grub2-efi-x64-cdboot
-kernel
-kernel-modules
-kernel-modules-extra
-memtest86+
-syslinux 
-# anaconda needs the locales available to run for different locales
-glibc-all-langpacks
-shim-x64
- 
-# no longer in @core since 2018-10, but needed for livesys script
-initscripts
-chkconfig
-
-# save some space
-# Anaconda has a weak dep on this and we don't want it on livecds, see
-# https://fedoraproject.org/wiki/Changes/RemoveDeviceMapperMultipathFromWorkstationLiveCD
-# -fcoe-utils  # donot filter, anaconda needs it
-# -device-mapper-multipath # donot filter, anaconda needs it
-
--mpage
--hplip
--isdn4k-utils
--gfs2-utils
--xsane
--xsane-gimp
--sane-backends
--@admin-tools
-### The KDE-Desktop
-### fixes
-# use kde-print-manager instead of system-config-printer
--system-config-printer
-
-# TODO: check mariadb required
-## make sure mariadb lands instead of MySQL (hopefully a temporary hack)
-#mariadb-embedded
-#mariadb-connector-c
-#mariadb-server
-
-# minimal localization support - allows installing the kde-l10n-* packages
-# system-config-language  #not found
-# kde-l10n #not found
-# unwanted packages from @kde-desktop
-# don't include these for now to fit on a cd
--desktop-backgrounds-basic
--kdeaccessibility*
--ktorrent			# kget has also basic torrent features (~3 megs)
--digikam			# digikam has duplicate functionality with gwenview (~28 megs)
--kipi-plugins			# ~8 megs + drags in Marble
--krusader			# ~4 megs
--k3b				# ~15 megs
-#-kdeplasma-addons		# ~16 megs
-# mediawriter   #not found
-### space issues
-# admin-tools
--gnome-disk-utility
-# kcm_clock still lacks some features, so keep system-config-date around
-#-system-config-date
-# prefer kcm_systemd
--system-config-services
-# prefer/use kusers
--system-config-users
-
+%include packages-kde.txt
 %end
