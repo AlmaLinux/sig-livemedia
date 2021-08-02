@@ -4,80 +4,67 @@ This git repository contains Kickstarts and other scripts needed to produce the 
 
 ## Local Build
 
-### Build Environment
+### Build Environments
 
-This project contains number of `KickStart` files to build live media for AlmaLiux. It uses `anaconda` and `lorax` packages for ISO file build process.
+This project contains number of `KickStart` files to build live media for AlmaLiux. It uses `anaconda` and `livecd-tools` packages for ISO file build process. `livecd-tools` available in `epel` repos, enable prior to install.
 
-`AlmaLinux` system installed on a physical or vitual system is prefered. following additional packages are required. Please make note `hfsplus-tools` is available only in `elrepo`, make sure enable prior to isntall it.
+`AlmaLinux` system installed on a physical or vitual system is prefered. following additional packages are required. Package `hfsplus-tools` is available only in `elrepo`, make sure enable prior to isntall it.
 
 ```sh
-anaconda
-lorax
-hfsplus-tools
-efibootmgr 
-efi-filesystem 
-efi-srpm-macros 
-efivar-libs 
-grub2-efi-x64 
-grub2-efi-x64-cdboot 
-grub2-tools-efi 
-shim-x64
+sudo dnf -y install epel-release elrepo-release
+sudo dnf -y update
+sudo dnf install anaconda\
+                livecd-tools \
+                hfsplus-tools \
+                efibootmgr \
+                efi-filesystem \
+                efi-srpm-macros \
+                efivar-libs \
+                grub2-efi-x64 \
+                grub2-efi-x64-cdboot \
+                grub2-tools-efi \
+                shim-x64
 ```
 
-### Build ISO
+### Build ISOs
 
-Building ISO using `livemedia-creator` command, fewer options. The build output will be available at `/var/tmp/lmc-XXXX`, check build output for folder name.
+Local build proces takes `20-50 minutes` depends on number of CPU cores and internet speed. Minimum `15GB` work space for temporary files. Resulting ISO size ranges from `1.4GB` to `2.4GB` depends on build type.
 
-```sh
-sudo livemedia-creator --project AlmaLinux --releasever 8 --make-iso --ks=kickstarts/almalinux-8-live-gnome.ks --no-virt
-```
-
-Build with extended options, building `gnome live media`
+Building `gnome live media`
 
 ```sh
-sudo livemedia-creator \
-    --ks=kickstarts/almalinux-8-live-gnome.ks \
-    --no-virt --resultdir  ./iso \
-    --project "AlmaLinux live gnome" \
-    --make-iso \
-    --iso-only \
-    --iso-name almalinux-8-live-gnome.iso \
-    --releasever 8 \
-    --volid "AlmaLinux 8 live" \
-    --title "AlmaLinux 8" \
-    --nomacboot 
+sudo livecd-creator \
+    --cache=~/livecd-creator/package-cache \
+    -c almalinux-8-live-gnome.ks \
+    -f AlmaLinux-8-Live-GNOME
+ 
 ```
 
 Building `mini live media`
 
 ```sh
-sudo livemedia-creator \
-    --ks=kickstarts/almalinux-8-live-mini.ks \
-    --no-virt --resultdir  ./iso \
-    --project "AlmaLinux live mini" \
-    --make-iso \
-    --iso-only \
-    --iso-name almalinux-8-live-mini.iso \
-    --releasever 8 \
-    --volid "AlmaLinux 8 live" \
-    --title "AlmaLinux 8" \
-    --nomacboot 
+sudo livecd-creator \
+    --cache=~/livecd-creator/package-cache \
+    -c almalinux-8-live-mini.ks \
+    -f AlmaLinux-8-Live-mini
 ```
 
 Building `KDE live media`
 
 ```sh
-sudo livemedia-creator \
-    --ks=kickstarts/almalinux-8-live-kde.ks \
-    --no-virt --resultdir  ./iso \
-    --project "AlmaLinux KDE Live" \
-    --make-iso \
-    --iso-only \
-    --iso-name almalinux-8-live-kde.iso \
-    --releasever 8 \
-    --volid "AlmaLinux 8 live" \
-    --title "AlmaLinux 8" \
-    --nomacboot 
+sudo livecd-creator \
+    --cache=~/livecd-creator/package-cache \
+    -c almalinux-8-live-kde.ks \
+    -f AlmaLinux-8-Live-KDE
+```
+
+Building `XFCE live media`
+
+```sh
+sudo livecd-creator \
+    --cache=~/livecd-creator/package-cache \
+    -c almalinux-8-live-xfce.ks \
+    -f AlmaLinux-8-Live-XFCE
 ```
 
 ### Full live media
@@ -113,3 +100,9 @@ Reboot the system, accept the license. Now system is ready to use.
 ![image](https://user-images.githubusercontent.com/1273137/127054222-2a94b1b5-b7ed-408c-9567-37dd105ddc91.png)
 
 ![image](https://user-images.githubusercontent.com/1273137/127054274-45668685-48c2-4dcb-800a-ccd7f8d4b2bd.png)
+
+### Additional notes
+
+* Current build scripts uses the AlmaLinux mirror closer to `US/East` zone. Use https://mirros.almalinux.org to find and change different mirror.
+* Use following commnd to generate package list to install `rpm -qa --qf "%{n}\n" | grep -v pubkey | sort > packages-XXX.txt`
+* Make sure to use `--cache` for build process, it will help for faster build and less network traffic.'

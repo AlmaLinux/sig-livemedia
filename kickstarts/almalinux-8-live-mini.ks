@@ -1,8 +1,5 @@
-# Live ISO Image
-# NOTE: This example is for creating a live-iso, eg.
-#       livemedia-creator --project Almalinux --releasever 8 --make-iso --ks=almalinux-8-livemedia.ks --no-virt
-# NOTE: This example does not include Anaconda and cannot be installed to a harddrive.
-
+# AlmaLinux Live Media (Beta - experimental), with optional install option.
+# Build: sudo livecd-creator --cache=~/livecd-creator/package-cache -c almalinux-8-live-mini.ks -f AlmaLinux-8-Live-mini
 # X Window System configuration information
 xconfig  --startxonboot
 # Keyboard layouts
@@ -14,10 +11,17 @@ timezone US/Eastern
 lang en_US.UTF-8
 # Firewall configuration
 firewall --enabled --service=mdns
-url --url="https://repo.almalinux.org/almalinux/8/BaseOS/x86_64/os/"
-repo --name=appstream --baseurl="https://repo.almalinux.org/almalinux/8/AppStream/x86_64/os/"
-repo --name=powertools --baseurl="https://repo.almalinux.org/almalinux/8/PowerTools/x86_64/os/"
-repo --name=extras --baseurl="https://repo.almalinux.org/almalinux/8/extras/x86_64/os/"
+# Repos
+# AlmaLinux repos, use https://mirros.almalinux.org to find and change different mirror
+repo --name=baseos --baseurl="https://ord.mirror.rackspace.com/almalinux/8/BaseOS/x86_64/os/"
+repo --name=appstream --baseurl="https://ord.mirror.rackspace.com/almalinux/8/AppStream/x86_64/os/"
+repo --name=extras --baseurl="https://ord.mirror.rackspace.com/almalinux/8/extras/x86_64/os/"
+repo --name=powertools --baseurl="https://ord.mirror.rackspace.com/almalinux/8/PowerTools/x86_64/os/"
+# epel repo, use https://mirrors.fedoraproject.org/mirrorlist?repo=epel-8&arch=x86_64 for mirror list
+repo --name=epel --baseurl="https://dl.fedoraproject.org/pub/epel/8/Everything/x86_64/"
+# elrepo use https://mirrors.elrepo.org/mirrors-elrepo.el8 for mirror list
+repo --name=elrepo --baseurl="https://mirror.rackspace.com/elrepo/elrepo/el8/x86_64/"
+
 # Network information
 network --activate --bootproto=dhcp --device=link --onboot=on
 
@@ -35,7 +39,7 @@ bootloader --location=none
 clearpart --all --initlabel
 rootpw rootme
 # Disk partitioning information
-part / --size=6656
+part / --size=10238
 
 %post
 # FIXME: it'd be better to get this installed from a package

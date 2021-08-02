@@ -1,5 +1,5 @@
 # AlmaLinux Live Media (Beta - experimental), with optional install option.
-# Build: livemedia-creator --project Almalinux --releasever 8 --make-iso --ks=almalinux-8-live-xfce.ks --no-virt
+# Build: sudo livecd-creator --cache=~/livecd-creator/package-cache -c almalinux-8-live-xfce.ks -f AlmaLinux-8-Live-XFCE
 # X Window System configuration information
 xconfig  --startxonboot
 # Keyboard layouts
@@ -11,14 +11,16 @@ timezone US/Eastern
 lang en_US.UTF-8
 # Firewall configuration
 firewall --enabled --service=mdns
-
 # Repos
-url --mirrorlist="https://mirrors.almalinux.org/mirrorlist/$releasever/baseos"
-repo --name=appstream --mirrorlist="https://mirrors.almalinux.org/mirrorlist/$releasever/appstream"
-repo --name=powertools --mirrorlist="https://mirrors.almalinux.org/mirrorlist/$releasever/powertools"
-repo --name=extras --mirrorlist="https://mirrors.almalinux.org/mirrorlist/$releasever/extras"
-# repo --name=epel --baseurl="https://dl.fedoraproject.org/pub/epel/8/Everything/x86_64/"
-repo --name=epel --mirrorlist="https://mirrors.fedoraproject.org/mirrorlist?repo=epel-8&arch=x86_64"
+# AlmaLinux repos, use https://mirros.almalinux.org to find and change different mirror
+repo --name=baseos --baseurl="https://ord.mirror.rackspace.com/almalinux/8/BaseOS/x86_64/os/"
+repo --name=appstream --baseurl="https://ord.mirror.rackspace.com/almalinux/8/AppStream/x86_64/os/"
+repo --name=extras --baseurl="https://ord.mirror.rackspace.com/almalinux/8/extras/x86_64/os/"
+repo --name=powertools --baseurl="https://ord.mirror.rackspace.com/almalinux/8/PowerTools/x86_64/os/"
+# epel repo, use https://mirrors.fedoraproject.org/mirrorlist?repo=epel-8&arch=x86_64 for mirror list
+repo --name=epel --baseurl="https://dl.fedoraproject.org/pub/epel/8/Everything/x86_64/"
+# elrepo use https://mirrors.elrepo.org/mirrors-elrepo.el8 for mirror list
+repo --name=elrepo --baseurl="https://mirror.rackspace.com/elrepo/elrepo/el8/x86_64/"
 
 # Network information
 network --activate --bootproto=dhcp --device=link --onboot=on
@@ -33,16 +35,15 @@ services --disabled="sshd" --enabled="NetworkManager,ModemManager"
 shutdown
 # System bootloader configuration
 bootloader --location=none
-zerombr
 # Clear blank disks or all existing partitions
 clearpart --all --initlabel
 rootpw rootme
 # Disk partitioning information
-part / --size=7198
+part / --size=10238
 
 %post
 # Enable sddm since it is disabled by the packager by default
-# systemctl enable --force sddm.service
+systemctl enable --force sddm.service
 
 # FIXME: it'd be better to get this installed from a package
 cat > /etc/rc.d/init.d/livesys << EOF
@@ -310,7 +311,7 @@ rm -f /boot/*-rescue*
 
 # Disable network service here, as doing it in the services line
 # fails due to RHBZ #1369794
-# /sbin/chkconfig network off
+/sbin/chkconfig network off
 
 # Remove machine-id on pre generated images
 rm -f /etc/machine-id
@@ -381,7 +382,7 @@ EOF
 %end
 
 %post --nochroot
-cp $INSTALL_ROOT/usr/share/licenses/*-release/* $LIVE_ROOT/
+# cp $INSTALL_ROOT/usr/share/licenses/*-release/* $LIVE_ROOT/
 
 # only works on x86, x86_64
 if [ "$(uname -i)" = "i386" -o "$(uname -i)" = "x86_64" ]; then
@@ -392,77 +393,7 @@ fi
 %end
 
 # Packages
+# rpm -qa --qf "%{n}\n" | grep -v pubkey | sort > packages-xfce.txt
 %packages
-@base-x
-@minimal-environment
-@fonts
-@guest-desktop-agents
-@hardware-support
-@Xfce
-# @multimedia
-@networkmanager-submodules
-# Need aajohan-comfortaa-fonts for the SVG rnotes images
-aajohan-comfortaa-fonts
-firefox
-kernel
-# Make sure that DNF doesn't pull in debug kernel to satisfy kmod() requires
-kernel-modules
-kernel-modules-extra
-libreoffice-calc 
-libreoffice-impress 
-libreoffice-writer
-liberation-fonts
-liberation-fonts-common
-liberation-mono-fonts
-liberation-sans-fonts
-liberation-serif-fonts
-nano 
-open-vm-tools
-rsync
-#rsyslog
-#rsyslog-gnutls
-#rsyslog-gssapi
-#rsyslog-relp
-thunderbird
-
-# sddm and its deps
-sddm
-pcre2-utf16
-qt5-qtbase
-qt5-qtbase-common
-qt5-qtbase-gui
-qt5-qtdeclarative
-xcb-util-image
-xcb-util-keysyms
-xcb-util-renderutil
-xcb-util-wm
-
-
-# The point of a live image is to install
-anaconda-core
-anaconda-gui
-anaconda-live
-anaconda-tui
-anaconda-user-help
-anaconda-widgets
-dracut-config-generic
-dracut-live
-efibootmgr 
-efi-filesystem 
-efi-srpm-macros 
-efivar-libs 
-glibc-all-langpacks
-grub2-efi
-grub2-pc-modules
-grub2-efi-x64 
-grub2-efi-x64-cdboot 
-grub2-tools-efi
-memtest86+
-shim-x64
-syslinux
- 
-# no longer in @core since 2018-10, but needed for livesys script
-initscripts
-chkconfig
-
+%include packages-xfce.txt
 %end
