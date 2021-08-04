@@ -19,8 +19,8 @@ repo --name=extras --baseurl="https://ord.mirror.rackspace.com/almalinux/8/extra
 repo --name=powertools --baseurl="https://ord.mirror.rackspace.com/almalinux/8/PowerTools/x86_64/os/"
 # epel repo, use https://mirrors.fedoraproject.org/mirrorlist?repo=epel-8&arch=x86_64 for mirror list
 repo --name=epel --baseurl="https://dl.fedoraproject.org/pub/epel/8/Everything/x86_64/"
-# elrepo use https://mirrors.elrepo.org/mirrors-elrepo.el8 for mirror list
-repo --name=elrepo --baseurl="https://mirror.rackspace.com/elrepo/elrepo/el8/x86_64/"
+## elrepo use https://mirrors.elrepo.org/mirrors-elrepo.el8 for mirror list
+#repo --name=elrepo --baseurl="https://mirror.rackspace.com/elrepo/elrepo/el8/x86_64/"
 
 # Network information
 network --activate --bootproto=dhcp --device=link --onboot=on
