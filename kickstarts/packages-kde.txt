@@ -192,6 +192,7 @@ gettext
 gettext-libs
 ghostscript
 giflib
+gjs
 glib2
 glibc
 glibc-all-langpacks
@@ -240,8 +241,6 @@ hardlink
 harfbuzz
 harfbuzz-icu
 hdparm
-hfsplus-tools
-hfsutils
 hicolor-icon-theme
 hostname
 http-parser
@@ -1017,7 +1016,6 @@ qt5-qtxmlpatterns
 rdma-core
 re2
 readline
-reiserfs-utils
 rest
 rng-tools
 rootfiles

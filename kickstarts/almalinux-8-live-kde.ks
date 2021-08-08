@@ -360,6 +360,18 @@ chmod +x /usr/share/applications/liveinst.desktop
 mkdir /home/liveuser/Desktop
 cp -a /usr/share/applications/liveinst.desktop /home/liveuser/Desktop/
 
+  # Make the welcome screen show up
+  if [ -f /usr/share/anaconda/gnome/rhel-welcome.desktop ]; then
+    mkdir -p ~liveuser/.config/autostart
+    cp /usr/share/anaconda/gnome/rhel-welcome.desktop /usr/share/applications/
+    cp /usr/share/anaconda/gnome/rhel-welcome.desktop ~liveuser/.config/autostart/
+  fi
+
+  # Copy Anaconda branding in place
+  if [ -d /usr/share/lorax/product/usr/share/anaconda ]; then
+    cp -a /usr/share/lorax/product/* /
+  fi
+
 # Set akonadi backend
 mkdir -p /home/liveuser/.config/akonadi
 cat > /home/liveuser/.config/akonadi/akonadiserverrc << AKONADI_EOF
