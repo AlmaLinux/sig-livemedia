@@ -362,16 +362,34 @@ Session=xfce.desktop
 SDDM_EOF
 fi
 
-# Show harddisk install on the desktop
-sed -i -e 's/NoDisplay=true/NoDisplay=false/' /usr/share/applications/liveinst.desktop
-mkdir /home/liveuser/Desktop
-cp -a /usr/share/applications/liveinst.desktop /home/liveuser/Desktop/
+mkdir -p /home/liveuser/Desktop
+# make the installer show up, when exits
+if [ -f /usr/share/applications/liveinst.desktop ]; then
+  # Show harddisk install in shell dash
+  sed -i -e 's/NoDisplay=true/NoDisplay=false/' /usr/share/applications/liveinst.desktop ""
+  # copy to desktop
+  cp -a /usr/share/applications/liveinst.desktop /home/liveuser/Desktop/
+  # and mark it as executable (new Xfce security feature)
+  chmod +x /home/liveuser/Desktop/liveinst.desktop
+
+  # need to move it to anaconda.desktop to make shell happy TODO: Is reuired for XFCE?
+  mv /usr/share/applications/liveinst.desktop /usr/share/applications/anaconda.desktop
+
+  # Make the welcome screen show up
+  if [ -f /usr/share/anaconda/gnome/rhel-welcome.desktop ]; then
+    mkdir -p ~liveuser/.config/autostart
+    cp /usr/share/anaconda/gnome/rhel-welcome.desktop /usr/share/applications/
+    cp /usr/share/anaconda/gnome/rhel-welcome.desktop ~liveuser/.config/autostart/
+  fi
+
+  # Copy Anaconda branding in place
+  if [ -d /usr/share/lorax/product/usr/share/anaconda ]; then
+    cp -a /usr/share/lorax/product/* /
+  fi
+fi
 
 # no updater applet in live environment
 rm -f /etc/xdg/autostart/org.mageia.dnfdragora-updater.desktop
-
-# and mark it as executable (new Xfce security feature)
-chmod +x /home/liveuser/Desktop/liveinst.desktop
 
 # this goes at the end after all other changes. 
 chown -R liveuser:liveuser /home/liveuser
