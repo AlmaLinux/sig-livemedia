@@ -10,6 +10,7 @@ almalinux-indexhtml
 almalinux-logos
 almalinux-release
 alsa-lib
+anaconda-live
 aspell
 atk
 atkmm
@@ -104,6 +105,7 @@ dnf-data
 dnf-plugins-core
 dosfstools
 dracut
+dracut-config-generic
 dracut-config-rescue
 dracut-live
 dracut-network
