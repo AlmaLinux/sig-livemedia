@@ -1,8 +1,75 @@
 # SIG - AlmaLinux Live Media
 
-This git repository contains Kickstarts and other scripts needed to produce the AlmaLinux LiveCD/DVD.
+This git repository contains Kickstarts and other scripts needed to produce the AlmaLinux Live DVDs. Two ways to create/build this project. Using `docker` containers or `AlmaLinux` system.
 
-## Local Build
+## Build using Docker
+
+### Create `almalinux/ks2rootfs:livecd-tools` image
+
+Project root directory contains the `Dockerfile` necessary to build `almalinux/ks2rootfs:livecd-tools` image. Use docker build command to create docker image.
+
+```sh
+docker build -t almalinux/ks2rootfs:livecd-tools -f Dockerfile .
+```
+
+### Using `almalinux/ks2rootfs:livecd-tools` image
+
+Change working folder to `kickstarts` and run docker image created in previous step. Mount current working foder to `code` folder inside docker container as below.
+
+```sh
+cd  kickstarts
+docker run --privileged --rm -it -v $PWD:/code almalinux/ks2rootfs:livecd-tools
+```
+
+Run following commands inside docker shell to build Gnome live media.
+
+```sh
+ksflatten --config almalinux-8-live-gnome.ks --output flat-gnome.ks
+livecd-creator --config flat-gnome.ks \
+               --fslabel AlmaLinux-8-LiveDVD-Gnome \
+               --title=AlmaLinux-8-LiveDVD \
+               --product="AlmaLinux 8 Live" \
+               --cache=/code/pkg-cache-alma \
+               --releasever=8
+```
+
+Run following commands inside docker shell to build Gnome Mini live media.
+
+```sh
+ksflatten --config almalinux-8-live-mini.ks --output flat-mini.ks
+livecd-creator --config flat-mini.ks \
+               --fslabel AlmaLinux-8-LiveDVD-Mini \
+               --title=AlmaLinux-8-LiveDVD \
+               --product="AlmaLinux 8 Live" \
+               --cache=/code/pkg-cache-alma \
+               --releasever=8
+```
+
+Run following commands inside docker shell to build KDE live media.
+
+```sh
+ksflatten --config almalinux-8-live-kde.ks --output flat-kde.ks
+livecd-creator --config flat-kde.ks \
+               --fslabel AlmaLinux-8-LiveDVD-KDE \
+               --title=AlmaLinux-8-LiveDVD \
+               --product="AlmaLinux 8 Live" \
+               --cache=/code/pkg-cache-alma \
+               --releasever=8
+```
+
+Run following commands inside docker shell to build XFCE live media.
+
+```sh
+ksflatten --config almalinux-8-live-xfce.ks --output flat-xfce.ks
+livecd-creator --config flat-xfce.ks \
+               --fslabel AlmaLinux-8-LiveDVD-XFCE \
+               --title=AlmaLinux-8-LiveDVD \
+               --product="AlmaLinux 8 Live" \
+               --cache=/code/pkg-cache-alma \
+               --releasever=8
+```
+
+## Build using AlmaLinux System
 
 ### Build Environments
 
@@ -13,7 +80,7 @@ This project contains number of `KickStart` files to build live media for AlmaLi
 ```sh
 sudo dnf -y install epel-release elrepo-release
 sudo dnf -y update
-sudo dnf install anaconda\
+sudo dnf --enablerepo="powertools" --enablerepo="epel" --enablerepo="elrepo" install anaconda\
                 livecd-tools \
                 hfsplus-tools \
                 efibootmgr \
