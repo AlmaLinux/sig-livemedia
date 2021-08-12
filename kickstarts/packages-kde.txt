@@ -22,6 +22,8 @@ adobe-mappings-pdf
 adwaita-cursor-theme
 adwaita-gtk2-theme
 adwaita-icon-theme
+almalinux-backgrounds
+almalinux-indexhtml
 almalinux-logos
 almalinux-release
 alsa-lib
@@ -829,6 +831,7 @@ perl-Digest-MD5
 perl-Encode
 perl-Errno
 perl-Exporter
+perl-File-pushd
 perl-File-Path
 perl-File-Temp
 perl-Getopt-Long
@@ -1169,7 +1172,12 @@ initscripts
 chkconfig
 aajohan-comfortaa-fonts
 firefox
+libreoffice-base 
 libreoffice-calc 
+libreoffice-core
+libreoffice-data
+libreoffice-draw 
+libreoffice-graphicfilter
 libreoffice-impress 
 libreoffice-writer
 liberation-fonts

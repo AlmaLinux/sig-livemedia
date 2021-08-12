@@ -10,7 +10,10 @@ almalinux-indexhtml
 almalinux-logos
 almalinux-release
 alsa-lib
+anaconda
+anaconda-install-env-deps
 anaconda-live
+@anaconda-tools
 aspell
 atk
 atkmm
@@ -425,9 +428,11 @@ libquvi-scripts
 libqxp
 libraw1394
 libref_array
+libreoffice-base
 libreoffice-calc
 libreoffice-core
 libreoffice-data
+libreoffice-draw
 libreoffice-graphicfilter
 libreoffice-gtk3
 libreoffice-help-en

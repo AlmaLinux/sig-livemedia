@@ -329,6 +329,9 @@ EOF
 cat >> /etc/rc.d/init.d/livesys << EOF
 
 mkdir -p /home/liveuser/.config/xfce4
+# uglyfix, replace with almalinux-backgrounds-extras package
+mkdir -p /usr/share/backgrounds/images
+ln -s /usr/share/backgrounds/Alma-dark-2048x1536.jpg /usr/share/backgrounds/images/default.png
 
 cat > /home/liveuser/.config/xfce4/helpers.rc << FOE
 MailReader=sylpheed-claws

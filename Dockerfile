@@ -6,7 +6,7 @@ FROM almalinux:8 as builder
 
 RUN dnf install -y epel-release elrepo-release && \
     dnf upgrade -y && \
-    mkdir -p /mnt/system-root /mnt/system-root/build; \
+    mkdir -p /mnt/system-root /mnt/system-root/code; \
     dnf install --enablerepo="powertools" --enablerepo="epel" --enablerepo="elrepo" --installroot /mnt/system-root  --releasever 8 --setopt=install_weak_deps=False --setopt=tsflags=nodocs -y \
     dnf \
     systemd \
@@ -25,5 +25,7 @@ RUN dnf install -y epel-release elrepo-release && \
 FROM scratch
 
 COPY --from=builder /mnt/system-root/ /
+
+WORKDIR /code
 
 CMD ["/bin/bash"]
