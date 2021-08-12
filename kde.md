@@ -6,9 +6,10 @@
 
 ### KDE Desktop
 
-![image](https://user-images.githubusercontent.com/1273137/128655138-1355ba89-f8e5-4844-b3cc-e26f63d9e9bb.png)
+![image](https://user-images.githubusercontent.com/1273137/129279587-faacf763-01ca-4cf2-bb2b-a1458f4028db.png)
 
-![image](https://user-images.githubusercontent.com/1273137/128655159-7a9ec4e5-3f7c-477c-bcb2-dc224ddc86e4.png)
+![image](https://user-images.githubusercontent.com/1273137/129279554-ce53af68-776e-4f50-8a7e-8539991393f1.png)
 
-![image](https://user-images.githubusercontent.com/1273137/128655212-f478736e-c499-4279-bb29-6a1b8bbf4000.png)
+![image](https://user-images.githubusercontent.com/1273137/128854199-0b37401f-47f1-4d7f-a94a-496ca5a8d886.png)
 
+![image](https://user-images.githubusercontent.com/1273137/129027553-3e3e8d86-59b3-47be-9cb2-7f27c9e4f00e.png)
