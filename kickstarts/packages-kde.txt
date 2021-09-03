@@ -23,6 +23,7 @@ adwaita-cursor-theme
 adwaita-gtk2-theme
 adwaita-icon-theme
 almalinux-backgrounds
+almalinux-backgrounds-extras
 almalinux-indexhtml
 almalinux-logos
 almalinux-release
