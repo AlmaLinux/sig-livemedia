@@ -311,7 +311,8 @@ echo 'File created by kickstart. See systemd-update-done.service(8).' \
 # See bug 1317709
 rm -f /boot/*-rescue*
 
-# TODO: Move these to package or update to almalinux-backgrounds-extras package
+# TODO: almalinux-backgrounds-extras package looks good, remove inline method
+# on next build
 generateKDEWallpapers() {
   # Declare an array for background types
   declare -a bgtypes=("dark" "light" "abstract-dark" "abstract-light")
@@ -351,7 +352,7 @@ FOE
   done  
 }
 # call function to create wallpapers
-generateKDEWallpapers
+# generateKDEWallpapers
 # Very ODD fix to get Alma background, find alternative
 rm -rf /usr/share/wallpapers/Next
 ln -s /usr/share/wallpapers/Alma-dark /usr/share/wallpapers/Next
@@ -480,4 +481,5 @@ fi
 # Packages
 %packages
 %include packages-kde.txt
+-desktop-backgrounds-compat
 %end
