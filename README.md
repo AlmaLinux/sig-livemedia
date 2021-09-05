@@ -2,6 +2,10 @@
 
 This git repository contains Kickstarts and other scripts needed to produce the AlmaLinux Live DVDs. Two ways to create/build this project. Using `docker` containers or `AlmaLinux` system.
 
+## Using Live media
+
+Live media ISO files are available at https://repo.almalinux.org/almalinux/8/live/x86_64/ or use mirrors https://mirrors.almalinux.org find a close one.
+
 ## Build using Docker
 
 ### Create `almalinux/ks2rootfs:livecd-tools` image
