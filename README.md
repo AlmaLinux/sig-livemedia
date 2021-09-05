@@ -4,7 +4,7 @@ This git repository contains Kickstarts and other scripts needed to produce the 
 
 ## Using Live media
 
-Live media ISO files are available at https://repo.almalinux.org/almalinux/8/live/x86_64/ or use mirrors https://mirrors.almalinux.org find a close one.
+Live media ISO files are available at https://repo.almalinux.org/almalinux/8/live/x86_64/ or use mirrors https://mirrors.almalinux.org find a close one. Refer to project wiki https://wiki.almalinux.org/LiveMedia.html#about-live-media for detailed installation steps.
 
 ## Build using Docker
 
