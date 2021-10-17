@@ -13,15 +13,7 @@ lang en_US.UTF-8
 firewall --enabled --service=mdns
 
 # Repos
-# AlmaLinux repos, use https://mirros.almalinux.org to find and change different mirror
-repo --name=baseos --baseurl="https://ord.mirror.rackspace.com/almalinux/8.4/BaseOS/x86_64/os/"
-repo --name=appstream --baseurl="https://ord.mirror.rackspace.com/almalinux/8.4/AppStream/x86_64/os/"
-repo --name=extras --baseurl="https://ord.mirror.rackspace.com/almalinux/8.4/extras/x86_64/os/"
-repo --name=powertools --baseurl="https://ord.mirror.rackspace.com/almalinux/8.4/PowerTools/x86_64/os/"
-# epel repo, use https://mirrors.fedoraproject.org/mirrorlist?repo=epel-8&arch=x86_64 for mirror list
-repo --name=epel --baseurl="https://dl.fedoraproject.org/pub/epel/8/Everything/x86_64/"
-## elrepo use https://mirrors.elrepo.org/mirrors-elrepo.el8 for mirror list
-#repo --name=elrepo --baseurl="https://mirror.rackspace.com/elrepo/elrepo/el8/x86_64/"
+%include repos.txt
 
 # Network information
 network --activate --bootproto=dhcp --device=link --onboot=on
@@ -482,4 +474,9 @@ fi
 %packages
 %include packages-kde.txt
 -desktop-backgrounds-compat
+## Building for 8.4 requires lower version of `rng-tools` 
+## since rng-tools-6.8-4 version goes into loop
+## this issue resolved in 8.5 beta and above
+#-rng-tools-6.8-4.el8_4
+#rng-tools-6.8-3.el8
 %end

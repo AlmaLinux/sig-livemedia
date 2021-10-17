@@ -12,15 +12,7 @@ lang en_US.UTF-8
 # Firewall configuration
 firewall --enabled --service=mdns
 # Repos
-# AlmaLinux repos, use https://mirros.almalinux.org to find and change different mirror
-repo --name=baseos --baseurl="https://ord.mirror.rackspace.com/almalinux/8.5-beta/BaseOS/$basearch/kickstart/"
-repo --name=appstream --baseurl="https://ord.mirror.rackspace.com/almalinux/8.5-beta/AppStream/$basearch/kickstart/"
-repo --name=extras --baseurl="https://ord.mirror.rackspace.com/almalinux/8.5-beta/extras/$basearch/kickstart/"
-repo --name=powertools --baseurl="https://ord.mirror.rackspace.com/almalinux/8.5-beta/PowerTools/$basearch/kickstart/"
-# epel repo, use https://mirrors.fedoraproject.org/mirrorlist?repo=epel-8&arch=$basearch for mirror list
-repo --name=epel --baseurl="https://dl.fedoraproject.org/pub/epel/8/Everything/$basearch/"
-## elrepo use https://mirrors.elrepo.org/mirrors-elrepo.el8 for mirror list
-#repo --name=elrepo --baseurl="https://mirror.rackspace.com/elrepo/elrepo/el8/$basearch/"
+%include repos.txt
 
 # Network information
 network --activate --bootproto=dhcp --device=link --onboot=on
