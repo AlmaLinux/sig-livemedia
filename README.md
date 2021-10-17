@@ -6,70 +6,64 @@ This git repository contains Kickstarts and other scripts needed to produce the 
 
 Live media ISO files are available at https://repo.almalinux.org/almalinux/8/live/x86_64/ or use mirrors https://mirrors.almalinux.org find a close one. Refer to project wiki https://wiki.almalinux.org/LiveMedia.html#about-live-media for detailed installation steps.
 
-## Build using Docker
+## Build Environment
 
-### Create `almalinux/ks2rootfs:livecd-tools` image
+Repo live images can be build using AlmaLinux using `almalinux/ks2rootfs:all-in-one` docker image utility OR using an AlmaLinux physical or virtual machine.
 
-Project root directory contains the `Dockerfile` necessary to build `almalinux/ks2rootfs:livecd-tools` image. Use docker build command to create docker image.
+### Using `almalinux/ks2rootfs:all-in-one` docker image
 
-```sh
-docker build -t almalinux/ks2rootfs:livecd-tools -f Dockerfile .
-```
-
-### Using `almalinux/ks2rootfs:livecd-tools` image
-
-Change working folder to `kickstarts` and run docker image created in previous step. Mount current working foder to `code` folder inside docker container as below.
+Project root directory is mapped to `build` directory inside docker container as below.
 
 ```sh
-cd  kickstarts
-docker run --privileged --rm -it -v $PWD:/code almalinux/ks2rootfs:livecd-tools
+docker pull almalinux/ks2rootfs:all-in-one
+docker run --privileged --rm -it -v "$PWD:/build:z" almalinux/ks2rootfs:all-in-one /bin/bash
 ```
 
 Run following commands inside docker shell to build Gnome live media.
 
 ```sh
-ksflatten --config almalinux-8-live-gnome.ks --output flat-gnome.ks
+ksflatten --config $PWD/kickstarts/almalinux-8-live-gnome.ks --output flat-gnome.ks
 livecd-creator --config flat-gnome.ks \
                --fslabel AlmaLinux-8-LiveDVD-Gnome \
                --title=AlmaLinux-8-LiveDVD \
                --product="AlmaLinux 8 Live" \
-               --cache=/code/pkg-cache-alma \
+               --cache=$PWD/pkg-cache-alma \
                --releasever=8
 ```
 
 Run following commands inside docker shell to build Gnome Mini live media.
 
 ```sh
-ksflatten --config almalinux-8-live-mini.ks --output flat-mini.ks
+ksflatten --config $PWD/kickstarts/almalinux-8-live-mini.ks --output flat-mini.ks
 livecd-creator --config flat-mini.ks \
                --fslabel AlmaLinux-8-LiveDVD-Mini \
                --title=AlmaLinux-8-LiveDVD \
                --product="AlmaLinux 8 Live" \
-               --cache=/code/pkg-cache-alma \
+               --cache=$PWD/pkg-cache-alma \
                --releasever=8
 ```
 
 Run following commands inside docker shell to build KDE live media.
 
 ```sh
-ksflatten --config almalinux-8-live-kde.ks --output flat-kde.ks
+ksflatten --config $PWD/kickstarts/almalinux-8-live-kde.ks --output flat-kde.ks
 livecd-creator --config flat-kde.ks \
                --fslabel AlmaLinux-8-LiveDVD-KDE \
                --title=AlmaLinux-8-LiveDVD \
                --product="AlmaLinux 8 Live" \
-               --cache=/code/pkg-cache-alma \
+               --cache=$PWD/pkg-cache-alma \
                --releasever=8
 ```
 
 Run following commands inside docker shell to build XFCE live media.
 
 ```sh
-ksflatten --config almalinux-8-live-xfce.ks --output flat-xfce.ks
+ksflatten --config $PWD/kickstarts/almalinux-8-live-xfce.ks --output flat-xfce.ks
 livecd-creator --config flat-xfce.ks \
                --fslabel AlmaLinux-8-LiveDVD-XFCE \
                --title=AlmaLinux-8-LiveDVD \
                --product="AlmaLinux 8 Live" \
-               --cache=/code/pkg-cache-alma \
+               --cache=$PWD/pkg-cache-alma \
                --releasever=8
 ```
 
@@ -79,22 +73,22 @@ livecd-creator --config flat-xfce.ks \
 
 This project contains number of `KickStart` files to build live media for AlmaLiux. It uses `anaconda` and `livecd-tools` packages for ISO file build process. `livecd-tools` available in `epel` repos, enable prior to install.
 
-`AlmaLinux` system installed on a physical or vitual system is prefered. following additional packages are required. Package `hfsplus-tools` is available only in `elrepo`, make sure enable prior to isntall it.
+`AlmaLinux` system installed on a physical or vitual system is prefered.
 
 ```sh
-sudo dnf -y install epel-release elrepo-release
+sudo dnf -y install epel-release
 sudo dnf -y update
-sudo dnf --enablerepo="powertools" --enablerepo="epel" --enablerepo="elrepo" install anaconda\
+sudo dnf --enablerepo="powertools" --enablerepo="epel" install anaconda\
                 livecd-tools \
-                hfsplus-tools \
+                pykickstart \
                 efibootmgr \
                 efi-filesystem \
                 efi-srpm-macros \
                 efivar-libs \
-                grub2-efi-x64 \
-                grub2-efi-x64-cdboot \
+                grub2-efi-*64 \
+                grub2-efi-*64-cdboot \
                 grub2-tools-efi \
-                shim-x64
+                shim-*64
 ```
 
 ### Build ISOs
