@@ -396,6 +396,7 @@ EOF
 anaconda-live
 dracut-config-generic
 dracut-live
+firefox
 glibc-all-langpacks
 grub2-efi
 grub2-pc-modules
