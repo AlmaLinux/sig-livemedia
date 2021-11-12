@@ -28,7 +28,7 @@ livecd-creator --config flat-gnome.ks \
                --title=AlmaLinux-8-LiveDVD \
                --product="AlmaLinux 8 Live" \
                --cache=$PWD/pkg-cache-alma \
-               --releasever=8
+               --releasever=8.5
 ```
 
 Run following commands inside docker shell to build Gnome Mini live media.
@@ -40,7 +40,7 @@ livecd-creator --config flat-mini.ks \
                --title=AlmaLinux-8-LiveDVD \
                --product="AlmaLinux 8 Live" \
                --cache=$PWD/pkg-cache-alma \
-               --releasever=8
+               --releasever=8.5
 ```
 
 Run following commands inside docker shell to build KDE live media.
@@ -52,7 +52,7 @@ livecd-creator --config flat-kde.ks \
                --title=AlmaLinux-8-LiveDVD \
                --product="AlmaLinux 8 Live" \
                --cache=$PWD/pkg-cache-alma \
-               --releasever=8
+               --releasever=8.5
 ```
 
 Run following commands inside docker shell to build XFCE live media.
@@ -64,7 +64,7 @@ livecd-creator --config flat-xfce.ks \
                --title=AlmaLinux-8-LiveDVD \
                --product="AlmaLinux 8 Live" \
                --cache=$PWD/pkg-cache-alma \
-               --releasever=8
+               --releasever=8.5
 ```
 
 ## Build using AlmaLinux System

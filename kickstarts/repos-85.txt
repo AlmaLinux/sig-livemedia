@@ -4,6 +4,7 @@ repo --name=appstream --baseurl="https://mirror.nyc.velocihost.net/almalinux/8.5
 repo --name=extras --baseurl="https://mirror.nyc.velocihost.net/almalinux/8.5/extras/$basearch/kickstart/"
 repo --name=powertools --baseurl="https://mirror.nyc.velocihost.net/almalinux/8.5/PowerTools/$basearch/kickstart/"
 # epel repo, use https://mirrors.fedoraproject.org/mirrorlist?repo=epel-8&arch=$basearch for mirror list
+# repo --name="epel-next" --baseurl=https://dl.fedoraproject.org/pub/epel/next/8/Everything/$basearch/ --cost=1000 --install
 repo --name=epel --baseurl="https://dl.fedoraproject.org/pub/epel/8/Everything/$basearch/"
 ## elrepo use https://mirrors.elrepo.org/mirrors-elrepo.el8 for mirror list
 #repo --name=elrepo --baseurl="https://mirror.rackspace.com/elrepo/elrepo/el8/$basearch/"
