@@ -1,8 +1,8 @@
 # AlmaLinux repos, use https://mirros.almalinux.org to find and change different mirror
-repo --name=baseos --baseurl="https://ord.mirror.rackspace.com/almalinux/8.5/BaseOS/$basearch/kickstart/"
-repo --name=appstream --baseurl="https://ord.mirror.rackspace.com/almalinux/8.5/AppStream/$basearch/kickstart/"
-repo --name=extras --baseurl="https://ord.mirror.rackspace.com/almalinux/8.5/extras/$basearch/kickstart/"
-repo --name=powertools --baseurl="https://ord.mirror.rackspace.com/almalinux/8.5/PowerTools/$basearch/kickstart/"
+repo --name=baseos --baseurl="https://mirror.nyc.velocihost.net/almalinux/8.5/BaseOS/$basearch/kickstart/"
+repo --name=appstream --baseurl="https://mirror.nyc.velocihost.net/almalinux/8.5/AppStream/$basearch/kickstart/"
+repo --name=extras --baseurl="https://mirror.nyc.velocihost.net/almalinux/8.5/extras/$basearch/kickstart/"
+repo --name=powertools --baseurl="https://mirror.nyc.velocihost.net/almalinux/8.5/PowerTools/$basearch/kickstart/"
 # epel repo, use https://mirrors.fedoraproject.org/mirrorlist?repo=epel-8&arch=$basearch for mirror list
 repo --name=epel --baseurl="https://dl.fedoraproject.org/pub/epel/8/Everything/$basearch/"
 ## elrepo use https://mirrors.elrepo.org/mirrors-elrepo.el8 for mirror list
