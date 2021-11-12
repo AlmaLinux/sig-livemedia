@@ -393,7 +393,12 @@ EOF
 @networkmanager-submodules
 @gnome-desktop
 #@workstation-product-environment
+anaconda-core
+anaconda-gui
 anaconda-live
+anaconda-tui
+anaconda-user-help
+anaconda-widgets
 dracut-config-generic
 dracut-live
 firefox
@@ -415,6 +420,12 @@ liberation-sans-fonts
 liberation-serif-fonts
 memtest86+
 nano
+open-vm-tools
+rsync
+rsyslog
+rsyslog-gnutls
+rsyslog-gssapi
+rsyslog-relp
 shim-x64
 syslinux
 thunderbird
