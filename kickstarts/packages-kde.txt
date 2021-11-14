@@ -221,7 +221,7 @@ graphite2
 grep
 groff-base
 grub2-common
-grub2-efi-x64
+grub2-efi-*64
 grub2-tools
 grub2-tools-extra
 grub2-tools-minimal
@@ -270,6 +270,7 @@ iptables-libs
 iputils
 irqbalance
 iso-codes
+isomd5sum
 iw
 iwl1000-firmware
 iwl100-firmware
@@ -1047,7 +1048,7 @@ sg3_utils-libs
 sgml-common
 shadow-utils
 shared-mime-info
-shim-x64
+shim-*64
 signon
 signon-plugin-oauth2
 slang
@@ -1161,14 +1162,13 @@ dracut-live
 glibc-all-langpacks
 grub2-efi
 grub2-pc-modules
-grub2-efi-x64-cdboot
+grub2-efi-*64-cdboot
 kernel
 kernel-modules
 kernel-modules-extra
 memtest86+
 syslinux 
 glibc-all-langpacks
-shim-x64
 initscripts
 chkconfig
 aajohan-comfortaa-fonts

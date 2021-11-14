@@ -384,59 +384,8 @@ EOF
 
 %end
 
+# Packages
 %packages
-@base-x
-@fonts
-@guest-desktop-agents
-@hardware-support
-@multimedia
-@networkmanager-submodules
-@gnome-desktop
-#@workstation-product-environment
-anaconda-core
-anaconda-gui
-anaconda-live
-anaconda-tui
-anaconda-user-help
-anaconda-widgets
-dracut-config-generic
-dracut-live
-firefox
-glibc-all-langpacks
-grub2-efi
-grub2-pc-modules
-grub2-efi-x64-cdboot
-kernel
-# Make sure that DNF doesn't pull in debug kernel to satisfy kmod() requires
-kernel-modules
-kernel-modules-extra
-libreoffice-calc 
-libreoffice-impress 
-libreoffice-writer
-liberation-fonts
-liberation-fonts-common
-liberation-mono-fonts
-liberation-sans-fonts
-liberation-serif-fonts
-memtest86+
-nano
-open-vm-tools
-rsync
-rsyslog
-rsyslog-gnutls
-rsyslog-gssapi
-rsyslog-relp
-shim-x64
-syslinux
-thunderbird
-tmux
--@dial-up
--@input-methods
--gfs2-utils
-# -dracut-config-rescue
-
-# no longer in @core since 2018-10, but needed for livesys script
-initscripts
-chkconfig
+%include packages-gnome.txt
 
 %end
