@@ -19,14 +19,16 @@ docker pull almalinux/ks2rootfs:all-in-one
 docker run --privileged --rm -it -v "$PWD:/build:z" almalinux/ks2rootfs:all-in-one /bin/bash
 ```
 
-Run following commands inside docker shell to build Gnome live media.
+Run following commands inside docker shell to build Gnome live media. Remove old symbolic link to packages, choose right package and run build commands.
 
 ```sh
+rm -f $PWD/kickstarts/packages-gnome.txt
+ln -s $PWD/kickstarts/packages-gnome-full.txt $PWD/kickstarts/packages-gnome.txt 
 ksflatten --config $PWD/kickstarts/almalinux-8-live-gnome.ks --output flat-gnome.ks
-livecd-creator --config flat-gnome.ks \
+livecd-creator --config flat-mini.ks \
                --fslabel AlmaLinux-8-LiveDVD-Gnome \
                --title=AlmaLinux-8-LiveDVD \
-               --product="AlmaLinux 8 Live" \
+               --product="AlmaLinux 8.5 Live" \
                --cache=$PWD/pkg-cache-alma \
                --releasever=8.5
 ```
@@ -34,11 +36,13 @@ livecd-creator --config flat-gnome.ks \
 Run following commands inside docker shell to build Gnome Mini live media.
 
 ```sh
-ksflatten --config $PWD/kickstarts/almalinux-8-live-mini.ks --output flat-mini.ks
+rm -f $PWD/kickstarts/packages-gnome.txt
+ln -s $PWD/kickstarts/packages-gnome-mini.txt $PWD/kickstarts/packages-gnome.txt 
+ksflatten --config $PWD/kickstarts/almalinux-8-live-gnome.ks --output flat-mini.ks
 livecd-creator --config flat-mini.ks \
                --fslabel AlmaLinux-8-LiveDVD-Mini \
                --title=AlmaLinux-8-LiveDVD \
-               --product="AlmaLinux 8 Live" \
+               --product="AlmaLinux 8.5 Live" \
                --cache=$PWD/pkg-cache-alma \
                --releasever=8.5
 ```
@@ -62,7 +66,7 @@ ksflatten --config $PWD/kickstarts/almalinux-8-live-xfce.ks --output flat-xfce.k
 livecd-creator --config flat-xfce.ks \
                --fslabel AlmaLinux-8-LiveDVD-XFCE \
                --title=AlmaLinux-8-LiveDVD \
-               --product="AlmaLinux 8 Live" \
+               --product="AlmaLinux 8.5 Live" \
                --cache=$PWD/pkg-cache-alma \
                --releasever=8.5
 ```

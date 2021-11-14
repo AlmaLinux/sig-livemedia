@@ -1,1 +1,1 @@
-packages-gnome-mini.txt
+/build/kickstarts/packages-gnome-mini.txt
