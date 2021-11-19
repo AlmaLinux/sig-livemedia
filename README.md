@@ -25,7 +25,7 @@ Run following commands inside docker shell to build Gnome live media. Remove old
 rm -f $PWD/kickstarts/packages-gnome.txt
 ln -s $PWD/kickstarts/packages-gnome-full.txt $PWD/kickstarts/packages-gnome.txt 
 ksflatten --config $PWD/kickstarts/almalinux-8-live-gnome.ks --output flat-gnome.ks
-livecd-creator --config flat-mini.ks \
+livecd-creator --config flat-gnome.ks \
                --fslabel AlmaLinux-8-LiveDVD-Gnome \
                --title=AlmaLinux-8-LiveDVD \
                --product="AlmaLinux 8.5 Live" \
