@@ -15,7 +15,7 @@ firewall --enabled --service=mdns
 # Repos
 %include repos.txt
 # TODO: remove next when epel is updated
-repo --name="epel-next" --baseurl=https://dl.fedoraproject.org/pub/epel/next/8/Everything/$basearch/ --cost=1000 --install
+# repo --name="epel-next" --baseurl=https://dl.fedoraproject.org/pub/epel/next/8/Everything/$basearch/ --cost=1000 --install
 
 # Network information
 network --activate --bootproto=dhcp --device=link --onboot=on
