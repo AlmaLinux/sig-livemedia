@@ -181,5 +181,5 @@ Reboot the system, accept the license. Now system is ready to use.
 ### Additional notes
 
 * Current build scripts uses the AlmaLinux mirror closer to `US/East` zone. Use https://mirrors.almalinux.org to find and change different mirror.
-* Use following commnd to generate package list to install `rpm -qa --qf "%{n}\n" | grep -v pubkey | sort > packages-XXX.txt`
+* Use following commnd to generate package list to install `rpm -qa --qf "%{n}\n" | grep -v pubkey | sort > packages-name.txt`
 * Make sure to use `--cache` for build process, it will help for faster build and less network traffic.'
