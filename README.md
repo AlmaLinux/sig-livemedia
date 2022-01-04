@@ -97,14 +97,17 @@ sudo dnf --enablerepo="powertools" --enablerepo="epel" install anaconda\
 
 ### Build ISOs
 
-Local build proces takes `20-50 minutes` depends on number of CPU cores and internet speed. Minimum `15GB` work space for temporary files. Resulting ISO size ranges from `1.4GB` to `2.4GB` depends on build type.
+Local build proces takes `20-50 minutes` depends on number of CPU cores and internet speed. Minimum `15GB` work space for temporary files. Resulting ISO size ranges from `1.4GB` to `2.4GB` depends on build type. Execute following commands from root folder of sources.
 
 Building `gnome live media`
 
 ```sh
+rm -f $PWD/kickstarts/packages-gnome.txt
+ln -s $PWD/kickstarts/packages-gnome-full.txt $PWD/kickstarts/packages-gnome.txt 
+ksflatten --config $PWD/kickstarts/almalinux-8-live-gnome.ks --output flat-gnome.ks
 sudo livecd-creator \
     --cache=~/livecd-creator/package-cache \
-    -c almalinux-8-live-gnome.ks \
+    -c flat-gnome.ks \
     -f AlmaLinux-8-Live-GNOME
  
 ```
@@ -112,27 +115,32 @@ sudo livecd-creator \
 Building `mini live media`
 
 ```sh
+rm -f $PWD/kickstarts/packages-gnome.txt
+ln -s $PWD/kickstarts/packages-gnome-mini.txt $PWD/kickstarts/packages-gnome.txt 
+ksflatten --config $PWD/kickstarts/almalinux-8-live-gnome.ks --output flat-gnome.ks
 sudo livecd-creator \
     --cache=~/livecd-creator/package-cache \
-    -c almalinux-8-live-mini.ks \
+    -c flat-gnome.ks \
     -f AlmaLinux-8-Live-mini
 ```
 
 Building `KDE live media`
 
 ```sh
+ksflatten --config $PWD/kickstarts/almalinux-8-live-kde.ks --output flat-kde.ks
 sudo livecd-creator \
     --cache=~/livecd-creator/package-cache \
-    -c almalinux-8-live-kde.ks \
+    -c flat-kde.ks \
     -f AlmaLinux-8-Live-KDE
 ```
 
 Building `XFCE live media`
 
 ```sh
+ksflatten --config $PWD/kickstarts/almalinux-8-live-xfce.ks --output flat-xfce.ks
 sudo livecd-creator \
     --cache=~/livecd-creator/package-cache \
-    -c almalinux-8-live-xfce.ks \
+    -c flat-xfce.ks \
     -f AlmaLinux-8-Live-XFCE
 ```
 
