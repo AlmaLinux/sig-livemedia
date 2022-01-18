@@ -87,6 +87,87 @@ sudo livecd-creator --config flat-xfce.ks \
                --releasever=8.5
 ```
 
+
+### Build using `lorax`
+
+Run following commands inside docker shell to build Gnome live media. Remove old symbolic link to packages, choose right package and run build commands.
+
+```sh
+rm -f $PWD/kickstarts/packages-gnome.txt
+ln -s $PWD/kickstarts/packages-gnome-full.txt $PWD/kickstarts/packages-gnome.txt 
+ksflatten --config $PWD/kickstarts/almalinux-8-live-gnome.ks --output flat-gnome.ks
+sed -i 's/repo --name="baseos" --base/url --/' $PWD/flat-gnome.ks &>/dev/null
+sudo livemedia-creator \
+    --ks=flat-gnome.ks \
+    --no-virt --resultdir  ./iso \
+    --project "AlmaLinux live gnome" \
+    --make-iso \
+    --iso-only \
+    --iso-name almalinux-8-live-gnome.iso \
+    --releasever 8 \
+    --volid "AlmaLinux 8 live" \
+    --title "AlmaLinux 8" \
+    --nomacboot 
+```
+
+Run following commands inside docker shell to build Gnome Mini live media.
+
+```sh
+rm -f $PWD/kickstarts/packages-gnome.txt
+ln -s $PWD/kickstarts/packages-gnome-mini.txt $PWD/kickstarts/packages-gnome.txt 
+ksflatten --config $PWD/kickstarts/almalinux-8-live-gnome.ks --output flat-mini.ks
+sed -i 's/repo --name="baseos" --base/url --/' $PWD/flat-mini.ks &>/dev/null
+sudo livemedia-creator \
+    --ks=flat-mini.ks \
+    --no-virt --resultdir  ./iso \
+    --project "AlmaLinux live gnome" \
+    --make-iso \
+    --iso-only \
+    --iso-name almalinux-8-live-mini.iso \
+    --releasever 8 \
+    --volid "AlmaLinux 8 live" \
+    --title "AlmaLinux 8" \
+    --nomacboot 
+```
+
+Run following commands inside docker shell to build KDE live media.
+
+```sh
+ksflatten --config $PWD/kickstarts/almalinux-8-live-kde.ks --output flat-kde.ks
+sed -i 's/repo --name="baseos" --base/url --/' $PWD/flat-kde.ks &>/dev/null
+sudo livemedia-creator \
+    --ks=flat-kde.ks \
+    --no-virt --resultdir  ./iso \
+    --project "AlmaLinux live kde" \
+    --make-iso \
+    --iso-only \
+    --iso-name almalinux-8-live-kde.iso \
+    --releasever 8 \
+    --volid "AlmaLinux 8 live" \
+    --title "AlmaLinux 8" \
+    --nomacboot 
+
+```
+
+Run following commands inside docker shell to build XFCE live media.
+
+```sh
+ksflatten --config $PWD/kickstarts/almalinux-8-live-xfce.ks --output flat-xfce.ks
+sed -i 's/repo --name="baseos" --base/url --/' $PWD/flat-xfce.ks &>/dev/null
+sudo livemedia-creator \
+    --ks=flat-xfce.ks \
+    --no-virt --resultdir  ./iso \
+    --project "AlmaLinux live xfce" \
+    --make-iso \
+    --iso-only \
+    --iso-name almalinux-8-live-xfce.iso \
+    --releasever 8 \
+    --volid "AlmaLinux 8 live" \
+    --title "AlmaLinux 8" \
+    --nomacboot 
+
+```
+
 ### Additional notes
 
 * Current build scripts uses the AlmaLinux mirror closer to `US/East` zone. Use https://mirrors.almalinux.org to find and change different mirror.
