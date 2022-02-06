@@ -107,7 +107,7 @@ sudo livemedia-creator \
     --releasever 8 \
     --volid "AlmaLinux 8 live" \
     --title "AlmaLinux 8" \
-    --nomacboot 
+    --nomacboot
 ```
 
 Run following commands inside docker shell to build Gnome Mini live media.
@@ -127,7 +127,7 @@ sudo livemedia-creator \
     --releasever 8 \
     --volid "AlmaLinux 8 live" \
     --title "AlmaLinux 8" \
-    --nomacboot 
+    --nomacboot
 ```
 
 Run following commands inside docker shell to build KDE live media.
@@ -145,8 +145,7 @@ sudo livemedia-creator \
     --releasever 8 \
     --volid "AlmaLinux 8 live" \
     --title "AlmaLinux 8" \
-    --nomacboot 
-
+    --nomacboot
 ```
 
 Run following commands inside docker shell to build XFCE live media.
@@ -164,8 +163,7 @@ sudo livemedia-creator \
     --releasever 8 \
     --volid "AlmaLinux 8 live" \
     --title "AlmaLinux 8" \
-    --nomacboot 
-
+    --nomacboot
 ```
 
 ### Additional notes
