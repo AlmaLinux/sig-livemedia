@@ -1,8 +1,8 @@
-# AlmaLinux repos, use https://mirros.almalinux.org to find and change different mirror
-repo --name=baseos --baseurl="https://mirror.cloudpropeller.com/almalinux/8.6/BaseOS/$basearch/os/"
-repo --name=appstream --baseurl="https://mirror.cloudpropeller.com/almalinux/8.6/AppStream/$basearch/os/"
-repo --name=extras --baseurl="https://mirror.cloudpropeller.com/almalinux/8.6/extras/$basearch/os/"
-repo --name=powertools --baseurl="https://mirror.cloudpropeller.com/almalinux/8.6/PowerTools/$basearch/os/"
+# AlmaLinux repos, use https://mirrors.almalinux.org to find and change different mirror
+repo --name=baseos --baseurl="https://rsync.repo.almalinux.org/almalinux/8.6/BaseOS/$basearch/os/"
+repo --name=appstream --baseurl="https://rsync.repo.almalinux.org/almalinux/8.6/AppStream/$basearch/os/"
+repo --name=extras --baseurl="https://rsync.repo.almalinux.org/almalinux/8.6/extras/$basearch/os/"
+repo --name=powertools --baseurl="https://rsync.repo.almalinux.org/almalinux/8.6/PowerTools/$basearch/os/"
 # epel repo, use https://mirrors.fedoraproject.org/mirrorlist?repo=epel-8&arch=$basearch for mirror list
 # repo --name="epel-next" --baseurl=https://dl.fedoraproject.org/pub/epel/next/8/Everything/$basearch/ --cost=1000 --install
 repo --name=epel --baseurl="https://dl.fedoraproject.org/pub/epel/8/Everything/$basearch/"
