@@ -100,11 +100,11 @@ sed -i 's/repo --name="baseos" --base/url --/' $PWD/flat-gnome.ks &>/dev/null
 sudo livemedia-creator \
     --ks=flat-gnome.ks \
     --no-virt --resultdir  ./iso \
-    --project "AlmaLinux live gnome" \
+    --project "AlmaLinux Live" \
     --make-iso \
     --iso-only \
     --iso-name almalinux-8-live-gnome.iso \
-    --releasever 8 \
+    --releasever 8.6 \
     --volid "AlmaLinux 8 live" \
     --title "AlmaLinux 8" \
     --nomacboot
@@ -120,11 +120,11 @@ sed -i 's/repo --name="baseos" --base/url --/' $PWD/flat-mini.ks &>/dev/null
 sudo livemedia-creator \
     --ks=flat-mini.ks \
     --no-virt --resultdir  ./iso \
-    --project "AlmaLinux live gnome" \
+    --project "AlmaLinux Live" \
     --make-iso \
     --iso-only \
     --iso-name almalinux-8-live-mini.iso \
-    --releasever 8 \
+    --releasever 8.6 \
     --volid "AlmaLinux 8 live" \
     --title "AlmaLinux 8" \
     --nomacboot
@@ -138,11 +138,11 @@ sed -i 's/repo --name="baseos" --base/url --/' $PWD/flat-kde.ks &>/dev/null
 sudo livemedia-creator \
     --ks=flat-kde.ks \
     --no-virt --resultdir  ./iso \
-    --project "AlmaLinux live kde" \
+    --project "AlmaLinux Live" \
     --make-iso \
     --iso-only \
     --iso-name almalinux-8-live-kde.iso \
-    --releasever 8 \
+    --releasever 8.6 \
     --volid "AlmaLinux 8 live" \
     --title "AlmaLinux 8" \
     --nomacboot
@@ -156,11 +156,11 @@ sed -i 's/repo --name="baseos" --base/url --/' $PWD/flat-xfce.ks &>/dev/null
 sudo livemedia-creator \
     --ks=flat-xfce.ks \
     --no-virt --resultdir  ./iso \
-    --project "AlmaLinux live xfce" \
+    --project "AlmaLinux Live" \
     --make-iso \
     --iso-only \
     --iso-name almalinux-8-live-xfce.iso \
-    --releasever 8 \
+    --releasever 8.6 \
     --volid "AlmaLinux 8 live" \
     --title "AlmaLinux 8" \
     --nomacboot
