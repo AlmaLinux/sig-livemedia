@@ -2,6 +2,7 @@
 repo --name=baseos --baseurl="http://3.222.218.138/cloudlinux/almalinux/latest/compose//BaseOS/$basearch/os/"
 repo --name=appstream --baseurl="http://3.222.218.138/cloudlinux/almalinux/latest/compose/AppStream/$basearch/os/"
 repo --name=extras --baseurl="http://3.222.218.138/cloudlinux/almalinux/latest/compose/extras/$basearch/os/"
+repo --name=extras2 --baseurl="https://build.almalinux.org/pulp/content/builds/AlmaLinux-9-x86_64-2742-br/Packages/a/"
 # repo --name=powertools --baseurl="https://nyc.mirrors.clouvider.net/almalinux/9/PowerTools/$basearch/os/"
 # epel repo, use https://mirrors.fedoraproject.org/mirrorlist?repo=epel-9&arch=$basearch for mirror list
 # repo --name="epel-next" --baseurl=https://dl.fedoraproject.org/pub/epel/next/9/Everything/$basearch/ --cost=1000 --install
