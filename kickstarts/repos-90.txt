@@ -1,8 +1,8 @@
 # AlmaLinux repos, use https://mirros.almalinux.org to find and change different mirror
-repo --name=baseos --baseurl="https://nyc.mirrors.clouvider.net/almalinux/9/BaseOS/$basearch/os/"
-repo --name=appstream --baseurl="https://nyc.mirrors.clouvider.net/almalinux/9/AppStream/$basearch/os/"
-repo --name=extras --baseurl="https://nyc.mirrors.clouvider.net/almalinux/9/extras/$basearch/os/"
-repo --name=powertools --baseurl="https://nyc.mirrors.clouvider.net/almalinux/9/PowerTools/$basearch/os/"
+repo --name=baseos --baseurl="http://3.222.218.138/cloudlinux/almalinux/latest/compose//BaseOS/$basearch/os/"
+repo --name=appstream --baseurl="http://3.222.218.138/cloudlinux/almalinux/latest/compose/AppStream/$basearch/os/"
+repo --name=extras --baseurl="http://3.222.218.138/cloudlinux/almalinux/latest/compose/extras/$basearch/os/"
+# repo --name=powertools --baseurl="https://nyc.mirrors.clouvider.net/almalinux/9/PowerTools/$basearch/os/"
 # epel repo, use https://mirrors.fedoraproject.org/mirrorlist?repo=epel-9&arch=$basearch for mirror list
 # repo --name="epel-next" --baseurl=https://dl.fedoraproject.org/pub/epel/next/9/Everything/$basearch/ --cost=1000 --install
 repo --name=epel --baseurl="https://dl.fedoraproject.org/pub/epel/9/Everything/$basearch/"
