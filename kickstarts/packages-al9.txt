@@ -15,7 +15,8 @@ memtest86+
 nano
 shim-x64
 syslinux
-thunderbird
+efibootmgr
+rsync
 -@dial-up
 -@input-methods
 -gfs2-utils
