@@ -206,14 +206,14 @@ ln -s $PWD/kickstarts/repos-90.txt $PWD/kickstarts/repos.txt
 rm -f $PWD/kickstarts/packages-gnome.txt
 ln -s $PWD/kickstarts/packages-gnome-al9.txt $PWD/kickstarts/packages-gnome.txt 
 ksflatten --config $PWD/kickstarts/almalinux-8-live-gnome.ks --output flat-gnome.ks
-sed -i 's/repo --name="baseos" --base/url --/' $PWD/flat-mini.ks &>/dev/null
+sed -i 's/repo --name="baseos" --base/url --/' $PWD/flat-gnome.ks &>/dev/null
 sudo livemedia-creator \
     --ks=flat-gnome.ks \
     --no-virt --resultdir  ./iso-gnome9 \
     --project "AlmaLinux Live" \
     --make-iso \
     --iso-only \
-    --iso-name almalinux-9-live-mini.iso \
+    --iso-name almalinux-9-live-gnome.iso \
     --releasever 9.0 \
     --volid "AlmaLinuxLive" \
     --nomacboot
