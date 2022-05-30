@@ -1,0 +1,28 @@
+@guest-desktop-agents
+@gnome-desktop
+anaconda-live
+dracut-config-generic
+dracut-live
+glibc-all-langpacks
+grub2-efi
+grub2-pc-modules
+grub2-efi-x64-cdboot
+kernel
+# Make sure that DNF doesn't pull in debug kernel to satisfy kmod() requires
+kernel-modules
+kernel-modules-extra
+memtest86+
+nano
+shim-x64
+syslinux
+efibootmgr
+rsync
+-@dial-up
+-@input-methods
+-gfs2-utils
+# -dracut-config-rescue
+
+# no longer in @core since 2018-10, but needed for livesys script
+initscripts
+chkconfig
+
