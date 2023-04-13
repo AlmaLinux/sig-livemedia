@@ -1,8 +1,8 @@
 # AlmaLinux repos, use https://mirros.almalinux.org to find and change different mirror
-repo --name="baseos" --baseurl=https://rsync.repo.almalinux.org/almalinux/9/BaseOS/$basearch/os/
-repo --name="appstream" --baseurl=https://rsync.repo.almalinux.org/almalinux/9/AppStream/$basearch/os/
-repo --name="crb" --baseurl=https://rsync.repo.almalinux.org/almalinux/9/CRB/$basearch/os/
-repo --name="extras" --baseurl=https://rsync.repo.almalinux.org/almalinux/9/extras/$basearch/os/
+repo --name="baseos" --baseurl=https://repo.almalinux.org/almalinux/9/BaseOS/$basearch/os/
+repo --name="appstream" --baseurl=https://repo.almalinux.org/almalinux/9/AppStream/$basearch/os/
+repo --name="crb" --baseurl=https://repo.almalinux.org/almalinux/9/CRB/$basearch/os/
+repo --name="extras" --baseurl=https://repo.almalinux.org/almalinux/9/extras/$basearch/os/
 # epel repo, use https://mirrors.fedoraproject.org/mirrorlist?repo=epel-9&arch=$basearch for mirror list
 # repo --name="epel-next" --baseurl=https://dl.fedoraproject.org/pub/epel/next/9/Everything/$basearch/ --cost=1000 --install
 repo --name=epel --baseurl="https://dl.fedoraproject.org/pub/epel/9/Everything/$basearch/"

@@ -4,7 +4,7 @@ This git repository contains Kickstarts and other scripts needed to produce the 
 
 ## Using Live media
 
-Live media ISO files are available at https://repo.almalinux.org/almalinux/8/live/x86_64/ or use mirrors https://mirrors.almalinux.org find a close one. Refer to project wiki https://wiki.almalinux.org/LiveMedia.html#about-live-media for detailed installation steps.
+Live media ISO files are available at https://repo.almalinux.org/almalinux/8/live/x86_64/ and https://repo.almalinux.org/almalinux/9/live/x86_64/, or use mirrors https://mirrors.almalinux.org find a close one. Refer to project wiki https://wiki.almalinux.org/LiveMedia.html#about-live-media for detailed installation steps.
 
 ## Build using AlmaLinux System
 
@@ -34,74 +34,74 @@ sudo dnf -y --enablerepo="epel" install anaconda-tui \
 
 ### Build using `livecd-tools`
 
-Run following commands to build Gnome live media. Remove old symbolic link to packages, choose right package and run build commands.
+Run following commands to build GNOME live media. Remove old symbolic link to packages, choose right package and run build commands.
 
 ```sh
 rm -f $PWD/kickstarts/repos.txt
-ln -s $PWD/kickstarts/repos-86.txt $PWD/kickstarts/repos.txt
+ln -s $PWD/kickstarts/repos-8.txt $PWD/kickstarts/repos.txt
 rm -f $PWD/kickstarts/packages-gnome.txt
 ln -s $PWD/kickstarts/packages-gnome-full.txt $PWD/kickstarts/packages-gnome.txt
 ksflatten --config $PWD/kickstarts/almalinux-8-live-gnome.ks --output flat-gnome.ks
 sudo livecd-creator --config flat-gnome.ks \
-               --fslabel AlmaLinux-8-LiveDVD-Gnome \
+               --fslabel AlmaLinux-8-LiveDVD-GNOME \
                --title=AlmaLinux-8-LiveDVD \
-               --product="AlmaLinux Live 8.6" \
+               --product="AlmaLinux Live 8.7" \
                --cache=$PWD/pkg-cache-alma \
-               --releasever=8.6
+               --releasever=8.7
 ```
 
-Run following commands to build Gnome Mini live media.
+Run following commands to build GNOME Mini live media.
 
 ```sh
 rm -f $PWD/kickstarts/repos.txt
-ln -s $PWD/kickstarts/repos-86.txt $PWD/kickstarts/repos.txt
+ln -s $PWD/kickstarts/repos-8.txt $PWD/kickstarts/repos.txt
 rm -f $PWD/kickstarts/packages-gnome.txt
 ln -s $PWD/kickstarts/packages-gnome-mini.txt $PWD/kickstarts/packages-gnome.txt
 ksflatten --config $PWD/kickstarts/almalinux-8-live-gnome.ks --output flat-mini.ks
 sudo livecd-creator --config flat-mini.ks \
                --fslabel AlmaLinux-8-LiveDVD-Mini \
                --title=AlmaLinux-8-LiveDVD \
-               --product="AlmaLinux Live 8.6" \
+               --product="AlmaLinux Live 8.7" \
                --cache=$PWD/pkg-cache-alma \
-               --releasever=8.6
+               --releasever=8.7
 ```
 
 Run following commands to build KDE live media.
 
 ```sh
 rm -f $PWD/kickstarts/repos.txt
-ln -s $PWD/kickstarts/repos-86.txt $PWD/kickstarts/repos.txt
+ln -s $PWD/kickstarts/repos-8.txt $PWD/kickstarts/repos.txt
 ksflatten --config $PWD/kickstarts/almalinux-8-live-kde.ks --output flat-kde.ks
 sudo livecd-creator --config flat-kde.ks \
                --fslabel AlmaLinux-8-LiveDVD-KDE \
                --title=AlmaLinux-8-LiveDVD \
-               --product="AlmaLinux Live 8.6" \
+               --product="AlmaLinux Live 8.7" \
                --cache=$PWD/pkg-cache-alma \
-               --releasever=8.6
+               --releasever=8.7
 ```
 
 Run following commands to build XFCE live media.
 
 ```sh
 rm -f $PWD/kickstarts/repos.txt
-ln -s $PWD/kickstarts/repos-86.txt $PWD/kickstarts/repos.txt
+ln -s $PWD/kickstarts/repos-8.txt $PWD/kickstarts/repos.txt
 ksflatten --config $PWD/kickstarts/almalinux-8-live-xfce.ks --output flat-xfce.ks
 sudo livecd-creator --config flat-xfce.ks \
                --fslabel AlmaLinux-8-LiveDVD-XFCE \
                --title=AlmaLinux-8-LiveDVD \
-               --product="AlmaLinux Live 8.6" \
+               --product="AlmaLinux Live 8.7" \
                --cache=$PWD/pkg-cache-alma \
-               --releasever=8.6
+               --releasever=8.7
 ```
 
 
 ### Build using `lorax`
 
-Run following commands to build Gnome live media. Remove old symbolic link to packages, choose right package and run build commands.
+Run following commands to build GNOME live media. Remove old symbolic link to packages, choose right package and run build commands.
 
 ```sh
 rm -f $PWD/kickstarts/repos.txt
-ln -s $PWD/kickstarts/repos-86.txt $PWD/kickstarts/repos.txt
+ln -s $PWD/kickstarts/repos-8.txt $PWD/kickstarts/repos.txt
 rm -f $PWD/kickstarts/packages-gnome.txt
 ln -s $PWD/kickstarts/packages-gnome-full.txt $PWD/kickstarts/packages-gnome.txt
 ksflatten --config $PWD/kickstarts/almalinux-8-live-gnome.ks --output flat-gnome.ks
@@ -113,16 +113,16 @@ sudo livemedia-creator \
     --make-iso \
     --iso-only \
     --iso-name almalinux-8-live-gnome.iso \
-    --releasever 8.6 \
+    --releasever 8.7 \
     --volid "AlmaLinuxLive" \
     --nomacboot
 ```
 
-Run following commands to build Gnome Mini live media.
+Run following commands to build GNOME Mini live media.
 
 ```sh
 rm -f $PWD/kickstarts/repos.txt
-ln -s $PWD/kickstarts/repos-86.txt $PWD/kickstarts/repos.txt
+ln -s $PWD/kickstarts/repos-8.txt $PWD/kickstarts/repos.txt
 rm -f $PWD/kickstarts/packages-gnome.txt
 ln -s $PWD/kickstarts/packages-gnome-mini.txt $PWD/kickstarts/packages-gnome.txt
 ksflatten --config $PWD/kickstarts/almalinux-8-live-gnome.ks --output flat-mini.ks
@@ -134,7 +134,7 @@ sudo livemedia-creator \
     --make-iso \
     --iso-only \
     --iso-name almalinux-8-live-mini.iso \
-    --releasever 8.6 \
+    --releasever 8.7 \
     --volid "AlmaLinuxLive" \
     --nomacboot
 ```
@@ -143,7 +143,7 @@ Run following commands to build KDE live media.
 
 ```sh
 rm -f $PWD/kickstarts/repos.txt
-ln -s $PWD/kickstarts/repos-86.txt $PWD/kickstarts/repos.txt
+ln -s $PWD/kickstarts/repos-8.txt $PWD/kickstarts/repos.txt
 ksflatten --config $PWD/kickstarts/almalinux-8-live-kde.ks --output flat-kde.ks
 sed -i 's/repo --name="baseos" --base/url --/' $PWD/flat-kde.ks &>/dev/null
 sudo livemedia-creator \
@@ -153,7 +153,7 @@ sudo livemedia-creator \
     --make-iso \
     --iso-only \
     --iso-name almalinux-8-live-kde.iso \
-    --releasever 8.6 \
+    --releasever 8.7 \
     --volid "AlmaLinux Live" \
     --nomacboot
 ```
@@ -162,7 +162,7 @@ Run following commands to build XFCE live media.
 
 ```sh
 rm -f $PWD/kickstarts/repos.txt
-ln -s $PWD/kickstarts/repos-86.txt $PWD/kickstarts/repos.txt
+ln -s $PWD/kickstarts/repos-8.txt $PWD/kickstarts/repos.txt
 ksflatten --config $PWD/kickstarts/almalinux-8-live-xfce.ks --output flat-xfce.ks
 sed -i 's/repo --name="baseos" --base/url --/' $PWD/flat-xfce.ks &>/dev/null
 sudo livemedia-creator \
@@ -172,16 +172,16 @@ sudo livemedia-creator \
     --make-iso \
     --iso-only \
     --iso-name almalinux-8-live-xfce.iso \
-    --releasever 8.6 \
+    --releasever 8.7 \
     --volid "AlmaLinux Live" \
     --nomacboot
 ```
 
-Run following commands to build AlmaLinux 9 Gnome Mini live media.
+Run following commands to build AlmaLinux 9 GNOME Mini live media.
 
 ```sh
 rm -f $PWD/kickstarts/repos.txt
-ln -s $PWD/kickstarts/repos-90.txt $PWD/kickstarts/repos.txt
+ln -s $PWD/kickstarts/repos-9.txt $PWD/kickstarts/repos.txt
 rm -f $PWD/kickstarts/packages-gnome.txt
 ln -s $PWD/kickstarts/packages-mini-al9.txt $PWD/kickstarts/packages-gnome.txt
 ksflatten --config $PWD/kickstarts/almalinux-8-live-gnome.ks --output flat-mini.ks
@@ -198,11 +198,11 @@ sudo livemedia-creator \
     --nomacboot
 ```
 
-Run following commands to build AlmaLinux 9 Gnome Mini live media.
+Run following commands to build AlmaLinux 9 GNOME Mini live media.
 
 ```sh
 rm -f $PWD/kickstarts/repos.txt
-ln -s $PWD/kickstarts/repos-90.txt $PWD/kickstarts/repos.txt
+ln -s $PWD/kickstarts/repos-9.txt $PWD/kickstarts/repos.txt
 rm -f $PWD/kickstarts/packages-gnome.txt
 ln -s $PWD/kickstarts/packages-gnome-al9.txt $PWD/kickstarts/packages-gnome.txt
 ksflatten --config $PWD/kickstarts/almalinux-8-live-gnome.ks --output flat-gnome.ks
