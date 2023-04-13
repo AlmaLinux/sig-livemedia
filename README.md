@@ -34,13 +34,13 @@ sudo dnf -y --enablerepo="epel" install anaconda-tui \
 
 ### Build using `livecd-tools`
 
-Run following commands inside docker shell to build Gnome live media. Remove old symbolic link to packages, choose right package and run build commands.
+Run following commands to build Gnome live media. Remove old symbolic link to packages, choose right package and run build commands.
 
 ```sh
 rm -f $PWD/kickstarts/repos.txt
 ln -s $PWD/kickstarts/repos-86.txt $PWD/kickstarts/repos.txt
 rm -f $PWD/kickstarts/packages-gnome.txt
-ln -s $PWD/kickstarts/packages-gnome-full.txt $PWD/kickstarts/packages-gnome.txt 
+ln -s $PWD/kickstarts/packages-gnome-full.txt $PWD/kickstarts/packages-gnome.txt
 ksflatten --config $PWD/kickstarts/almalinux-8-live-gnome.ks --output flat-gnome.ks
 sudo livecd-creator --config flat-gnome.ks \
                --fslabel AlmaLinux-8-LiveDVD-Gnome \
@@ -50,13 +50,13 @@ sudo livecd-creator --config flat-gnome.ks \
                --releasever=8.6
 ```
 
-Run following commands inside docker shell to build Gnome Mini live media.
+Run following commands to build Gnome Mini live media.
 
 ```sh
 rm -f $PWD/kickstarts/repos.txt
 ln -s $PWD/kickstarts/repos-86.txt $PWD/kickstarts/repos.txt
 rm -f $PWD/kickstarts/packages-gnome.txt
-ln -s $PWD/kickstarts/packages-gnome-mini.txt $PWD/kickstarts/packages-gnome.txt 
+ln -s $PWD/kickstarts/packages-gnome-mini.txt $PWD/kickstarts/packages-gnome.txt
 ksflatten --config $PWD/kickstarts/almalinux-8-live-gnome.ks --output flat-mini.ks
 sudo livecd-creator --config flat-mini.ks \
                --fslabel AlmaLinux-8-LiveDVD-Mini \
@@ -66,7 +66,7 @@ sudo livecd-creator --config flat-mini.ks \
                --releasever=8.6
 ```
 
-Run following commands inside docker shell to build KDE live media.
+Run following commands to build KDE live media.
 
 ```sh
 rm -f $PWD/kickstarts/repos.txt
@@ -80,7 +80,7 @@ sudo livecd-creator --config flat-kde.ks \
                --releasever=8.6
 ```
 
-Run following commands inside docker shell to build XFCE live media.
+Run following commands to build XFCE live media.
 
 ```sh
 rm -f $PWD/kickstarts/repos.txt
@@ -97,13 +97,13 @@ sudo livecd-creator --config flat-xfce.ks \
 
 ### Build using `lorax`
 
-Run following commands inside docker shell to build Gnome live media. Remove old symbolic link to packages, choose right package and run build commands.
+Run following commands to build Gnome live media. Remove old symbolic link to packages, choose right package and run build commands.
 
 ```sh
 rm -f $PWD/kickstarts/repos.txt
 ln -s $PWD/kickstarts/repos-86.txt $PWD/kickstarts/repos.txt
 rm -f $PWD/kickstarts/packages-gnome.txt
-ln -s $PWD/kickstarts/packages-gnome-full.txt $PWD/kickstarts/packages-gnome.txt 
+ln -s $PWD/kickstarts/packages-gnome-full.txt $PWD/kickstarts/packages-gnome.txt
 ksflatten --config $PWD/kickstarts/almalinux-8-live-gnome.ks --output flat-gnome.ks
 sed -i 's/repo --name="baseos" --base/url --/' $PWD/flat-gnome.ks &>/dev/null
 sudo livemedia-creator \
@@ -118,13 +118,13 @@ sudo livemedia-creator \
     --nomacboot
 ```
 
-Run following commands inside docker shell to build Gnome Mini live media.
+Run following commands to build Gnome Mini live media.
 
 ```sh
 rm -f $PWD/kickstarts/repos.txt
 ln -s $PWD/kickstarts/repos-86.txt $PWD/kickstarts/repos.txt
 rm -f $PWD/kickstarts/packages-gnome.txt
-ln -s $PWD/kickstarts/packages-gnome-mini.txt $PWD/kickstarts/packages-gnome.txt 
+ln -s $PWD/kickstarts/packages-gnome-mini.txt $PWD/kickstarts/packages-gnome.txt
 ksflatten --config $PWD/kickstarts/almalinux-8-live-gnome.ks --output flat-mini.ks
 sed -i 's/repo --name="baseos" --base/url --/' $PWD/flat-mini.ks &>/dev/null
 sudo livemedia-creator \
@@ -139,7 +139,7 @@ sudo livemedia-creator \
     --nomacboot
 ```
 
-Run following commands inside docker shell to build KDE live media.
+Run following commands to build KDE live media.
 
 ```sh
 rm -f $PWD/kickstarts/repos.txt
@@ -158,7 +158,7 @@ sudo livemedia-creator \
     --nomacboot
 ```
 
-Run following commands inside docker shell to build XFCE live media.
+Run following commands to build XFCE live media.
 
 ```sh
 rm -f $PWD/kickstarts/repos.txt
@@ -177,13 +177,13 @@ sudo livemedia-creator \
     --nomacboot
 ```
 
-Run following commands inside docker shell to build AlmaLinux 9 Gnome Mini live media.
+Run following commands to build AlmaLinux 9 Gnome Mini live media.
 
 ```sh
 rm -f $PWD/kickstarts/repos.txt
 ln -s $PWD/kickstarts/repos-90.txt $PWD/kickstarts/repos.txt
 rm -f $PWD/kickstarts/packages-gnome.txt
-ln -s $PWD/kickstarts/packages-mini-al9.txt $PWD/kickstarts/packages-gnome.txt 
+ln -s $PWD/kickstarts/packages-mini-al9.txt $PWD/kickstarts/packages-gnome.txt
 ksflatten --config $PWD/kickstarts/almalinux-8-live-gnome.ks --output flat-mini.ks
 sed -i 's/repo --name="baseos" --base/url --/' $PWD/flat-mini.ks &>/dev/null
 sudo livemedia-creator \
@@ -198,13 +198,13 @@ sudo livemedia-creator \
     --nomacboot
 ```
 
-Run following commands inside docker shell to build AlmaLinux 9 Gnome Mini live media.
+Run following commands to build AlmaLinux 9 Gnome Mini live media.
 
 ```sh
 rm -f $PWD/kickstarts/repos.txt
 ln -s $PWD/kickstarts/repos-90.txt $PWD/kickstarts/repos.txt
 rm -f $PWD/kickstarts/packages-gnome.txt
-ln -s $PWD/kickstarts/packages-gnome-al9.txt $PWD/kickstarts/packages-gnome.txt 
+ln -s $PWD/kickstarts/packages-gnome-al9.txt $PWD/kickstarts/packages-gnome.txt
 ksflatten --config $PWD/kickstarts/almalinux-8-live-gnome.ks --output flat-gnome.ks
 sed -i 's/repo --name="baseos" --base/url --/' $PWD/flat-gnome.ks &>/dev/null
 sudo livemedia-creator \
