@@ -1,3 +1,5 @@
 work/
 pkg-cache-*/
 flat-*.ks
+kickstarts/commands_to_build
+packages/
