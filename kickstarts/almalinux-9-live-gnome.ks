@@ -1,5 +1,5 @@
 # AlmaLinux Live Media (Beta - experimental), with optional install option.
-# Build: sudo livecd-creator --cache=~/livecd-creator/package-cache -c almalinux-8-live-xfce.ks -f AlmaLinux-8-Live-XFCE
+# Build: sudo livecd-creator --cache=~/livecd-creator/package-cache -c almalinux-8-live-gnome.ks -f AlmaLinux-8-Live-gnome
 # X Window System configuration information
 xconfig  --startxonboot
 # Keyboard layouts
@@ -13,14 +13,11 @@ lang en_US.UTF-8
 firewall --enabled --service=mdns
 
 # Repos
-url --url=https://rsync.repo.almalinux.org/almalinux/8/BaseOS/$basearch/os/
-repo --name="appstream" --baseurl=https://rsync.repo.almalinux.org/almalinux/8/AppStream/$basearch/os/
-repo --name="extras" --baseurl=https://rsync.repo.almalinux.org/almalinux/8/extras/$basearch/os/
-repo --name="powertools" --baseurl=https://rsync.repo.almalinux.org/almalinux/8/PowerTools/$basearch/os/
-repo --name="epel" --baseurl=https://dl.fedoraproject.org/pub/epel/8/Everything/$basearch/
-
-# TODO: remove next when epel is updated
-# repo --name="epel-next" --baseurl=https://dl.fedoraproject.org/pub/epel/next/8/Everything/$basearch/ --cost=1000 --install
+url --url=https://repo.almalinux.org/almalinux/9/BaseOS/$basearch/os/
+repo --name="appstream" --baseurl=https://repo.almalinux.org/almalinux/9/AppStream/$basearch/os/
+repo --name="crb" --baseurl=https://repo.almalinux.org/almalinux/9/CRB/$basearch/os/
+repo --name="extras" --baseurl=https://repo.almalinux.org/almalinux/9/extras/$basearch/os/
+repo --name=epel --baseurl="https://dl.fedoraproject.org/pub/epel/9/Everything/$basearch/"
 
 # Network information
 network --activate --bootproto=dhcp --device=link --onboot=on
@@ -35,7 +32,6 @@ services --disabled="sshd" --enabled="NetworkManager,ModemManager"
 shutdown
 # System bootloader configuration
 bootloader --location=none
-zerombr
 # Clear blank disks or all existing partitions
 clearpart --all --initlabel
 rootpw rootme
@@ -52,7 +48,7 @@ cat > /etc/rc.d/init.d/livesys << EOF
 # chkconfig: 345 00 99
 # description: Init script for live image.
 ### BEGIN INIT INFO
-# X-Start-Before: display-manager chronyd
+# X-Start-Before: display-manager
 ### END INIT INFO
 
 . /etc/init.d/functions
@@ -74,10 +70,11 @@ livedir="LiveOS"
 for arg in \`cat /proc/cmdline\` ; do
   if [ "\${arg##rd.live.dir=}" != "\${arg}" ]; then
     livedir=\${arg##rd.live.dir=}
-    continue
+    return
   fi
   if [ "\${arg##live_dir=}" != "\${arg}" ]; then
     livedir=\${arg##live_dir=}
+    return
   fi
 done
 
@@ -132,6 +129,7 @@ findPersistentHome() {
   for arg in \`cat /proc/cmdline\` ; do
     if [ "\${arg##persistenthome=}" != "\${arg}" ]; then
       homedev=\${arg##persistenthome=}
+      return
     fi
   done
 }
@@ -151,7 +149,11 @@ if [ -n "\$configdone" ]; then
   exit 0
 fi
 
-# add liveuser user with no passwd
+### TODO: Review and finalize the location of anaconda-live package, experimental - starts
+# dnf install https://dfw.mirror.rackspace.com/almalinux/8/devel/x86_64/os/Packages/anaconda-live-33.16.4.15-1.el8.alma.x86_64.rpm
+### TODO: ends
+
+# add liveuser with no passwd
 action "Adding live user" useradd \$USERADDARGS -c "Live System User" liveuser
 passwd -d liveuser > /dev/null
 usermod -aG wheel liveuser > /dev/null
@@ -184,10 +186,6 @@ systemctl --no-reload disable atd.service 2> /dev/null || :
 systemctl stop crond.service 2> /dev/null || :
 systemctl stop atd.service 2> /dev/null || :
 
-# turn off abrtd on a live image
-systemctl --no-reload disable abrtd.service 2> /dev/null || :
-systemctl stop abrtd.service 2> /dev/null || :
-
 # Don't sync the system clock when running live (RHBZ #1018162)
 sed -i 's/rtcsync//' /etc/chrony.conf
 
@@ -196,9 +194,7 @@ touch /.liveimg-configured
 
 # add static hostname to work around xauth bug
 # https://bugzilla.redhat.com/show_bug.cgi?id=679486
-# the hostname must be something else than 'localhost'
-# https://bugzilla.redhat.com/show_bug.cgi?id=1370222
-echo "localhost-live" > /etc/hostname
+echo "localhost" > /etc/hostname
 
 EOF
 
@@ -266,9 +262,6 @@ chmod 755 /etc/rc.d/init.d/livesys-late
 /sbin/restorecon /etc/rc.d/init.d/livesys-late
 /sbin/chkconfig --add livesys-late
 
-# Enable sddm since EPEL packages it disabled by default
-systemctl enable sddm.service
-
 # enable tmpfs for /tmp
 systemctl enable tmp.mount
 
@@ -283,7 +276,6 @@ EOF
 rm -f /var/lib/rpm/__db*
 releasever=$(rpm -q --qf '%{version}\n' --whatprovides system-release)
 basearch=$(uname -i)
-# rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-$releasever-$basearch
 # import AlmaLinux PGP key
 rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux
 echo "Packages within this LiveCD"
@@ -297,125 +289,69 @@ rm -f /var/lib/rpm/__db*
 # make sure there aren't core files lying around
 rm -f /core*
 
-# remove random seed, the newly installed instance should make it's own
-rm -f /var/lib/systemd/random-seed
-
 # convince readahead not to collect
 # FIXME: for systemd
 
 echo 'File created by kickstart. See systemd-update-done.service(8).' \
     | tee /etc/.updated >/var/.updated
 
-# Drop the rescue kernel and initramfs, we don't need them on the live media itself.
-# See bug 1317709
+# Remove random-seed
+rm /var/lib/systemd/random-seed
+
+# Remove the rescue kernel and image to save space
+# Installation will recreate these on the target
 rm -f /boot/*-rescue*
-
-# TODO: almalinux-backgrounds-extras package looks good, remove inline method
-# on next build
-generateKDEWallpapers() {
-  # Declare an array for background types
-  declare -a bgtypes=("dark" "light" "abstract-dark" "abstract-light")
-  # Declare an array for background sizes
-  declare -a sizes=("1800x1440.jpg" "2048x1536.jpg" "2560x1080.jpg" "2560x1440.jpg" "2560x1600.jpg" "3440x1440.jpg")
-  ## Loop through the above array(s) types and sizes to create links and metadata
-  for bg in "${bgtypes[@]}"
-  do
-    echo "Processing 'Alma-"$bg"' background"
-    # Remove any old folders and create new structure
-    rm -rf /usr/share/wallpapers/Alma-$bg*
-    mkdir -p /usr/share/wallpapers/Alma-$bg/contents/images/
-    # creae sym link for all sizes
-    for size in "${sizes[@]}"
-    do
-    ln -s /usr/share/backgrounds/Alma-$bg-$size /usr/share/wallpapers/Alma-$bg/contents/images/$size
-    done
-    # Create metadata file to make Desktop Wallpaper application happy
-    # Move this to pre-created files in repo to give support to other languages
-    # This is quick hack for time being.
-    cat > /usr/share/wallpapers/Alma-$bg/metadata.desktop <<FOE
-[Desktop Entry]
-Name=AlmaLinux $bg
-
-X-KDE-PluginInfo-Author=Bala Raman
-X-KDE-PluginInfo-Email=srbala@gmail.com
-X-KDE-PluginInfo-Name=Alma-$bg
-X-KDE-PluginInfo-Version=0.1.0
-X-KDE-PluginInfo-Website=https://almalinux.org
-X-KDE-PluginInfo-Category=
-X-KDE-PluginInfo-Depends=
-X-KDE-PluginInfo-License=CC-BY-SA
-X-KDE-PluginInfo-EnabledByDefault=true
-X-Plasma-API=5.0
-
-FOE
-  done  
-}
-# call function to create wallpapers
-# generateKDEWallpapers
-# Very ODD fix to get Alma background, find alternative
-rm -rf /usr/share/wallpapers/Next
-ln -s /usr/share/wallpapers/Alma-dark /usr/share/wallpapers/Next
-# background end
-
-# Update default theme - this has to stay KS 
-# Hack KDE Fedora package starts. TODO: need almalinux-kde-fix package
-sed -i 's/defaultWallpaperTheme=Next/defaultWallpaperTheme=Alma-dark/' /usr/share/plasma/desktoptheme/default/metadata.desktop
-sed -i 's/defaultFileSuffix=.png/defaultFileSuffix=.jpg/' /usr/share/plasma/desktoptheme/default/metadata.desktop
-sed -i 's/defaultWidth=1920/defaultWidth=2048/' /usr/share/plasma/desktoptheme/default/metadata.desktop
-sed -i 's/defaultHeight=1080/defaultHeight=1536/' /usr/share/plasma/desktoptheme/default/metadata.desktop
-# Update KInfocenter
-sed -i 's/pixmaps\/system-logo-white.png/icons\/hicolor\/256x256\/apps\/fedora-logo-icon.png/' /etc/xdg/kcm-about-distrorc
-sed -i 's/http:\/\/fedoraproject.org/https:\/\/almalinux.org/' /etc/xdg/kcm-about-distrorc
-# Hack KDE Fedora package ends
-
-# Disable network service here, as doing it in the services line
-# fails due to RHBZ #1369794
-sbin/chkconfig network off  #fails
 
 # Remove machine-id on pre generated images
 rm -f /etc/machine-id
 touch /etc/machine-id
+%end
 
-# set default GTK+ theme for root (see #683855, #689070, #808062)
-cat > /root/.gtkrc-2.0 << EOF
-include "/usr/share/themes/Adwaita/gtk-2.0/gtkrc"
-include "/etc/gtk-2.0/gtkrc"
-gtk-theme-name="Adwaita"
-EOF
-mkdir -p /root/.config/gtk-3.0
-cat > /root/.config/gtk-3.0/settings.ini << EOF
-[Settings]
-gtk-theme-name = Adwaita
-EOF
+%post
 
-# add initscript
 cat >> /etc/rc.d/init.d/livesys << EOF
 
-# set up autologin for user liveuser
-if [ -f /etc/sddm.conf ]; then
-sed -i 's/^#User=.*/User=liveuser/' /etc/sddm.conf
-sed -i 's/^#Session=.*/Session=plasma.desktop/' /etc/sddm.conf
-else
-cat > /etc/sddm.conf << SDDM_EOF
-[Autologin]
-User=liveuser
-Session=plasma.desktop
-SDDM_EOF
-fi
+# disable gnome-software automatically downloading updates
+cat >> /usr/share/glib-2.0/schemas/org.gnome.software.gschema.override << FOE
+[org.gnome.software]
+download-updates=false
+FOE
 
-# add liveinst.desktop to favorites menu
-mkdir -p /home/liveuser/.config/
-cat > /home/liveuser/.config/kickoffrc << MENU_EOF
-[Favorites]
-FavoriteURLs=/usr/share/applications/firefox.desktop,/usr/share/applications/org.kde.dolphin.desktop,/usr/share/applications/systemsettings.desktop,/usr/share/applications/org.kde.konsole.desktop,/usr/share/applications/liveinst.desktop
-MENU_EOF
+# don't autostart gnome-software session service
+rm -f /etc/xdg/autostart/gnome-software-service.desktop
 
-# show liveinst.desktop on desktop and in menu
-sed -i 's/NoDisplay=true/NoDisplay=false/' /usr/share/applications/liveinst.desktop
-# set executable bit disable KDE security warning
-chmod +x /usr/share/applications/liveinst.desktop
-mkdir /home/liveuser/Desktop
-cp -a /usr/share/applications/liveinst.desktop /home/liveuser/Desktop/
+# disable the gnome-software shell search provider
+cat >> /usr/share/gnome-shell/search-providers/org.gnome.Software-search-provider.ini << FOE
+DefaultDisabled=true
+FOE
+
+# don't run gnome-initial-setup
+mkdir ~liveuser/.config
+touch ~liveuser/.config/gnome-initial-setup-done
+
+# suppress anaconda spokes redundant with gnome-initial-setup
+cat >> /etc/sysconfig/anaconda << FOE
+[NetworkSpoke]
+visited=1
+
+[PasswordSpoke]
+visited=1
+
+[UserSpoke]
+visited=1
+FOE
+
+# make the installer show up
+if [ -f /usr/share/applications/liveinst.desktop ]; then
+  # Show harddisk install in shell dash
+  sed -i -e 's/NoDisplay=true/NoDisplay=false/' /usr/share/applications/liveinst.desktop ""
+  # need to move it to anaconda.desktop to make shell happy
+  mv /usr/share/applications/liveinst.desktop /usr/share/applications/anaconda.desktop
+
+  cat >> /usr/share/glib-2.0/schemas/org.gnome.shell.gschema.override << FOE
+[org.gnome.shell]
+favorite-apps=['firefox.desktop', 'evolution.desktop', 'rhythmbox.desktop', 'shotwell.desktop', 'org.gnome.Nautilus.desktop', 'anaconda.desktop']
+FOE
 
   # Make the welcome screen show up
   if [ -f /usr/share/anaconda/gnome/rhel-welcome.desktop ]; then
@@ -428,35 +364,22 @@ cp -a /usr/share/applications/liveinst.desktop /home/liveuser/Desktop/
   if [ -d /usr/share/lorax/product/usr/share/anaconda ]; then
     cp -a /usr/share/lorax/product/* /
   fi
+fi
 
-# Set akonadi backend
-mkdir -p /home/liveuser/.config/akonadi
-cat > /home/liveuser/.config/akonadi/akonadiserverrc << AKONADI_EOF
-[%General]
-Driver=QSQLITE3
-AKONADI_EOF
+# rebuild schema cache with any overrides we installed
+glib-compile-schemas /usr/share/glib-2.0/schemas
 
-# Disable plasma-pk-updates (bz #1436873 and 1206760)
-echo "Removing plasma-pk-updates package."
-rpm -e plasma-pk-updates
+# set up auto-login
+cat > /etc/gdm/custom.conf << FOE
+[daemon]
+AutomaticLoginEnable=True
+AutomaticLogin=liveuser
+FOE
 
-# Disable baloo
-cat > /home/liveuser/.config/baloofilerc << BALOO_EOF
-[Basic Settings]
-Indexing-Enabled=false
-BALOO_EOF
-
-# Disable kres-migrator
-cat > /home/liveuser/.kde/share/config/kres-migratorrc << KRES_EOF
-[Migration]
-Enabled=false
-KRES_EOF
-
-# Disable kwallet migrator
-cat > /home/liveuser/.config/kwalletrc << KWALLET_EOL
-[Migration]
-alreadyMigrated=true
-KWALLET_EOL
+# Turn off PackageKit-command-not-found while uninstalled
+if [ -f /etc/PackageKit/CommandNotFound.conf ]; then
+  sed -i -e 's/^SoftwareSourceSearch=true/SoftwareSourceSearch=false/' /etc/PackageKit/CommandNotFound.conf
+fi
 
 # make sure to set the right permissions and selinux contexts
 chown -R liveuser:liveuser /home/liveuser/
@@ -466,102 +389,120 @@ EOF
 
 %end
 
-%post --nochroot
-cp $INSTALL_ROOT/usr/share/licenses/*-release/* $LIVE_ROOT/
-
-# only works on x86, x86_64
-if [ "$(uname -i)" = "i386" -o "$(uname -i)" = "x86_64" ]; then
-  if [ ! -d $LIVE_ROOT/LiveOS ]; then mkdir -p $LIVE_ROOT/LiveOS ; fi
-  cp /usr/bin/livecd-iso-to-disk $LIVE_ROOT/LiveOS
-fi
-
-%end
-
 # Packages
 %packages
-# KDE package list
-
+Box2D
+ModemManager
+ModemManager-glib
+NetworkManager
+NetworkManager-adsl
+NetworkManager-libnm
+NetworkManager-team
+NetworkManager-tui
+NetworkManager-wifi
+PackageKit
+PackageKit-command-not-found
+PackageKit-glib
+PackageKit-gtk3-module
 abattis-cantarell-fonts
-abrt
-abrt-addon-ccpp
-abrt-addon-coredump-helper
-abrt-addon-kerneloops
-abrt-addon-pstoreoops
-abrt-addon-vmcore
-abrt-addon-xorg
-abrt-dbus
-abrt-desktop
-abrt-gui
-abrt-gui-libs
-abrt-libs
-accounts-qml-module
 accountsservice
+accountsservice-libs
 acl
+adcli
 adobe-mappings-cmap
 adobe-mappings-cmap-deprecated
 adobe-mappings-pdf
+adobe-source-code-pro-fonts
 adwaita-cursor-theme
 adwaita-gtk2-theme
 adwaita-icon-theme
 almalinux-backgrounds
-almalinux-backgrounds-extras
+almalinux-gpg-keys
 almalinux-indexhtml
 almalinux-logos
 almalinux-release
+almalinux-repos
 alsa-lib
-alsa-plugins-pulseaudio
-alsa-utils
+alternatives
 anaconda-core
 anaconda-gui
+anaconda-live
 anaconda-tui
 anaconda-user-help
 anaconda-widgets
-aspell
-atk
-atkmm
+anthy-unicode
+appstream
+appstream-data
 at-spi2-atk
 at-spi2-core
+atk
+atkmm
 audit
 audit-libs
 augeas-libs
 authselect
 authselect-libs
+autocorr-en
 avahi
 avahi-glib
 avahi-libs
-baloo-widgets
+baobab
 basesystem
 bash
 bc
-bind-export-libs
-biosdevname
+bind-libs
+bind-license
+bind-utils
 blivet-data
-bluedevil
+blktrace
 bluez
 bluez-libs
-breeze-cursor-theme
-breeze-icon-theme
-brotli
+bluez-obexd
+bolt
+boost-chrono
+boost-date-time
+boost-filesystem
+boost-iostreams
+boost-locale
+boost-system
+boost-thread
+bpftool
+brasero
+brasero-libs
+brasero-nautilus
+brlapi
+brltty
 bubblewrap
+bzip2
 bzip2-libs
+c-ares
 ca-certificates
 cairo
 cairo-gobject
 cairomm
-c-ares
+checkpolicy
+cheese
+cheese-libs
 chkconfig
+chrome-gnome-shell
 chrony
-cmake-filesystem
-colord
-colord-kde
-colord-libs
+clucene-contribs-lib
+clucene-core
+clutter
+clutter-gst3
+clutter-gtk
+cogl
 color-filesystem
+colord
+colord-gtk
+colord-libs
+copy-jdk-configs
 coreutils
 coreutils-common
 cpio
+cpp
 cracklib
 cracklib-dicts
-crda
 cronie
 cronie-anacron
 crontabs
@@ -577,20 +518,22 @@ cups-ipptool
 cups-libs
 cups-pk-helper
 curl
+cyrus-sasl
+cyrus-sasl-gssapi
 cyrus-sasl-lib
 daxctl-libs
 dbus
+dbus-broker
 dbus-common
 dbus-daemon
 dbus-glib
 dbus-libs
-dbusmenu-qt5
 dbus-tools
 dbus-x11
 dconf
-dejavu-fonts-common
+dejavu-sans-fonts
 dejavu-sans-mono-fonts
-desktop-backgrounds-compat
+dejavu-serif-fonts
 desktop-file-utils
 device-mapper
 device-mapper-event
@@ -599,382 +542,341 @@ device-mapper-libs
 device-mapper-multipath
 device-mapper-multipath-libs
 device-mapper-persistent-data
-dhcp-client
-dhcp-common
-dhcp-libs
 diffutils
 dmidecode
 dnf
 dnf-data
 dnf-plugins-core
-docbook-dtds
-docbook-style-xsl
-dolphin
-dolphin-libs
+dnsmasq
 dosfstools
 dotconf
+double-conversion
 dracut
+dracut-config-generic
 dracut-config-rescue
+dracut-live
 dracut-network
 dracut-squash
 e2fsprogs
 e2fsprogs-libs
-efibootmgr
+edk2-ovmf
 efi-filesystem
+efibootmgr
 efivar-libs
-elfutils
-elfutils-debuginfod-client
 elfutils-default-yama-scope
 elfutils-libelf
 elfutils-libs
-elrepo-release
 emacs-filesystem
 enchant2
-epel-release
+eog
 espeak-ng
 ethtool
+evince
+evince-libs
+evince-nautilus
+evince-previewer
+evince-thumbnailer
+evolution
+evolution-data-server
+evolution-data-server-langpacks
+evolution-ews
+evolution-ews-langpacks
+evolution-help
+evolution-langpacks
+evolution-mapi
+evolution-mapi-langpacks
+exempi
 exiv2
 exiv2-libs
 expat
-f31-backgrounds-base
-f32-backgrounds-base
-f32-backgrounds-kde
+fdk-aac-free
 file
 file-libs
 filesystem
 findutils
-firewall-config
+firefox
 firewalld
 firewalld-filesystem
 flac-libs
+flashrom
+flatpak
 flatpak-libs
+flatpak-selinux
+flatpak-session-helper
+flexiblas
+flexiblas-netlib
+flexiblas-openblas-openmp
 fontconfig
-fontpackages-filesystem
+fonts-filesystem
+fprintd
+fprintd-pam
 freetype
 fribidi
+fstrm
 fuse
 fuse-common
 fuse-libs
+fuse3
+fuse3-libs
 fwupd
+fwupd-plugin-flashrom
 gawk
+gawk-all-langpacks
 gc
-GConf2
 gcr
+gcr-base
 gd
-gdb-headless
-gdbm
 gdbm-libs
 gdisk
 gdk-pixbuf2
 gdk-pixbuf2-modules
-geany
-geany-libgeany
+gdm
+gedit
 geoclue2
-geolite2-city
-geolite2-country
+geoclue2-libs
+geocode-glib
 gettext
 gettext-libs
 ghostscript
+ghostscript-tools-fonts
+ghostscript-tools-printing
 giflib
 gjs
+glib-networking
 glib2
 glibc
 glibc-all-langpacks
 glibc-common
+glibc-gconv-extra
 glibc-langpack-en
 glibmm24
-glib-networking
 glx-utils
 gmp
-gnome-abrt
+gnome-autoar
+gnome-bluetooth
+gnome-bluetooth-libs
+gnome-calculator
+gnome-characters
+gnome-classic-session
+gnome-color-manager
+gnome-control-center
+gnome-control-center-filesystem
+gnome-desktop3
+gnome-disk-utility
+gnome-font-viewer
+gnome-initial-setup
 gnome-keyring
 gnome-keyring-pam
+gnome-logs
 gnome-menus
+gnome-online-accounts
+gnome-remote-desktop
+gnome-screenshot
+gnome-session
+gnome-session-wayland-session
+gnome-session-xsession
+gnome-settings-daemon
+gnome-shell
+gnome-shell-extension-apps-menu
+gnome-shell-extension-background-logo
+gnome-shell-extension-common
+gnome-shell-extension-desktop-icons
+gnome-shell-extension-launch-new-instance
+gnome-shell-extension-places-menu
+gnome-shell-extension-window-list
+gnome-software
+gnome-system-monitor
+gnome-terminal
+gnome-terminal-nautilus
+gnome-tour
+gnome-user-docs
+gnome-video-effects
 gnupg2
-gnupg2-smime
 gnutls
+gnutls-dane
+gnutls-utils
 gobject-introspection
+gom
+google-carlito-fonts
 google-droid-sans-fonts
 google-noto-cjk-fonts-common
+google-noto-emoji-color-fonts
 google-noto-fonts-common
 google-noto-sans-cjk-ttc-fonts
-google-noto-sans-lisu-fonts
-google-noto-sans-mandaic-fonts
-google-noto-sans-meetei-mayek-fonts
-google-noto-sans-sinhala-fonts
-google-noto-sans-tagalog-fonts
-google-noto-sans-tai-tham-fonts
-google-noto-sans-tai-viet-fonts
+google-noto-sans-gurmukhi-fonts
+google-noto-sans-sinhala-vf-fonts
 google-noto-serif-cjk-ttc-fonts
-google-noto-sans-khmer-fonts
-google-noto-sans-myanmar-fonts
-google-noto-sans-oriya-fonts
-google-noto-sans-tibetan-fonts
-lohit-assamese-fonts
-lohit-bengali-fonts
-lohit-devanagari-fonts
-lohit-gujarati-fonts
-lohit-gurmukhi-fonts
-lohit-kannada-fonts
-lohit-malayalam-fonts
-lohit-marathi-fonts
-lohit-nepali-fonts
-lohit-odia-fonts
-lohit-tamil-fonts
-lohit-telugu-fonts
 gpgme
-gpsd-libs
-grantlee-qt5
+gpgmepp
+gpm-libs
+graphene
 graphite2
 grep
+grilo
+grilo-plugins
 groff-base
 grub2-common
-grub2-efi-*64
+grub2-efi-x64
+grub2-efi-x64-cdboot
+grub2-pc-modules
 grub2-tools
-grub2-tools-extra
 grub2-tools-minimal
 grubby
 gsettings-desktop-schemas
+gsl
 gsm
+gsound
+gspell
+gssproxy
 gstreamer1
 gstreamer1-plugins-bad-free
 gstreamer1-plugins-base
 gstreamer1-plugins-good
+gstreamer1-plugins-good-gtk
+gstreamer1-plugins-ugly-free
+gtk-update-icon-cache
+gtk-vnc2
 gtk2
 gtk3
+gtk4
 gtkmm30
-gtk-update-icon-cache
-guile
-gwenview
-gwenview-libs
+gtksourceview4
+gutenprint
+gutenprint-cups
+gutenprint-doc
+gutenprint-libs
+gvfs
+gvfs-client
+gvfs-fuse
+gvfs-goa
+gvfs-gphoto2
+gvfs-mtp
+gvfs-smb
+gvnc
 gzip
-hardlink
 harfbuzz
 harfbuzz-icu
-hdparm
+hexchat
 hicolor-icon-theme
+highcontrast-icon-theme
+highlight
 hostname
-http-parser
+hplip-common
+hplip-libs
+ht-caladea-fonts
 hunspell
+hunspell-en
+hunspell-en-GB
 hunspell-en-US
+hunspell-filesystem
 hwdata
 hyphen
+hyphen-en
+ibus
+ibus-gtk2
+ibus-gtk3
 ibus-libs
-ilmbase
-ima-evm-utils0
+ibus-setup
+iio-sensor-proxy
 ima-evm-utils
-info
-initial-setup
-initial-setup-gui
+inih
 initscripts
-ipcalc
+initscripts-rename-device
+initscripts-service
+inkscape
 iproute
-iprutils
+iproute-tc
 ipset
 ipset-libs
-iptables
-iptables-ebtables
 iptables-libs
+iptables-nft
 iputils
+ipxe-roms-qemu
 irqbalance
+iscsi-initiator-utils
+iscsi-initiator-utils-iscsiuio
+isns-utils-libs
 iso-codes
 isomd5sum
+itstool
 iw
-iwl1000-firmware
 iwl100-firmware
+iwl1000-firmware
 iwl105-firmware
 iwl135-firmware
 iwl2000-firmware
 iwl2030-firmware
 iwl3160-firmware
-iwl3945-firmware
-iwl4965-firmware
 iwl5000-firmware
 iwl5150-firmware
-iwl6000-firmware
 iwl6000g2a-firmware
 iwl6050-firmware
 iwl7260-firmware
 jansson
-jasper-libs
+java-11-openjdk-headless
+javapackages-filesystem
 jbig2dec-libs
 jbigkit-libs
+jomolhari-fonts
+jose
+jq
 json-c
 json-glib
-kaccounts-integration
-kactivitymanagerd
-kamera
+julietaula-montserrat-fonts
+kasumi-common
+kasumi-unicode
 kbd
-kbd-legacy
 kbd-misc
-kcalc
-kcharselect
-kcm_systemd
-kcolorchooser
-kde-cli-tools
-kdecoration
-kde-filesystem
-kdegraphics-thumbnailers
-kde-gtk-config
-kde-partitionmanager
-kdeplasma-addons
-kde-print-manager
-kde-print-manager-libs
-kde-settings
-kde-settings-plasma
-kde-settings-pulseaudio
-kdesu
-kdialog
-kdnssd
-keditbookmarks
-keditbookmarks-libs
 kernel
 kernel-core
-kernel-core
-kernel-modules
 kernel-modules
 kernel-modules-extra
 kernel-tools
 kernel-tools-libs
 kexec-tools
 keybinder3
+keyutils
 keyutils-libs
-kf5-akonadi-contacts
-kf5-akonadi-server
-kf5-akonadi-server-mysql
-kf5-attica
-kf5-baloo
-kf5-baloo-file
-kf5-baloo-libs
-kf5-bluez-qt
-kf5-filesystem
-kf5-frameworkintegration
-kf5-frameworkintegration-libs
-kf5-kactivities
-kf5-kactivities-stats
-kf5-karchive
-kf5-kauth
-kf5-kbookmarks
-kf5-kcmutils
-kf5-kcodecs
-kf5-kcompletion
-kf5-kconfig-core
-kf5-kconfig-gui
-kf5-kconfigwidgets
-kf5-kcontacts
-kf5-kcoreaddons
-kf5-kcrash
-kf5-kdbusaddons
-kf5-kdeclarative
-kf5-kded
-kf5-kdelibs4support
-kf5-kdelibs4support-libs
-kf5-kdesu
-kf5-kdewebkit
-kf5-kdnssd
-kf5-kdoctools
-kf5-kemoticons
-kf5-kfilemetadata
-kf5-kglobalaccel
-kf5-kglobalaccel-libs
-kf5-kguiaddons
-kf5-kholidays
-kf5-khtml
-kf5-ki18n
-kf5-kiconthemes
-kf5-kidletime
-kf5-kimageformats
-kf5-kinit
-kf5-kio-core
-kf5-kio-core-libs
-kf5-kio-doc
-kf5-kio-file-widgets
-kf5-kio-gui
-kf5-kio-ntlm
-kf5-kio-widgets
-kf5-kio-widgets-libs
-kf5-kipi-plugins
-kf5-kirigami2
-kf5-kitemmodels
-kf5-kitemviews
-kf5-kjobwidgets
-kf5-kjs
-kf5-kmime
-kf5-knewstuff
-kf5-knotifications
-kf5-knotifyconfig
-kf5-kpackage
-kf5-kparts
-kf5-kpeople
-kf5-kpty
-kf5-kquickcharts
-kf5-kross-core
-kf5-kross-ui
-kf5-krunner
-kf5-kservice
-kf5-ktexteditor
-kf5-ktextwidgets
-kf5-kunitconversion
-kf5-kwallet
-kf5-kwallet-libs
-kf5-kwayland
-kf5-kwidgetsaddons
-kf5-kwindowsystem
-kf5-kxmlgui
-kf5-kxmlrpcclient
-kf5-libkdcraw
-kf5-libkexiv2
-kf5-libkipi
-kf5-modemmanager-qt
-kf5-networkmanager-qt
-kf5-plasma
-kf5-prison
-kf5-purpose
-kf5-solid
-kf5-sonnet-core
-kf5-sonnet-ui
-kf5-syntax-highlighting
-kf5-threadweaver
-kfind
-kgpg
-khelpcenter
-khotkeys
-kinfocenter
-kio-extras
-kmag
-kmenuedit
+khmer-os-system-fonts
 kmod
+kmod-kvdo
 kmod-libs
-kmousetool
-kmouth
-konqueror
-konqueror-libs
-konsole5
-konsole5-part
 kpartx
-kpmcore
 krb5-libs
-kruler
-kscreen
-kscreenlocker
-ksshaskpass
-ksysguard
-ksysguardd
-kwalletmanager5
-kwebenginepart
-kwebkitpart
-kwin
-kwin-common
-kwin-libs
-kwrite
-kwrited
 lame-libs
+langpacks-core-en
+langpacks-core-font-en
+langpacks-en
 langtable
 lcms2
-ldns
 less
-libaccounts-glib
-libaccounts-qt5
+libICE
+libSM
+libX11
+libX11-common
+libX11-xcb
+libXau
+libXcomposite
+libXcursor
+libXdamage
+libXdmcp
+libXext
+libXfixes
+libXfont2
+libXft
+libXi
+libXinerama
+libXmu
+libXpm
+libXrandr
+libXrender
+libXres
+libXt
+libXtst
+libXv
+libXxf86vm
+liba52
+libabw
 libacl
 libaio
 libao
@@ -983,11 +885,7 @@ libarchive
 libassuan
 libasyncns
 libatasmart
-libatomic
-libatomic_ops
 libattr
-libavc1394
-libbabeltrace
 libbasicobjects
 libblkid
 libblockdev
@@ -1003,83 +901,119 @@ libblockdev-nvdimm
 libblockdev-part
 libblockdev-swap
 libblockdev-utils
+libbpf
+libbrotli
+libbsd
+libburn
 libbytesize
 libcanberra
+libcanberra-gtk2
+libcanberra-gtk3
 libcap
 libcap-ng
+libcap-ng-python3
+libcbor
+libcdio
+libcdio-paranoia
+libcdr
+libcmis
 libcollection
 libcom_err
 libcomps
-libcroco
 libcurl
 libdaemon
 libdatrie
 libdb
-libdb-utils
 libdhash
-libdmtx
-libdmx
 libdnf
 libdrm
-libdv
 libdvdnav
 libdvdread
+libeconf
 libedit
 libepoxy
+libepubgen
 liberation-fonts-common
 liberation-mono-fonts
+liberation-sans-fonts
+liberation-serif-fonts
+libestr
+libetonyek
+libev
 libevdev
 libevent
 libexif
+libexttextcat
+libfastjson
 libfdisk
+libfdt
 libffi
+libfido2
 libfontenc
+libfprint
+libfreehand
 libgcab1
 libgcc
 libgcrypt
-libgit2
+libgdata
+libgee
+libgexiv2
+libgfortran
 libglvnd
 libglvnd-egl
 libglvnd-gles
 libglvnd-glx
+libglvnd-opengl
 libgnomekbd
 libgomp
 libgpg-error
 libgphoto2
 libgs
+libgsf
+libgtop2
 libgudev
 libgusb
+libgweather
+libgxps
+libhandy
 libibverbs
-libICE
+libical
+libical-glib
 libicu
-libidn
 libidn2
-libiec61883
+libieee1284
 libijs
-libimobiledevice
 libini_config
 libinput
-libipt
+libipa_hbac
+libiptcdata
+libisoburn
+libisofs
+libjcat
+libjose
 libjpeg-turbo
 libkcapi
 libkcapi-hmaccalc
 libksba
-libkscreen-qt5
-libksysguard
-libksysguard-common
-libkworkspace5
+liblangtag
+liblangtag-data
+libldac
 libldb
+liblouis
 libmaxminddb
 libmbim
-libmcpp
-libmetalink
-libmng
+libmbim-utils
+libmd
+libmediaart
 libmnl
-libmodman
 libmodulemd
 libmount
+libmpc
+libmpeg2
 libmspack
+libmspub
 libmtp
+libmwaw
 libndp
 libnetfilter_conntrack
 libnfnetlink
@@ -1090,24 +1024,55 @@ libnl3
 libnl3-cli
 libnma
 libnotify
-libnsl2
+libnumbertext
+libodfgen
 libogg
+liborcus
+libosinfo
+libpagemaker
 libpaper
 libpath_utils
 libpcap
 libpciaccess
+libpeas
+libpeas-gtk
+libpeas-loader-python3
 libpipeline
 libpkgconf
-libplist
+libpmem
 libpng
 libproxy
+libproxy-webkitgtk4
 libpsl
 libpwquality
-libqalculate
 libqmi
-LibRaw
-libraw1394
+libqmi-utils
+libqrtr-glib
+libquadmath
+libqxp
+librados2
+librbd1
+librdmacm
 libref_array
+libreoffice-calc
+libreoffice-core
+libreoffice-data
+libreoffice-draw
+libreoffice-emailmerge
+libreoffice-graphicfilter
+libreoffice-gtk3
+libreoffice-help-en
+libreoffice-impress
+libreoffice-langpack-en
+libreoffice-math
+libreoffice-ogltrans
+libreoffice-opensymbol-fonts
+libreoffice-pdfimport
+libreoffice-pyuno
+libreoffice-ure
+libreoffice-ure-common
+libreoffice-writer
+libreoffice-x11
 librepo
 libreport
 libreport-anaconda
@@ -1115,11 +1080,15 @@ libreport-cli
 libreport-filesystem
 libreport-gtk
 libreport-plugin-reportuploader
-libreport-plugin-ureport
 libreport-web
-libreswan
+libretls
+librevenge
 librsvg2
+librsvg2-tools
 libsamplerate
+libsane-airscan
+libsane-hpaio
+libsbc
 libseccomp
 libsecret
 libselinux
@@ -1129,27 +1098,27 @@ libsepol
 libshout
 libsigc++20
 libsigsegv
-libSM
+libslirp
 libsmartcols
 libsmbclient
 libsmbios
 libsndfile
 libsolv
 libsoup
+libspectre
 libsrtp
 libss
 libssh
 libssh-config
-libsss_autofs
 libsss_certmap
 libsss_idmap
 libsss_nss_idmap
 libsss_sudo
+libstaroffice
 libstdc++
 libstemmer
 libsysfs
 libtalloc
-libtar
 libtasn1
 libtdb
 libteam
@@ -1160,15 +1129,39 @@ libtiff
 libtimezonemap
 libtirpc
 libtool-ltdl
+libtpms
+libtracker-sparql
 libudisks2
 libunistring
-libusbmuxd
 libusbx
 libuser
 libutempter
 libuuid
+libuv
 libv4l
 libverto
+libverto-libev
+libvirt-client
+libvirt-daemon
+libvirt-daemon-config-network
+libvirt-daemon-driver-interface
+libvirt-daemon-driver-network
+libvirt-daemon-driver-nodedev
+libvirt-daemon-driver-nwfilter
+libvirt-daemon-driver-qemu
+libvirt-daemon-driver-secret
+libvirt-daemon-driver-storage
+libvirt-daemon-driver-storage-core
+libvirt-daemon-driver-storage-disk
+libvirt-daemon-driver-storage-iscsi
+libvirt-daemon-driver-storage-logical
+libvirt-daemon-driver-storage-mpath
+libvirt-daemon-driver-storage-rbd
+libvirt-daemon-driver-storage-scsi
+libvirt-daemon-kvm
+libvirt-glib
+libvirt-libs
+libvisio
 libvisual
 libvorbis
 libvpx
@@ -1180,291 +1173,264 @@ libwayland-egl
 libwayland-server
 libwbclient
 libwebp
-libX11
-libX11-common
-libX11-xcb
-libXau
-libXaw
+libwnck3
+libwpd
+libwpe
+libwpg
+libwps
 libxcb
-libXcomposite
 libxcrypt
-libXcursor
-libXdamage
-libXdmcp
-libXext
-libXfixes
-libXfont2
-libXft
-libXi
-libXinerama
+libxcrypt-compat
 libxkbcommon
 libxkbcommon-x11
 libxkbfile
 libxklavier
 libxml2
 libxmlb
-libXmu
-libXpm
-libXrandr
-libXrender
-libXres
-libXScrnSaver
 libxshmfence
 libxslt
-libXt
-libXtst
-libXv
-libXxf86dga
-libXxf86misc
-libXxf86vm
 libyaml
+libzmf
 libzstd
 linux-firmware
+linux-firmware-whence
+lksctp-tools
 llvm-libs
 lmdb-libs
-lm_sensors-libs
 lockdev
 logrotate
+lohit-assamese-fonts
+lohit-bengali-fonts
+lohit-devanagari-fonts
+lohit-gujarati-fonts
+lohit-kannada-fonts
+lohit-odia-fonts
+lohit-tamil-fonts
+lohit-telugu-fonts
+low-memory-monitor
+lpsolve
 lshw
 lsof
 lsscsi
+lua
 lua-libs
+lua-posix
 lvm2
 lvm2-libs
-lz4
 lz4-libs
 lzo
+lzop
+mallard-rng
 man-db
-mariadb
-mariadb-backup
-mariadb-common
 mariadb-connector-c
 mariadb-connector-c-config
-mariadb-errmsg
-mariadb-gssapi-server
-mariadb-server
-mariadb-server-utils
-mcpp
 mdadm
-media-player-info
-memstrack
+mdevctl
+memtest86+
 mesa-dri-drivers
 mesa-filesystem
 mesa-libEGL
-mesa-libgbm
 mesa-libGL
+mesa-libgbm
 mesa-libglapi
-mesa-libGLU
+mesa-vulkan-drivers
 microcode_ctl
 mobile-broadband-provider-info
-ModemManager
-ModemManager-glib
 mokutil
-mozjs60
+mozilla-filesystem
 mpfr
 mpg123-libs
 mtdev
+mtools
+mutter
+mythes
+mythes-en
 nano
+nautilus
+nautilus-extensions
 ncurses
 ncurses-base
 ncurses-libs
 ndctl
 ndctl-libs
+neon
+net-snmp-libs
+netcat
 nettle
-NetworkManager
-NetworkManager-l2tp
-NetworkManager-libnm
-NetworkManager-libreswan
-NetworkManager-openconnect
-NetworkManager-openvpn
-NetworkManager-pptp
-NetworkManager-team
-NetworkManager-tui
-NetworkManager-wifi
 newt
+nfs-utils
 nftables
 nm-connection-editor
 npth
 nspr
 nss
-nss-mdns
 nss-softokn
 nss-softokn-freebl
 nss-sysinit
-nss-tools
 nss-util
 numactl-libs
-openal-soft
-openconnect
-OpenEXR-libs
+numad
+oniguruma
+openblas
+openblas-openmp
+openchange
 openjpeg2
 openldap
+openldap-compat
 openssh
 openssh-clients
 openssh-server
 openssl
 openssl-libs
 openssl-pkcs11
-open-vm-tools
-open-vm-tools-desktop
-openvpn
 opus
 orc
+orca
 os-prober
+osinfo-db
+osinfo-db-tools
 ostree
 ostree-libs
-oxygen-sound-theme
 p11-kit
+p11-kit-server
 p11-kit-trust
-PackageKit
-PackageKit-glib
-PackageKit-Qt5
+paktype-naskh-basic-fonts
 pam
-pam-kwallet
 pango
 pangomm
 parted
 passwd
 pcaudiolib
-pciutils
 pciutils-libs
 pcre
 pcre2
-pcre2-utf16
-pcsc-lite-libs
+pcre2-syntax
+pcre2-utf32
+perl-AutoLoader
+perl-B
 perl-Carp
-perl-constant
+perl-Class-Struct
 perl-Data-Dumper
-perl-DBD-MySQL
-perl-DBI
 perl-Digest
 perl-Digest-MD5
 perl-Encode
 perl-Errno
 perl-Exporter
-perl-File-pushd
+perl-Fcntl
+perl-File-Basename
 perl-File-Path
 perl-File-Temp
+perl-File-stat
+perl-FileHandle
 perl-Getopt-Long
+perl-Getopt-Std
 perl-HTTP-Tiny
-perl-interpreter
 perl-IO
 perl-IO-Socket-IP
 perl-IO-Socket-SSL
-perl-libnet
-perl-libs
-perl-macros
-perl-Math-BigInt
-perl-Math-Complex
+perl-IPC-Open3
 perl-MIME-Base64
 perl-Mozilla-CA
+perl-NDBM_File
 perl-Net-SSLeay
-perl-parent
+perl-POSIX
 perl-PathTools
 perl-Pod-Escapes
-perl-podlators
 perl-Pod-Perldoc
 perl-Pod-Simple
 perl-Pod-Usage
 perl-Scalar-List-Utils
+perl-SelectSaver
 perl-Socket
 perl-Storable
+perl-Symbol
 perl-Term-ANSIColor
 perl-Term-Cap
 perl-Text-ParseWords
 perl-Text-Tabs+Wrap
-perl-threads
-perl-threads-shared
 perl-Time-Local
-perl-Unicode-Normalize
 perl-URI
-phonon-qt5
-phonon-qt5-backend-gstreamer
+perl-base
+perl-constant
+perl-if
+perl-interpreter
+perl-libnet
+perl-libs
+perl-mro
+perl-overload
+perl-overloading
+perl-parent
+perl-podlators
+perl-subs
+perl-vars
 pigz
 pinentry
 pinentry-gnome3
+pipewire
+pipewire-alsa
+pipewire-gstreamer
+pipewire-jack-audio-connection-kit
+pipewire-libs
+pipewire-pulseaudio
 pixman
-pkcs11-helper
 pkgconf
 pkgconf-m4
 pkgconf-pkg-config
-plasma-breeze
-plasma-breeze-common
-plasma-desktop
-plasma-desktop-doc
-plasma-discover
-plasma-discover-flatpak
-plasma-discover-libs
-plasma-discover-notifier
-plasma-discover-packagekit
-plasma-drkonqi
-plasma-integration
-plasma-milou
-plasma-nm
-plasma-nm-l2tp
-plasma-nm-openconnect
-plasma-nm-openswan
-plasma-nm-openvpn
-plasma-nm-pptp
-plasma-pa
-plasma-pk-updates
-plasma-systemsettings
-plasma-user-manager
-plasma-workspace
-plasma-workspace-common
-plasma-workspace-geolocation
-plasma-workspace-geolocation-libs
-plasma-workspace-libs
-platform-python
-platform-python-pip
-platform-python-setuptools
+plymouth
+plymouth-core-libs
+plymouth-graphics-libs
+plymouth-plugin-label
+plymouth-plugin-two-step
+plymouth-scripts
+plymouth-system-theme
+plymouth-theme-spinner
 policycoreutils
+policycoreutils-python-utils
 polkit
-polkit-kde
 polkit-libs
 polkit-pkla-compat
-polkit-qt5-1
 poppler
+poppler-cpp
 poppler-data
+poppler-glib
 poppler-utils
 popt
-powerdevil
-ppp
-pptp
+potrace
+power-profiles-daemon
 prefixdevname
 procps-ng
+protobuf-c
 psmisc
+pt-sans-fonts
 publicsuffix-list-dafsa
-pulseaudio
 pulseaudio-libs
 pulseaudio-libs-glib2
-pulseaudio-module-bluetooth
-pulseaudio-module-x11
 pulseaudio-utils
-python3-abrt
-python3-abrt-addon
-python3-augeas
+python-unversioned-command
+python3
+python3-appdirs
+python3-argcomplete
+python3-audit
 python3-blivet
 python3-blockdev
+python3-brlapi
 python3-bytesize
 python3-cairo
+python3-cffi
 python3-chardet
-python3-configobj
 python3-cups
 python3-dasbus
 python3-dateutil
 python3-dbus
-python3-decorator
 python3-dnf
 python3-dnf-plugins-core
 python3-firewall
 python3-gobject
 python3-gobject-base
+python3-gobject-base-noarch
 python3-gpg
 python3-hawkey
-python3-humanize
 python3-idna
-python3-inotify
 python3-kickstart
 python3-langtable
 python3-libcomps
@@ -1472,135 +1438,179 @@ python3-libdnf
 python3-libreport
 python3-libs
 python3-libselinux
-python3-linux-procfs
+python3-libsemanage
+python3-libvirt
+python3-libxml2
+python3-louis
+python3-lxml
 python3-meh
 python3-meh-gui
 python3-nftables
-python3-ntplib
-python3-ordered-set
-python3-perf
+python3-numpy
+python3-pexpect
 python3-pid
 python3-pip-wheel
+python3-ply
+python3-policycoreutils
 python3-productmd
+python3-ptyprocess
 python3-pwquality
+python3-pyatspi
+python3-pycparser
 python3-pycurl
 python3-pyparted
 python3-pysocks
 python3-pytz
 python3-pyudev
+python3-pyyaml
 python3-requests
 python3-requests-file
 python3-requests-ftp
 python3-rpm
-python3-schedutils
+python3-scour
+python3-setools
+python3-setuptools
 python3-setuptools-wheel
 python3-simpleline
 python3-six
-python3-slip
-python3-slip-dbus
-python3-syspurpose
+python3-speechd
 python3-systemd
-python3-unbound
 python3-urllib3
-qca-qt5
-qca-qt5-ossl
+qemu-img
+qemu-kvm
+qemu-kvm-audio-pa
+qemu-kvm-block-rbd
+qemu-kvm-common
+qemu-kvm-core
+qemu-kvm-device-display-virtio-gpu
+qemu-kvm-device-display-virtio-gpu-gl
+qemu-kvm-device-display-virtio-gpu-pci
+qemu-kvm-device-display-virtio-gpu-pci-gl
+qemu-kvm-device-display-virtio-vga
+qemu-kvm-device-display-virtio-vga-gl
+qemu-kvm-device-usb-host
+qemu-kvm-device-usb-redirect
+qemu-kvm-docs
+qemu-kvm-tools
+qemu-kvm-ui-egl-headless
+qemu-kvm-ui-opengl
+qemu-pr-helper
 qpdf-libs
-qqc2-desktop-style
-qrencode-libs
-qt5-qtbase
-qt5-qtbase-common
-qt5-qtbase-gui
-qt5-qtbase-mysql
-qt5-qtdeclarative
-qt5-qtgraphicaleffects
-qt5-qtimageformats
-qt5-qtlocation
-qt5-qtmultimedia
-qt5-qtquickcontrols
-qt5-qtquickcontrols2
-qt5-qtscript
-qt5-qtsensors
-qt5-qtspeech
-qt5-qtspeech-speechd
-qt5-qtsvg
-qt5-qttools
-qt5-qttools-common
-qt5-qttools-libs-designer
-qt5-qtvirtualkeyboard
-qt5-qtwebchannel
-qt5-qtwebengine
-qt5-qtwebkit
-qt5-qtx11extras
-qt5-qtxmlpatterns
-rdma-core
-re2
+quota
+quota-nls
+raptor2
+rasqal
 readline
+redland
 rest
-rng-tools
 rootfiles
+rpcbind
 rpm
 rpm-build-libs
 rpm-libs
+rpm-plugin-audit
 rpm-plugin-selinux
 rpm-plugin-systemd-inhibit
+rpm-sign-libs
+rsync
+rsyslog
+rsyslog-logrotate
 rtkit
-samba-client
 samba-client-libs
 samba-common
 samba-common-libs
+sane-airscan
+sane-backends
+sane-backends-drivers-cameras
+sane-backends-drivers-scanners
+sane-backends-libs
 satyr
-sbc
-sddm
-sddm-breeze
-sddm-kcm
+seabios-bin
+seavgabios-bin
 sed
 selinux-policy
 selinux-policy-targeted
 setup
+setxkbmap
 sg3_utils
 sg3_utils-libs
-sgml-common
 shadow-utils
+shadow-utils-subid
 shared-mime-info
-shim-*64
-signon
-signon-plugin-oauth2
+shim-x64
+sil-abyssinica-fonts
+sil-nuosu-fonts
+sil-padauk-fonts
 slang
+smartmontools
+smc-meera-fonts
 snappy
-socat
+sos
 sound-theme-freedesktop
 soundtouch
-spectacle
 speech-dispatcher
 speech-dispatcher-espeak-ng
 speex
-speexdsp
+spice-vdagent
 sqlite-libs
 squashfs-tools
+sscg
+sssd
+sssd-ad
 sssd-client
 sssd-common
+sssd-common-pac
+sssd-ipa
 sssd-kcm
+sssd-krb5
+sssd-krb5-common
+sssd-ldap
 sssd-nfs-idmap
+sssd-proxy
+startup-notification
+stix-fonts
+strace
 sudo
+sushi
+switcheroo-control
+swtpm
+swtpm-libs
+swtpm-tools
+symlinks
+syslinux
+syslinux-nonlinux
 system-config-printer-libs
+system-config-printer-udev
 systemd
+systemd-container
 systemd-libs
 systemd-pam
+systemd-rpm-macros
 systemd-udev
 taglib
 tar
+tcl
 teamd
+texlive-lib
+thai-scalable-fonts-common
+thai-scalable-waree-fonts
 tigervnc-license
 tigervnc-server-minimal
-timedatex
+totem
+totem-pl-parser
+totem-video-thumbnailer
 tpm2-tss
-trousers
-trousers-lib
-tuned
+tracker
+tracker-miners
 twolame-libs
 tzdata
+tzdata-java
 udisks2
+udisks2-iscsi
+udisks2-lvm2
 unbound-libs
+unicode-ucd
+unzip
 upower
 urw-base35-bookman-fonts
 urw-base35-c059-fonts
@@ -1614,95 +1624,72 @@ urw-base35-nimbus-sans-fonts
 urw-base35-p052-fonts
 urw-base35-standard-symbols-ps-fonts
 urw-base35-z003-fonts
+usb_modeswitch
+usb_modeswitch-data
+usbredir
+usbutils
+usermode
 userspace-rcu
 util-linux
+util-linux-core
+util-linux-user
+vdo
+vim-common
+vim-enhanced
+vim-filesystem
 vim-minimal
+virt-manager
+virt-manager-common
+virt-viewer
 virt-what
+virtiofsd
 volume_key-libs
-vpnc-script
-vte291
 vte-profile
+vte291
+vulkan-loader
 wavpack
 webkit2gtk3
 webkit2gtk3-jsc
 webrtc-audio-processing
 which
+wireless-regdb
+wireplumber
+wireplumber-libs
 woff2
 wpa_supplicant
-xapian-core-libs
+wpebackend-fdo
 xcb-util
-xcb-util-cursor
-xcb-util-image
-xcb-util-keysyms
-xcb-util-renderutil
-xcb-util-wm
+xdg-dbus-proxy
+xdg-desktop-portal
+xdg-desktop-portal-gnome
+xdg-desktop-portal-gtk
 xdg-user-dirs
-xdg-utils
+xdg-user-dirs-gtk
 xfsprogs
+xkbcomp
 xkeyboard-config
-xl2tpd
 xml-common
 xmlrpc-c
 xmlrpc-c-client
 xmlsec1
-xmlsec1-openssl
-xorg-x11-apps
-xorg-x11-drv-fbdev
+xmlsec1-nss
 xorg-x11-drv-libinput
-xorg-x11-drv-vesa
-xorg-x11-fonts-misc
-xorg-x11-font-utils
+xorg-x11-server-Xorg
+xorg-x11-server-Xwayland
 xorg-x11-server-common
 xorg-x11-server-utils
-xorg-x11-server-Xorg
-xorg-x11-utils
 xorg-x11-xauth
-xorg-x11-xbitmaps
 xorg-x11-xinit
-xorg-x11-xkb-utils
+xorriso
 xz
 xz-libs
+yajl
 yelp
 yelp-libs
+yelp-tools
 yelp-xsl
 yum
+zenity
 zlib
-anaconda
-anaconda-install-env-deps
-anaconda-live
-@anaconda-tools
-dracut-config-generic
-dracut-live
-glibc-all-langpacks
-grub2-efi
-grub2-pc-modules
-grub2-efi-*64-cdboot
-kernel
-kernel-modules
-kernel-modules-extra
-memtest86+
-syslinux 
-glibc-all-langpacks
-initscripts
-chkconfig
-aajohan-comfortaa-fonts
-firefox
-libreoffice-base 
-libreoffice-calc 
-libreoffice-core
-libreoffice-data
-libreoffice-draw 
-libreoffice-graphicfilter
-libreoffice-impress 
-libreoffice-writer
-liberation-fonts
-liberation-fonts-common
-liberation-mono-fonts
-liberation-sans-fonts
-liberation-serif-fonts
-nano 
-thunderbird
-
--desktop-backgrounds-compat
-
+zstd
 %end

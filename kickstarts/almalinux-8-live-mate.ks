@@ -13,11 +13,14 @@ shutdown
 timezone US/Eastern
 # Network information
 network  --bootproto=dhcp --device=link --activate
-repo --name="baseos" --baseurl=https://rsync.repo.almalinux.org/almalinux/8/BaseOS/$basearch/os/
+
+# Repos
+url --url=https://rsync.repo.almalinux.org/almalinux/8/BaseOS/$basearch/os/
 repo --name="appstream" --baseurl=https://rsync.repo.almalinux.org/almalinux/8/AppStream/$basearch/os/
 repo --name="extras" --baseurl=https://rsync.repo.almalinux.org/almalinux/8/extras/$basearch/os/
 repo --name="powertools" --baseurl=https://rsync.repo.almalinux.org/almalinux/8/PowerTools/$basearch/os/
 repo --name="epel" --baseurl=https://dl.fedoraproject.org/pub/epel/8/Everything/$basearch/
+
 # Firewall configuration
 firewall --enabled --service=mdns
 # SELinux configuration
@@ -33,6 +36,13 @@ clearpart --all --initlabel
 part / --size=10238
 
 %post
+if [ -f /etc/lightdm/slick-greeter.conf ]; then
+  mv /etc/lightdm/slick-greeter.conf  /etc/lightdm/slick-greeter.conf_saved
+fi
+cat > /etc/lightdm/slick-greeter.conf << SLK_EOF
+[Greeter]
+logo=
+SLK_EOF
 
 systemctl enable --force lightdm.service
 
@@ -301,6 +311,13 @@ touch /etc/machine-id
 %end
 
 %post
+if [ -f /etc/lightdm/slick-greeter.conf ]; then
+  mv /etc/lightdm/slick-greeter.conf  /etc/lightdm/slick-greeter.conf_saved
+fi
+cat > /etc/lightdm/slick-greeter.conf << SLK_EOF
+[Greeter]
+logo=
+SLK_EOF
 
 cat >> /etc/rc.d/init.d/livesys << EOF
 
@@ -399,6 +416,16 @@ background-color=#729fcf
 stretch-background-across-monitors=true
 
 SLG_EOF
+
+# Uncomment line with logo
+if [ -f /etc/lightdm/slick-greeter.conf ]; then
+  mv /etc/lightdm/slick-greeter.conf  /etc/lightdm/slick-greeter.conf_saved
+fi
+cat > /etc/lightdm/lightdm-gtk-greeter.conf << SLK_EOF
+[Greeter]
+logo=
+
+SLK_EOF
 
 # Turn off PackageKit-command-not-found while uninstalled
 if [ -f /etc/PackageKit/CommandNotFound.conf ]; then
