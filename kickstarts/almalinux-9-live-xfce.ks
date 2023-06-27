@@ -370,8 +370,9 @@ if [ -f /usr/share/applications/liveinst.desktop ]; then
   # and mark it as executable (new Xfce security feature)
   chmod +x /home/liveuser/Desktop/liveinst.desktop
   # Add Desktop dir to XDG_DATA_DIRS (Xfce 4.18 security feature)
-  echo 'export XDG_DATA_DIRS="$XDG_DATA_DIRS:$HOME/Desktop"' >> /home/liveuser/.profile
-
+  cat >> /home/liveuser/.profile << PROFILE_EOF
+  export XDG_DATA_DIRS="\${XDG_DATA_DIRS}:\${HOME}/Desktop"
+  PROFILE_EOF
   # need to move it to anaconda.desktop to make shell happy TODO: Is reuired for XFCE?
   mv /usr/share/applications/liveinst.desktop /usr/share/applications/anaconda.desktop
 
