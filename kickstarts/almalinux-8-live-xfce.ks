@@ -391,7 +391,7 @@ fi
 # no updater applet in live environment
 rm -f /etc/xdg/autostart/org.mageia.dnfdragora-updater.desktop
 
-# this goes at the end after all other changes. 
+# this goes at the end after all other changes.
 chown -R liveuser:liveuser /home/liveuser
 restorecon -R /home/liveuser
 
@@ -1306,6 +1306,7 @@ xfce4-panel
 xfce4-power-manager
 xfce4-pulseaudio-plugin
 xfce4-screensaver
+xfce4-screenshooter
 xfce4-session
 xfce4-settings
 xfce4-taskmanager

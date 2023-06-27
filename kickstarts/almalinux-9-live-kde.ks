@@ -344,18 +344,18 @@ X-KDE-PluginInfo-EnabledByDefault=true
 X-Plasma-API=5.0
 
 FOE
-  done  
+  done
 }
 # call function to create wallpapers
 # generateKDEWallpapers
 # Very ODD fix to get Alma background, find alternative
-rm -rf /usr/share/wallpapers/Next
-ln -s /usr/share/wallpapers/Alma-mountains-white /usr/share/wallpapers/Next
+rm -rf /usr/share/wallpapers/Fedora
+ln -s Alma-mountains-white /usr/share/wallpapers/Fedora
 # background end
 
-# Update default theme - this has to stay KS 
+# Update default theme - this has to stay KS
 # Hack KDE Fedora package starts. TODO: need almalinux-kde-fix package
-sed -i 's/defaultWallpaperTheme=Next/defaultWallpaperTheme=Alma-mountains-white/' /usr/share/plasma/desktoptheme/default/metadata.desktop
+sed -i 's/defaultWallpaperTheme=Fedora/defaultWallpaperTheme=Alma-mountains-white/' /usr/share/plasma/desktoptheme/default/metadata.desktop
 sed -i 's/defaultFileSuffix=.png/defaultFileSuffix=.jpg/' /usr/share/plasma/desktoptheme/default/metadata.desktop
 sed -i 's/defaultWidth=1920/defaultWidth=2048/' /usr/share/plasma/desktoptheme/default/metadata.desktop
 sed -i 's/defaultHeight=1080/defaultHeight=1536/' /usr/share/plasma/desktoptheme/default/metadata.desktop
@@ -674,6 +674,7 @@ elfutils-libelf
 elfutils-libs
 emacs-filesystem
 enchant2
+epel-release
 espeak-ng
 ethtool
 exempi

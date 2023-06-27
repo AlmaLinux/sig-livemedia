@@ -369,6 +369,8 @@ if [ -f /usr/share/applications/liveinst.desktop ]; then
   cp -a /usr/share/applications/liveinst.desktop /home/liveuser/Desktop/
   # and mark it as executable (new Xfce security feature)
   chmod +x /home/liveuser/Desktop/liveinst.desktop
+  # Add Desktop dir to XDG_DATA_DIRS (Xfce 4.18 security feature)
+  echo 'export XDG_DATA_DIRS="$XDG_DATA_DIRS:$HOME/Desktop"' >> /home/liveuser/.profile
 
   # need to move it to anaconda.desktop to make shell happy TODO: Is reuired for XFCE?
   mv /usr/share/applications/liveinst.desktop /usr/share/applications/anaconda.desktop
@@ -401,7 +403,7 @@ fi
 # no updater applet in live environment
 rm -f /etc/xdg/autostart/org.mageia.dnfdragora-updater.desktop
 
-# this goes at the end after all other changes. 
+# this goes at the end after all other changes.
 chown -R liveuser:liveuser /home/liveuser
 restorecon -R /home/liveuser
 
@@ -549,6 +551,7 @@ elfutils-libelf
 elfutils-libs
 emacs-filesystem
 enchant2
+epel-release
 ethtool
 exempi
 exiv2
@@ -1326,6 +1329,7 @@ xfce4-panel
 xfce4-power-manager
 xfce4-pulseaudio-plugin
 xfce4-screensaver
+xfce4-screenshooter
 xfce4-session
 xfce4-settings
 xfce4-terminal
