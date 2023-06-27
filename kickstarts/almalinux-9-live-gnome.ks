@@ -741,6 +741,7 @@ gtk3
 gtk4
 gtkmm30
 gtksourceview4
+@guest-desktop-agents
 gutenprint
 gutenprint-cups
 gutenprint-doc

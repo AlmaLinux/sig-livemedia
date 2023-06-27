@@ -653,6 +653,7 @@ gtk2
 gtk3
 gtkmm30
 gtksourceview4
+@guest-desktop-agents
 gvfs
 gvfs-client
 gzip

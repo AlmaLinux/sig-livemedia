@@ -789,6 +789,7 @@ gtk-update-icon-cache
 gtk2
 gtk2-engines
 gtk3
+@guest-desktop-agents
 gwenview
 gwenview-libs
 gzip

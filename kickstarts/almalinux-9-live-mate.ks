@@ -360,7 +360,7 @@ if [ -f /usr/share/applications/liveinst.desktop ]; then
   # copy to desktop
   mkdir -p /home/liveuser/Desktop
   cp -a /usr/share/applications/liveinst.desktop /home/liveuser/Desktop/
-  
+
   # need to move it to anaconda.desktop to make shell happy
   mv /usr/share/applications/liveinst.desktop /usr/share/applications/anaconda.desktop
 
@@ -767,6 +767,7 @@ gtksourceview3
 gtksourceview4
 gucharmap
 gucharmap-libs
+@guest-desktop-agents
 gvfs
 gvfs-client
 gvfs-fuse

@@ -743,6 +743,7 @@ gtk2
 gtk3
 gtkmm30
 gtk-update-icon-cache
+@guest-desktop-agents
 guile
 gwenview
 gwenview-libs

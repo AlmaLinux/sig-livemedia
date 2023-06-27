@@ -745,6 +745,7 @@ gtk2
 gtk3
 gtkmm30
 gtksourceview3
+@guest-desktop-agents
 gupnp
 gupnp-av
 gupnp-dlna
@@ -1051,13 +1052,13 @@ librbd1
 librdmacm
 libref_array
 librelp
-libreoffice-base 
-libreoffice-calc 
+libreoffice-base
+libreoffice-calc
 libreoffice-core
 libreoffice-data
-libreoffice-draw 
+libreoffice-draw
 libreoffice-graphicfilter
-libreoffice-impress 
+libreoffice-impress
 libreoffice-writer
 librepo
 libreport

@@ -758,6 +758,7 @@ gvfs-gphoto2
 gvfs-mtp
 gvfs-smb
 gvnc
+@guest-desktop-agents
 gzip
 hardlink
 harfbuzz
@@ -1430,7 +1431,7 @@ sudo
 sushi
 switcheroo-control
 symlinks
-syslinux 
+syslinux
 system-config-printer-libs
 systemd
 systemd-container

@@ -692,6 +692,7 @@ gvfs-gphoto2
 gvfs-mtp
 gvfs-smb
 gvnc
+@guest-desktop-agents
 gzip
 harfbuzz
 harfbuzz-icu

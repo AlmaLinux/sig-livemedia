@@ -665,6 +665,7 @@ gtk3
 gtkmm30
 gtksourceview3
 gtk-update-icon-cache
+@guest-desktop-agents
 gzip
 hardlink
 harfbuzz
