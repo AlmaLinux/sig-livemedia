@@ -112,8 +112,7 @@ Run following commands to build GNOME Mini live media.
 ```sh
 sudo livemedia-creator \
     --ks=kickstarts/almalinux-8-live-gnome-mini.ks \
-    --no-virt \
-    --resultdir=$PWD/pkg-cache-alma \
+    --no-virt --resultdir ./iso-gnome-mini \
     --project "AlmaLinux Live" \
     --make-iso \
     --iso-only \
