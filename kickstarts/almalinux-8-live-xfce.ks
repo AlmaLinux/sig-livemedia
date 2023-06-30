@@ -410,6 +410,7 @@ fi
 
 %end
 
+%packages
 abattis-cantarell-fonts
 accountsservice
 accountsservice-libs
