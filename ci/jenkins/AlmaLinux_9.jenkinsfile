@@ -1,0 +1,307 @@
+pipeline {
+    agent {
+        label 'x86_64 && bm'
+    }
+    options {
+        timestamps()
+        parallelsAlwaysFailFast()
+    }
+    parameters {
+        choice(name: 'TYPE_FILTER', choices: ['ALL', 'GNOME', 'GNOME-MINI', 'KDE', 'MATE', 'XFCE'], description: 'Type of Live Media')
+        string(name: 'MINORVER', defaultValue: '2', description: 'Minor version number of AlmaLinux OS 9', trim: true)
+        string(name: 'BUCKET', defaultValue: 'almalinux-live', description: 'Name of AWS S3 bucket', trim: true)
+        booleanParam(name: 'NOTIFY', defaultValue: false, description: 'Publish build results on SIG/LiveMedia channel')
+        string(name: 'CHANNEL', defaultValue: 'siglivemedia', description: 'Channel name on chat.almalinux.org', trim: true)
+    }
+    environment {
+        VAGRANT_NO_COLOR = '1'
+        DATE = sh script: 'date -u \'+%Y%m%d%H%M%S\'', returnStdout: true
+        TIMESTAMP = DATE.trim()
+    }
+    stages {
+        stage('Prepare') {
+            steps {
+                sh script: 'ansible-galaxy install -r ci/ansible/requirements.yaml',
+                    label: 'Install Ansible collections'
+            }
+        }
+        stage('CreateMultiBuilders') {
+            when {
+                expression { params.TYPE_FILTER == 'ALL' }
+            }
+            steps {
+                sh script: 'cp ci/vagrant/AlmaLinux_9_multi.rb Vagrantfile',
+                    label: 'Generate Vagrantfile'
+                sh script: 'vagrant up',
+                    label: 'Create builder VMs'
+                sh script: 'vagrant reload',
+                    label: 'Remount virtiofs synced folders'
+            }
+        }
+        stage('CreateSingleBuilder') {
+            when {
+                expression { params.TYPE_FILTER != 'ALL' }
+            }
+            steps {
+                script {
+                    def liveMedia = liveMediaSpec(params.TYPE_FILTER)
+
+                    sh script: 'cp ci/vagrant/AlmaLinux_single.rb Vagrantfile',
+                        label: 'Generate Vagrantfile'
+                    sh script: "vagrant up $liveMedia.vmName",
+                        label: 'Create builder VM'
+                    sh script: "vagrant reload $liveMedia.vmName",
+                        label: 'Remount virtiofs synced folders'
+                }
+            }
+        }
+        stage('BuildAndUpload') {
+            matrix {
+                when {
+                    anyOf {
+                        expression { params.TYPE_FILTER == 'ALL' }
+                        expression { params.TYPE_FILTER == env.TYPE }
+                    }
+                }
+                axes {
+                    axis {
+                        name 'TYPE'
+                        values 'GNOME', 'GNOME-MINI', 'KDE', 'MATE', 'XFCE'
+                    }
+                }
+                stages {
+                    stage('Build') {
+                        steps {
+                            script {
+                                def liveMedia = liveMediaSpec(TYPE)
+
+                                sh script: """
+                                vagrant ssh $liveMedia.vmName -c "sudo livemedia-creator \
+                                    --ks=/vagrant/kickstarts/${liveMedia.ksFile} \
+                                    --no-virt \
+                                    --resultdir /vagrant/iso_${liveMedia.dirName} \
+                                    --project 'AlmaLinux Live' \
+                                    --make-iso \
+                                    --iso-only \
+                                    --iso-name 'AlmaLinux-9.${MINORVER}-x86_64-Live-${liveMedia.isoName}.iso' \
+                                    --releasever 9.${MINORVER} \
+                                    --volid 'AlmaLinux-9_${MINORVER}-x86_64-Live-${liveMedia.volId}' \
+                                    --nomacboot \
+                                    --logfile /vagrant/logs_${liveMedia.dirName}/livemedia.log"
+                                """
+
+                                sh 'ls -lhaFZ iso* && ls -lhaFZ logs*' // DEBUG: Before fixing the permissions of files
+
+                                def jenkinsUid = sh script: 'id -u', returnStdout: true
+                                jenkinsUid = jenkinsUid.trim()
+                                def jenkinsGid = sh script: 'id -u', returnStdout: true
+                                jenkinsGid = jenkinsGid.trim()
+                                def jenkinsGname = sh script: 'id -g -n', returnStdout: true
+                                jenkinsGname = jenkinsGname.trim()
+                                sh """
+                                vagrant ssh $liveMedia.vmName -c \
+                                \"sudo groupadd -g $jenkinsGid $jenkinsGname \
+                                && sudo useradd -u $jenkinsUid -g $jenkinsGid jenkins \
+                                && sudo chown -Rv $jenkinsUid:$jenkinsGid /vagrant/{iso,logs}_${liveMedia.dirName}\"
+                                """
+
+                                sh 'ls -lhaFZ iso* && ls -lhaFZ logs*' // DEBUG: After fixing the permissions of files
+                            }
+                        }
+                    }
+                    stage('Publish') {
+                        environment {
+                            AWS_ACCESS_KEY_ID = credentials('almalinux-livemedia-bot-aws-access-key-id')
+                            AWS_SECRET_ACCESS_KEY = credentials('almalinux-livemedia-bot-aws-secret-access-key')
+                            AWS_DEFAULT_REGION = 'us-east-1'
+                        }
+                        steps {
+                            script {
+                                def liveMedia = liveMediaSpec(TYPE)
+                                def iso = "AlmaLinux-9.${MINORVER}-x86_64-Live-${liveMedia.isoName}.iso"
+                                def logFile = "AlmaLinux-9.${MINORVER}-x86_64-Live-${liveMedia.isoName}-logs.tar.zst"
+
+                                sh script: "aws s3 cp iso_${liveMedia.dirName}/${iso} s3://${BUCKET}/${TIMESTAMP}/",
+                                    label: 'Upload the ISO files'
+
+                                sh script: "aws s3api put-object-tagging --bucket $BUCKET --key ${TIMESTAMP}/${iso} --tagging \'TagSet={Key=public,Value=yes}\'",
+                                    label: 'Make uploaded ISO files available for download'
+
+                                sh script: "cd iso_${liveMedia.dirName} && sha256sum ${iso} >> ../CHECKSUM",
+                                    label: 'Calcute the sha256 checksum of ISO'
+
+                                sh script: "tar -cvf $logFile -I 'zstd -T0 -19' logs_${liveMedia.dirName}/",
+                                    label: 'Archive build logs'
+
+                                sh script: "aws s3 cp $logFile s3://${BUCKET}/${TIMESTAMP}/",
+                                    label: 'Upload the log files'
+
+                                sh script: "aws s3api put-object-tagging --bucket $BUCKET --key ${TIMESTAMP}/${logFile} --tagging \'TagSet={Key=public,Value=yes}\'",
+                                    label: 'Make uploaded ISO files available for download'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        stage('UploadChecksums') {
+            environment {
+                AWS_ACCESS_KEY_ID = credentials('almalinux-livemedia-bot-aws-access-key-id')
+                AWS_SECRET_ACCESS_KEY = credentials('almalinux-livemedia-bot-aws-secret-access-key')
+                AWS_DEFAULT_REGION = 'us-east-1'
+            }
+            steps {
+                sh 'cat CHECKSUM'
+                sh "aws s3 cp CHECKSUM s3://${BUCKET}/${TIMESTAMP}/"
+                sh "aws s3api put-object-tagging --bucket $BUCKET --key ${TIMESTAMP}/CHECKSUM --tagging \'TagSet={Key=public,Value=yes}\'"
+            }
+        }
+    }
+    post {
+        success {
+            script {
+                if (params.TYPE_FILTER == 'ALL') {
+                    def msg = """
+**AlmaLinux OS 9.${MINORVER} Live Media Build** `${TIMESTAMP}`
+**CHECKSUM(SHA256):** https://${BUCKET}.s3-accelerate.dualstack.amazonaws.com/${TIMESTAMP}/CHECKSUM
+
+**ISOs:**
+- GNOME: https://${BUCKET}.s3-accelerate.dualstack.amazonaws.com/${TIMESTAMP}/AlmaLinux-9.${MINORVER}-x86_64-Live-GNOME.iso
+- GNOME-Mini: https://${BUCKET}.s3-accelerate.dualstack.amazonaws.com/${TIMESTAMP}/AlmaLinux-9.${MINORVER}-x86_64-Live-GNOME-Mini.iso
+- KDE: https://${BUCKET}.s3-accelerate.dualstack.amazonaws.com/${TIMESTAMP}/AlmaLinux-9.${MINORVER}-x86_64-Live-KDE.iso
+- MATE: https://${BUCKET}.s3-accelerate.dualstack.amazonaws.com/${TIMESTAMP}/AlmaLinux-9.${MINORVER}-x86_64-Live-MATE.iso
+- XFCE: https://${BUCKET}.s3-accelerate.dualstack.amazonaws.com/${TIMESTAMP}/AlmaLinux-9.${MINORVER}-x86_64-Live-XFCE.iso
+
+**Logs:**
+- GNOME: https://${BUCKET}.s3-accelerate.dualstack.amazonaws.com/${TIMESTAMP}/AlmaLinux-9.${MINORVER}-x86_64-Live-GNOME-logs.tar.zst
+- GNOME-Mini: https://${BUCKET}.s3-accelerate.dualstack.amazonaws.com/${TIMESTAMP}/AlmaLinux-9.${MINORVER}-x86_64-Live-GNOME-Mini-logs.tar.zst
+- KDE: https://${BUCKET}.s3-accelerate.dualstack.amazonaws.com/${TIMESTAMP}/AlmaLinux-9.${MINORVER}-x86_64-Live-KDE-logs.tar.zst
+- MATE: https://${BUCKET}.s3-accelerate.dualstack.amazonaws.com/${TIMESTAMP}/AlmaLinux-9.${MINORVER}-x86_64-Live-MATE-logs.tar.zst
+- XFCE: https://${BUCKET}.s3-accelerate.dualstack.amazonaws.com/${TIMESTAMP}/AlmaLinux-9.${MINORVER}-x86_64-Live-XFCE-logs.tar.zst
+"""
+                    echo "$msg"
+                    if (params.NOTIFY) {
+                        mattermostSend channel: "$CHANNEL",
+                        color: 'good',
+                        message: "$msg"
+                    }
+                } else {
+                    def liveMedia = liveMediaSpec(TYPE_FILTER)
+                    def msg = """
+**AlmaLinux OS 9.${MINORVER} Live Media Build** `${TIMESTAMP}`
+**CHECKSUM(SHA256):** https://${BUCKET}.s3-accelerate.dualstack.amazonaws.com/${TIMESTAMP}/CHECKSUM
+
+**ISOs:**
+- ${liveMedia.isoName}: https://${BUCKET}.s3-accelerate.dualstack.amazonaws.com/${TIMESTAMP}/AlmaLinux-9.${MINORVER}-x86_64-Live-${liveMedia.isoName}.iso
+
+**Logs:**
+- ${liveMedia.isoName}: https://${BUCKET}.s3-accelerate.dualstack.amazonaws.com/${TIMESTAMP}/AlmaLinux-9.${MINORVER}-x86_64-Live-${liveMedia.isoName}-logs.tar.zst
+"""
+                    echo "$msg"
+                    if (params.NOTIFY) {
+                        mattermostSend channel: "$CHANNEL",
+                        color: 'good',
+                        message: "$msg"
+                    }
+                }
+            }
+        }
+        cleanup {
+            sh script: 'vagrant destroy -f --no-parallel -g',
+                label: 'Destroy VMs'
+            cleanWs()
+        }
+    }
+}
+
+def liveMediaSpec(type) {
+    def spec = [:]
+
+    switch (type) {
+        case 'GNOME':
+            vm = 'almalinux_9_gnome'
+            ks = 'almalinux-9-live-gnome.ks'
+            dir = 'gnome_9'
+            fname = 'GNOME'
+            id = 'GNOME'
+
+            spec = [
+            vmName: vm,
+            ksFile: ks,
+            dirName: dir,
+            isoName: fname,
+            volId: id
+            ]
+            break
+        case 'GNOME-MINI':
+            vm = 'almalinux_9_gnomemini'
+            ks = 'almalinux-9-live-gnome-mini.ks'
+            dir = 'gnome_mini_9'
+            fname = 'GNOME-Mini'
+            id = 'Mini'
+
+            spec = [
+            vmName: vm,
+            ksFile: ks,
+            dirName: dir,
+            isoName: fname,
+            volId: id
+            ]
+            break
+        case 'KDE':
+            vm = 'almalinux_9_kde'
+            ks = 'almalinux-9-live-kde.ks'
+            dir = 'kde_9'
+            fname = 'KDE'
+            id = 'KDE'
+
+            spec = [
+            vmName: vm,
+            ksFile: ks,
+            dirName: dir,
+            isoName: fname,
+            volId: id
+            ]
+            break
+        case 'XFCE':
+            vm = 'almalinux_9_xfce'
+            ks = 'almalinux-9-live-xfce.ks'
+            dir = 'xfce_9'
+            fname = 'XFCE'
+            id = 'XFCE'
+
+            spec = [
+            vmName: vm,
+            ksFile: ks,
+            dirName: dir,
+            isoName: fname,
+            volId: id
+            ]
+            break
+        case 'MATE':
+            vm = 'almalinux_9_mate'
+            ks = 'almalinux-9-live-mate.ks'
+            dir = 'mate_9'
+            fname = 'MATE'
+            id = 'MATE'
+
+            spec = [
+            vmName: vm,
+            ksFile: ks,
+            dirName: dir,
+            isoName: fname,
+            volId: id
+            ]
+            break
+        default:
+            spec = [
+            vmName: 'unknown',
+            ksFile: 'unknown',
+            dirName: 'unknown',
+            isoName: 'unknown',
+            volId: 'unknown'
+            ]
+            break
+    }
+    return spec
+}
