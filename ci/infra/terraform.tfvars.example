@@ -1,0 +1,5 @@
+project     = "AlmaLinux Live Media"
+environment = "Production"
+user        = "almalinux-livemedia-bot"
+bucket      = "almalinux-live"
+pgp_pub_key = "foo.gpg"

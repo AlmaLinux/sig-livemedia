@@ -1,0 +1,79 @@
+---
+- name: Configure live iso builder
+  hosts: all
+  become: true
+  tasks:
+    - name: Set PoweTools for AlmaLinux OS 8
+      ansible.builtin.set_fact:
+        dev_repo: powertools
+      when: ansible_facts['distribution_major_version'] == '8'
+    - name: Set CRB for AlmaLinux OS 9
+      ansible.builtin.set_fact:
+        dev_repo: crb
+      when: ansible_facts['distribution_major_version'] == '9'
+
+    - name: List of required packages
+      ansible.builtin.set_fact:
+        packages:
+          - anaconda-tui
+          - livecd-tools
+          - lorax
+          - subscription-manager
+          - pykickstart
+          - efibootmgr
+          - efi-filesystem
+          - efi-srpm-macros
+          - efivar-libs
+          - grub2-efi-x64
+          - grub2-efi-x64-cdboot
+          - grub2-tools-efi
+          - shim-x64
+
+    - name: Add required packages for AlmaLinux OS 9
+      ansible.builtin.set_fact:
+        packages: "{{ packages + ['libblockdev-nvme'] }}"
+      when: ansible_facts['distribution_major_version'] == '9'
+
+    - name: Upgrade the system
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest # noqa: package-latest
+        update_cache: true
+      notify:
+        - reboot
+        - remove old packages
+
+    - name: Flush handlers
+      ansible.builtin.meta: flush_handlers
+
+    - name: Enable PowerTools or CRB
+      community.general.ini_file:
+        path: "/etc/yum.repos.d/almalinux-{{ dev_repo }}.repo"
+        section: "{{ dev_repo }}"
+        option: enabled
+        value: 1
+        no_extra_spaces: true
+        mode: "0644"
+
+    - name: Add EPEL
+      ansible.builtin.dnf:
+        name: epel-release
+        state: present
+
+    - name: Install build tools
+      ansible.builtin.dnf:
+        name: "{{ packages }}"
+        state: present
+        update_cache: true
+
+  handlers:
+    - name: Reboot the system
+      ansible.builtin.reboot:
+      listen: "reboot"
+
+    - name: Remove old packages
+      ansible.builtin.command: dnf -y remove --oldinstallonly
+      register: old_pkgs_rm_rslt
+      changed_when: old_pkgs_rm_rslt.rc == 0
+      ignore_errors: true
+      listen: "remove old packages"
