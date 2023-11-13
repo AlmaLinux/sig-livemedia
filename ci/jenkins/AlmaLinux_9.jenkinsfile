@@ -8,7 +8,7 @@ pipeline {
     }
     parameters {
         choice(name: 'TYPE_FILTER', choices: ['ALL', 'GNOME', 'GNOME-MINI', 'KDE', 'MATE', 'XFCE'], description: 'Type of Live Media')
-        string(name: 'MINORVER', defaultValue: '2', description: 'Minor version number of AlmaLinux OS 9', trim: true)
+        string(name: 'MINORVER', defaultValue: '3', description: 'Minor version number of AlmaLinux OS 9', trim: true)
         string(name: 'BUCKET', defaultValue: 'almalinux-live', description: 'Name of AWS S3 bucket', trim: true)
         booleanParam(name: 'NOTIFY', defaultValue: false, description: 'Publish build results on SIG/LiveMedia channel')
         string(name: 'CHANNEL', defaultValue: 'siglivemedia', description: 'Channel name on chat.almalinux.org', trim: true)
