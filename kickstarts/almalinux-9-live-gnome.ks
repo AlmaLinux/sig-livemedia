@@ -1484,11 +1484,11 @@ qemu-kvm-block-rbd
 qemu-kvm-common
 qemu-kvm-core
 qemu-kvm-device-display-virtio-gpu
-qemu-kvm-device-display-virtio-gpu-gl
+# qemu-kvm-device-display-virtio-gpu-gl # Not available on 9.3
 qemu-kvm-device-display-virtio-gpu-pci
-qemu-kvm-device-display-virtio-gpu-pci-gl
+# qemu-kvm-device-display-virtio-gpu-pci-gl # Not available on 9.3
 qemu-kvm-device-display-virtio-vga
-qemu-kvm-device-display-virtio-vga-gl
+# qemu-kvm-device-display-virtio-vga-gl # Not available on 9.3
 qemu-kvm-device-usb-host
 qemu-kvm-device-usb-redirect
 qemu-kvm-docs
