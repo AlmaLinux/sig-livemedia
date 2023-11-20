@@ -420,28 +420,20 @@ chmod +x /usr/share/applications/liveinst.desktop
 mkdir -p /home/liveuser/Desktop /home/liveuser/.config/autostart /home/liveuser/.cache/thumbnails
 cp -a /usr/share/applications/liveinst.desktop /home/liveuser/Desktop/
 
-# Make the welcome screen show up EL8
-  if [ -f /usr/share/anaconda/gnome/rhel-welcome.desktop ]; then
-    # fix log warning in line 152
-    sed -i 's/init(null, null)/init(null)/' /usr/share/anaconda/gnome/rhel-welcome
-    cp /usr/share/anaconda/gnome/rhel-welcome.desktop /usr/share/applications/
-    cp /usr/share/anaconda/gnome/rhel-welcome.desktop ~liveuser/.config/autostart/
-  fi
+# Make the welcome screen show up
+if [ -f /usr/share/anaconda/gnome/fedora-welcome.desktop ]; then
+  mkdir -p ~liveuser/.config/autostart
+  cp /usr/share/anaconda/gnome/fedora-welcome.desktop /usr/share/applications/
+  cp /usr/share/anaconda/gnome/fedora-welcome.desktop ~liveuser/.config/autostart/
+fi
 
-  # Make the welcome screen show up EL9
-  if [ -f /usr/share/anaconda/gnome/fedora-welcome.desktop ]; then
-    # fix log warning in line 152
-    sed -i 's/init(null, null)/init(null)/' /usr/share/anaconda/gnome/fedora-welcome
-    cp /usr/share/anaconda/gnome/fedora-welcome.desktop /usr/share/applications/
-    cp /usr/share/anaconda/gnome/fedora-welcome.desktop ~liveuser/.config/autostart/
-  fi
-  # KDE live install popup not finding the second icon from current location, copy to different location to enable it
-  cp /usr/share/icons/hicolor/scalable/apps/org.fedoraproject.AnacondaInstaller.svg /usr/share/icons/hicolor/48x48/apps/
+# KDE live install popup not finding the second icon from current location, copy to different location to enable it
+cp /usr/share/icons/hicolor/scalable/apps/org.fedoraproject.AnacondaInstaller.svg /usr/share/icons/hicolor/48x48/apps/
 
-  # Copy Anaconda branding in place
-  if [ -d /usr/share/lorax/product/usr/share/anaconda ]; then
-    cp -a /usr/share/lorax/product/* /
-  fi
+# Copy Anaconda branding in place
+if [ -d /usr/share/lorax/product/usr/share/anaconda ]; then
+  cp -a /usr/share/lorax/product/* /
+fi
 
 # Set akonadi backend
 mkdir -p /home/liveuser/.config/akonadi
