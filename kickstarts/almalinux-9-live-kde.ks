@@ -879,7 +879,7 @@ kde-settings-pulseaudio
 kdecoration
 kdegraphics-mobipocket
 kdegraphics-thumbnailers
-kdepim-addons
+# kdepim-addons # Removed to fix a dependency issue on AlmaLinux OS 9.3
 kdepim-runtime
 kdepim-runtime-libs
 kdeplasma-addons
