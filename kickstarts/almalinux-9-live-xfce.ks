@@ -376,24 +376,12 @@ PROFILE_EOF
   # need to move it to anaconda.desktop to make shell happy TODO: Is reuired for XFCE?
   mv /usr/share/applications/liveinst.desktop /usr/share/applications/anaconda.desktop
 
-  # Make the welcome screen show up EL8
-  if [ -f /usr/share/anaconda/gnome/rhel-welcome.desktop ]; then
-    mkdir -p ~liveuser/.config/autostart
-    # fix log warning in line 152
-    sed -i 's/init(null, null)/init(null)/' /usr/share/anaconda/gnome/rhel-welcome
-    sed -i 's/^#User=.*/User=liveuser/' /etc/sddm.conf
-    cp /usr/share/anaconda/gnome/rhel-welcome.desktop /usr/share/applications/
-    cp /usr/share/anaconda/gnome/rhel-welcome.desktop ~liveuser/.config/autostart/
-  fi
-
-  # Make the welcome screen show up EL9
-  if [ -f /usr/share/anaconda/gnome/fedora-welcome.desktop ]; then
-    mkdir -p ~liveuser/.config/autostart
-    # fix log warning in line 152
-    sed -i 's/init(null, null)/init(null)/' /usr/share/anaconda/gnome/fedora-welcome
-    cp /usr/share/anaconda/gnome/fedora-welcome.desktop /usr/share/applications/
-    cp /usr/share/anaconda/gnome/fedora-welcome.desktop ~liveuser/.config/autostart/
-  fi
+# Make the welcome screen show up
+if [ -f /usr/share/anaconda/gnome/fedora-welcome.desktop ]; then
+  mkdir -p ~liveuser/.config/autostart
+  cp /usr/share/anaconda/gnome/fedora-welcome.desktop /usr/share/applications/
+  cp /usr/share/anaconda/gnome/fedora-welcome.desktop ~liveuser/.config/autostart/
+fi
 
   # Copy Anaconda branding in place
   if [ -d /usr/share/lorax/product/usr/share/anaconda ]; then

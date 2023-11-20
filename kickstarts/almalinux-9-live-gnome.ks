@@ -353,12 +353,12 @@ if [ -f /usr/share/applications/liveinst.desktop ]; then
 favorite-apps=['firefox.desktop', 'evolution.desktop', 'rhythmbox.desktop', 'shotwell.desktop', 'org.gnome.Nautilus.desktop', 'anaconda.desktop']
 FOE
 
-  # Make the welcome screen show up
-  if [ -f /usr/share/anaconda/gnome/rhel-welcome.desktop ]; then
-    mkdir -p ~liveuser/.config/autostart
-    cp /usr/share/anaconda/gnome/rhel-welcome.desktop /usr/share/applications/
-    cp /usr/share/anaconda/gnome/rhel-welcome.desktop ~liveuser/.config/autostart/
-  fi
+# Make the welcome screen show up
+if [ -f /usr/share/anaconda/gnome/fedora-welcome.desktop ]; then
+  mkdir -p ~liveuser/.config/autostart
+  cp /usr/share/anaconda/gnome/fedora-welcome.desktop /usr/share/applications/
+  cp /usr/share/anaconda/gnome/fedora-welcome.desktop ~liveuser/.config/autostart/
+fi
 
   # Copy Anaconda branding in place
   if [ -d /usr/share/lorax/product/usr/share/anaconda ]; then
