@@ -424,6 +424,7 @@ almalinux-indexhtml
 almalinux-logos
 almalinux-release
 alsa-lib
+alsa-sof-firmware
 anaconda
 anaconda-install-env-deps
 anaconda-live

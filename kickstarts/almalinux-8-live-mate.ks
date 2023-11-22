@@ -471,6 +471,7 @@ almalinux-logos
 almalinux-release
 alsa-lib
 alsa-plugins-pulseaudio
+alsa-sof-firmware
 alsa-utils
 anaconda-core
 anaconda-gui

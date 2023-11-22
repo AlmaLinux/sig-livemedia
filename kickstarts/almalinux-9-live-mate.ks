@@ -480,6 +480,7 @@ almalinux-logos
 almalinux-release
 almalinux-repos
 alsa-lib
+alsa-sof-firmware
 alsa-ucm
 alsa-utils
 alternatives

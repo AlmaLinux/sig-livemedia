@@ -421,6 +421,7 @@ almalinux-logos
 almalinux-release
 almalinux-repos
 alsa-lib
+alsa-sof-firmware
 alternatives
 anaconda-core
 anaconda-gui
