@@ -16,7 +16,7 @@ firewall --enabled --service=mdns
 url --url=https://atl.mirrors.knownhost.com/almalinux/8/BaseOS/$basearch/os/
 repo --name="appstream" --baseurl=https://atl.mirrors.knownhost.com/almalinux/8/AppStream/$basearch/os/
 repo --name="extras" --baseurl=https://atl.mirrors.knownhost.com/almalinux/8/extras/$basearch/os/
-repo --name="powertools" --baseurl=https://atl.mirrors.knownhost.com/almalinux/8/PowerTools/$basearch/os/
+# repo --name="powertools" --baseurl=https://atl.mirrors.knownhost.com/almalinux/8/PowerTools/$basearch/os/
 repo --name="epel" --baseurl=https://dl.fedoraproject.org/pub/epel/8/Everything/$basearch/
 
 # Network information

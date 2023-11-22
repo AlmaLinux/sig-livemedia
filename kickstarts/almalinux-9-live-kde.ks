@@ -468,6 +468,9 @@ KWALLET_EOL
 chown -R liveuser:liveuser /home/liveuser/
 restorecon -R /home/liveuser/
 
+# enable CRB repo
+dnf config-manager --enable crb
+
 EOF
 
 %end

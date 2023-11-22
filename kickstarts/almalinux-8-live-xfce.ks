@@ -395,6 +395,9 @@ rm -f /etc/xdg/autostart/org.mageia.dnfdragora-updater.desktop
 chown -R liveuser:liveuser /home/liveuser
 restorecon -R /home/liveuser
 
+# enable PowerTools repo
+dnf config-manager --enable powertools
+
 EOF
 
 %end

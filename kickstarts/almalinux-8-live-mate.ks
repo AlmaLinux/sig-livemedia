@@ -436,6 +436,9 @@ fi
 chown -R liveuser:liveuser /home/liveuser/
 restorecon -R /home/liveuser/
 
+# enable PowerTools repo
+dnf config-manager --enable powertools
+
 EOF
 
 %end
