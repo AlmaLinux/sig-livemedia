@@ -421,6 +421,7 @@ almalinux-indexhtml
 almalinux-logos
 almalinux-release
 alsa-lib
+alsa-sof-firmware
 anaconda-core
 anaconda-gui
 anaconda-live
