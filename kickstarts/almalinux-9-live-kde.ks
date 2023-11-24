@@ -968,6 +968,8 @@ kf5-kio-widgets-libs
 kf5-kipi-plugins
 kf5-kipi-plugins-libs
 kf5-kirigami2
+kf5-kirigami2-addons
+kf5-kirigami2-addons-treeview
 kf5-kitemmodels
 kf5-kitemviews
 kf5-kitinerary
