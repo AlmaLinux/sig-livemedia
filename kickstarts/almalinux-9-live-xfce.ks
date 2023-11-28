@@ -1317,6 +1317,7 @@ xdg-utils
 xfce-polkit
 xfce4-appfinder
 xfce4-panel
+xfce4-panel-profiles
 xfce4-power-manager
 xfce4-pulseaudio-plugin
 xfce4-screensaver
