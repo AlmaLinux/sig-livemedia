@@ -381,6 +381,8 @@ if [ -d /usr/share/lorax/product/usr/share/anaconda ]; then
   cp -a /usr/share/lorax/product/* /
 fi
 
+fi
+
 # rebuild schema cache with any overrides we installed
 glib-compile-schemas /usr/share/glib-2.0/schemas
 
@@ -424,7 +426,6 @@ fi
 # make sure to set the right permissions and selinux contexts
 chown -R liveuser:liveuser /home/liveuser/
 restorecon -R /home/liveuser/
-restorecon -R /
 
 EOF
 
