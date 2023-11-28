@@ -428,6 +428,9 @@ restorecon -R /
 
 EOF
 
+# enable CRB repo
+dnf config-manager --enable crb
+
 %end
 
 %packages

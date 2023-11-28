@@ -438,6 +438,9 @@ restorecon -R /home/liveuser/
 
 EOF
 
+# enable PowerTools repo
+dnf config-manager --enable powertools
+
 %end
 
 %packages
