@@ -424,6 +424,7 @@ fi
 # make sure to set the right permissions and selinux contexts
 chown -R liveuser:liveuser /home/liveuser/
 restorecon -R /home/liveuser/
+restorecon -R /
 
 EOF
 
