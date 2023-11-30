@@ -398,6 +398,9 @@ restorecon -R /home/liveuser
 
 EOF
 
+# enable CRB repo
+dnf config-manager --enable crb
+
 %end
 
 %post --nochroot
