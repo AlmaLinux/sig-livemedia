@@ -39,8 +39,7 @@ rootpw rootme
 part / --size=10238
 
 %post
-# Enable sddm since it is disabled by the packager by default
-systemctl enable --force sddm.service
+systemctl enable --force lightdm.service
 
 # FIXME: it'd be better to get this installed from a package
 cat > /etc/rc.d/init.d/livesys << EOF
@@ -320,7 +319,7 @@ touch /etc/machine-id
 
 cat > /etc/sysconfig/desktop <<EOF
 PREFERRED=/usr/bin/startxfce4
-DISPLAYMANAGER=/usr/bin/sddm
+DISPLAYMANAGER=/usr/bin/lightdm
 EOF
 
 cat >> /etc/rc.d/init.d/livesys << EOF
@@ -351,16 +350,35 @@ mkdir -p /home/liveuser/.config/xfce4/xfconf/xfce-perchannel-xml
 cp /etc/xdg/xfce4/panel/default.xml /home/liveuser/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml
 
 # set up autologin for user liveuser
-if [ -f /etc/sddm.conf ]; then
-sed -i 's/^#User=.*/User=liveuser/' /etc/sddm.conf
-sed -i 's/^#Session=.*/Session=xfce.desktop/' /etc/sddm.conf
-else
-cat > /etc/sddm.conf << SDDM_EOF
-[Autologin]
-User=liveuser
-Session=xfce.desktop
-SDDM_EOF
-fi
+cat > /etc/lightdm/lightdm.conf << LDM_EOF
+[LightDM]
+
+[Seat:*]
+user-session=mate
+autologin-user=liveuser
+autologin-user-timeout=0
+autologin-session=mate
+
+[XDMCPServer]
+
+[VNCServer]
+
+LDM_EOF
+
+cat > /etc/lightdm/lightdm-gtk-greeter.conf << SLG_EOF
+[Greeter]
+background=/usr/share/backgrounds/default.png
+background-color=#729fcf
+stretch-background-across-monitors=true
+
+SLG_EOF
+
+# Uncomment line with logo
+cat > /etc/lightdm/slick-greeter.conf << SLK_EOF
+[Greeter]
+logo=
+
+SLK_EOF
 
 mkdir -p /home/liveuser/Desktop
 # make the installer show up, when exits
@@ -574,7 +592,6 @@ gdbm-libs
 gdisk
 gdk-pixbuf2
 gdk-pixbuf2-modules
-gdm
 geany
 geany-libgeany
 geoclue2
@@ -593,21 +610,6 @@ glibmm24
 glib-networking
 glx-utils
 gmp
-gnome-bluetooth
-gnome-bluetooth-libs
-gnome-control-center
-gnome-control-center-filesystem
-gnome-desktop3
-gnome-keyring
-gnome-keyring-pam
-gnome-menus
-gnome-online-accounts
-gnome-session
-gnome-session-wayland-session
-gnome-session-xsession
-gnome-settings-daemon
-gnome-shell
-gnome-themes-standard
 gnupg2
 gnupg2-smime
 gnutls
@@ -997,6 +999,9 @@ libXxf86vm
 libyaml
 libzmf
 libzstd
+lightdm
+lightdm-gobject
+lightdm-gtk
 linux-firmware
 lksctp-tools
 llvm-libs
@@ -1231,7 +1236,6 @@ samba-client-libs
 samba-common
 samba-common-libs
 sbc
-sddm
 sed
 selinux-policy
 selinux-policy-targeted
