@@ -39,6 +39,11 @@ rootpw rootme
 part / --size=10238
 
 %post
+cat > /etc/lightdm/slick-greeter.conf << SLK_EOF
+[Greeter]
+logo=
+SLK_EOF
+
 systemctl enable --force lightdm.service
 
 # FIXME: it'd be better to get this installed from a package
@@ -354,10 +359,10 @@ cat > /etc/lightdm/lightdm.conf << LDM_EOF
 [LightDM]
 
 [Seat:*]
-user-session=mate
+user-session=xfce
 autologin-user=liveuser
 autologin-user-timeout=0
-autologin-session=mate
+autologin-session=xfce
 
 [XDMCPServer]
 
