@@ -496,7 +496,6 @@ NetworkManager-l2tp
 NetworkManager-libnm
 NetworkManager-libreswan
 NetworkManager-openconnect
-NetworkManager-openvpn
 NetworkManager-pptp
 NetworkManager-team
 NetworkManager-tui
@@ -1542,7 +1541,6 @@ openssh-server
 openssl
 openssl-libs
 openssl-pkcs11
-openvpn
 opus
 orc
 os-prober
@@ -1668,7 +1666,6 @@ plasma-nm
 plasma-nm-l2tp
 plasma-nm-openconnect
 plasma-nm-openswan
-plasma-nm-openvpn
 plasma-nm-pptp
 plasma-pa
 plasma-systemmonitor
