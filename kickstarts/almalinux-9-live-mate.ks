@@ -450,8 +450,6 @@ NetworkManager-libreswan
 NetworkManager-libreswan-gnome
 NetworkManager-openconnect
 NetworkManager-openconnect-gnome
-NetworkManager-openvpn
-NetworkManager-openvpn-gnome
 NetworkManager-ovs
 NetworkManager-ppp
 NetworkManager-pptp
@@ -1368,7 +1366,6 @@ openssh-server
 openssl
 openssl-libs
 openssl-pkcs11
-openvpn
 opus
 orc
 orca

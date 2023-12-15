@@ -1122,8 +1122,6 @@ NetworkManager-bluetooth
 NetworkManager-libnm
 NetworkManager-libreswan
 NetworkManager-libreswan-gnome
-NetworkManager-openvpn
-NetworkManager-openvpn-gnome
 NetworkManager-ovs
 NetworkManager-ppp
 NetworkManager-team
@@ -1154,7 +1152,6 @@ openssl-libs
 openssl-pkcs11
 open-vm-tools
 open-vm-tools-desktop
-openvpn
 opus
 orc
 os-prober
