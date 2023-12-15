@@ -36,8 +36,6 @@ clearpart --all --initlabel
 part / --size=10238
 
 %post
-# Enable sddm since it is disabled by the packager by default
-systemctl enable --force sddm.service
 
 # FIXME: it'd be better to get this installed from a package
 cat > /etc/rc.d/init.d/livesys << EOF
@@ -318,7 +316,7 @@ touch /etc/machine-id
 
 cat > /etc/sysconfig/desktop <<EOF
 PREFERRED=/usr/bin/startxfce4
-DISPLAYMANAGER=/usr/bin/sddm
+DISPLAYMANAGER=/usr/sbin/lightdm
 EOF
 
 cat >> /etc/rc.d/init.d/livesys << EOF
@@ -348,17 +346,13 @@ rm -f /etc/xdg/autostart/xfconf-migration-4.6.desktop || :
 mkdir -p /home/liveuser/.config/xfce4/xfconf/xfce-perchannel-xml
 cp /etc/xdg/xfce4/panel/default.xml /home/liveuser/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml
 
-# set up autologin for user liveuser
-if [ -f /etc/sddm.conf ]; then
-sed -i 's/^#User=.*/User=liveuser/' /etc/sddm.conf
-sed -i 's/^#Session=.*/Session=xfce.desktop/' /etc/sddm.conf
-else
-cat > /etc/sddm.conf << SDDM_EOF
-[Autologin]
-User=liveuser
-Session=xfce.desktop
-SDDM_EOF
-fi
+# Configure automatic login for liveuser on LightDM
+cat > /etc/lightdm/lightdm.conf.d/50-live.conf << 'LIGHTDM_EOF'
+[Seat:*]
+user-session=xfce
+autologin-user=liveuser
+autologin-user-timeout=0
+LIGHTDM_EOF
 
 mkdir -p /home/liveuser/Desktop
 # make the installer show up, when exits
@@ -398,6 +392,9 @@ restorecon -R /home/liveuser
 
 EOF
 
+# enable CRB repo
+dnf config-manager --enable crb
+
 %end
 
 %post --nochroot
@@ -412,6 +409,8 @@ fi
 %end
 
 %packages
+@anaconda-tools
+@guest-desktop-agents
 Box2D
 ModemManager
 ModemManager-glib
@@ -437,17 +436,19 @@ almalinux-release
 almalinux-repos
 alsa-lib
 alsa-sof-firmware
+alsa-ucm
+alsa-utils
 alternatives
 anaconda
 anaconda-install-env-deps
 anaconda-live
-@anaconda-tools
 appstream
 appstream-data
 at-spi2-atk
 at-spi2-core
 atk
 atkmm
+atril
 audit
 audit-libs
 augeas-libs
@@ -459,7 +460,10 @@ avahi-glib
 avahi-libs
 basesystem
 bash
+bash-color-prompt
+bash-completion
 blivet-data
+bluez
 bluez-libs
 boost-chrono
 boost-date-time
@@ -469,6 +473,7 @@ boost-locale
 boost-system
 boost-thread
 bubblewrap
+bzip2
 bzip2-libs
 c-ares
 ca-certificates
@@ -555,6 +560,7 @@ file-libs
 filesystem
 findutils
 firefox
+firewall-config
 firewalld
 firewalld-filesystem
 flac-libs
@@ -600,8 +606,6 @@ glibc-langpack-en
 glibmm24
 glx-utils
 gmp
-gnome-menus
-gnome-software
 gnupg2
 gnutls
 gobject-introspection
@@ -613,6 +617,7 @@ google-noto-sans-cjk-ttc-fonts
 google-noto-sans-gurmukhi-fonts
 google-noto-sans-sinhala-vf-fonts
 google-noto-serif-cjk-ttc-fonts
+gparted
 gpgme
 gpgmepp
 graphene
@@ -642,7 +647,6 @@ gtk2
 gtk3
 gtkmm30
 gtksourceview4
-@guest-desktop-agents
 gvfs
 gvfs-client
 gzip
@@ -697,6 +701,7 @@ javapackages-filesystem
 javapackages-tools
 jbigkit-libs
 jomolhari-fonts
+jq
 json-c
 json-glib
 julietaula-montserrat-fonts
@@ -1008,6 +1013,7 @@ libxslt
 libyaml
 libzmf
 libzstd
+lightdm
 linux-firmware
 linux-firmware-whence
 lksctp-tools
@@ -1078,6 +1084,9 @@ nss-softokn
 nss-softokn-freebl
 nss-sysinit
 nss-util
+ntfs-3g
+ntfs-3g-system-compression
+ntfsprogs
 numactl-libs
 oddjob
 oddjob-mkhomedir
@@ -1103,10 +1112,13 @@ ostree-libs
 p11-kit
 p11-kit-server
 p11-kit-trust
+p7zip
+p7zip-plugins
 paktype-naskh-basic-fonts
 pam
 pango
 pangomm
+parole
 parted
 passwd
 pavucontrol
@@ -1123,6 +1135,7 @@ pipewire-alsa
 pipewire-jack-audio-connection-kit
 pipewire-libs
 pipewire-pulseaudio
+pipewire-utils
 pixman
 plymouth
 plymouth-core-libs
@@ -1211,6 +1224,7 @@ readline
 realmd
 redland
 restore
+ristretto
 rmt
 rootfiles
 rpm
@@ -1226,8 +1240,6 @@ rsyslog-logrotate
 rtkit
 sac
 satyr
-sddm
-sddm-x11
 sed
 selinux-policy
 selinux-policy-targeted
@@ -1283,6 +1295,7 @@ tzdata
 tzdata-java
 udisks2
 unzip
+unzip
 upower
 usermode
 userspace-rcu
@@ -1315,14 +1328,18 @@ xdg-desktop-portal-gtk
 xdg-user-dirs-gtk
 xdg-utils
 xfce-polkit
+xfce4-about
 xfce4-appfinder
+xfce4-notifyd
 xfce4-panel
+xfce4-panel-profiles
 xfce4-power-manager
 xfce4-pulseaudio-plugin
 xfce4-screensaver
 xfce4-screenshooter
 xfce4-session
 xfce4-settings
+xfce4-taskmanager
 xfce4-terminal
 xfconf
 xfdesktop

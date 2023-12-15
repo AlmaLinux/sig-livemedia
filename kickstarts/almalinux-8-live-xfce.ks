@@ -39,13 +39,6 @@ rootpw rootme
 part / --size=10238
 
 %post
-cat > /etc/lightdm/slick-greeter.conf << SLK_EOF
-[Greeter]
-logo=
-SLK_EOF
-
-systemctl enable --force lightdm.service
-
 # FIXME: it'd be better to get this installed from a package
 cat > /etc/rc.d/init.d/livesys << EOF
 #!/bin/bash
@@ -324,7 +317,7 @@ touch /etc/machine-id
 
 cat > /etc/sysconfig/desktop <<EOF
 PREFERRED=/usr/bin/startxfce4
-DISPLAYMANAGER=/usr/bin/lightdm
+DISPLAYMANAGER=/usr/sbin/lightdm
 EOF
 
 cat >> /etc/rc.d/init.d/livesys << EOF
@@ -354,36 +347,13 @@ rm -f /etc/xdg/autostart/xfconf-migration-4.6.desktop || :
 mkdir -p /home/liveuser/.config/xfce4/xfconf/xfce-perchannel-xml
 cp /etc/xdg/xfce4/panel/default.xml /home/liveuser/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml
 
-# set up autologin for user liveuser
-cat > /etc/lightdm/lightdm.conf << LDM_EOF
-[LightDM]
-
+# Configure automatic login for liveuser on LightDM
+cat > /etc/lightdm/lightdm.conf.d/50-live.conf << 'LIGHTDM_EOF'
 [Seat:*]
 user-session=xfce
 autologin-user=liveuser
 autologin-user-timeout=0
-autologin-session=xfce
-
-[XDMCPServer]
-
-[VNCServer]
-
-LDM_EOF
-
-cat > /etc/lightdm/lightdm-gtk-greeter.conf << SLG_EOF
-[Greeter]
-background=/usr/share/backgrounds/default.png
-background-color=#729fcf
-stretch-background-across-monitors=true
-
-SLG_EOF
-
-# Uncomment line with logo
-cat > /etc/lightdm/slick-greeter.conf << SLK_EOF
-[Greeter]
-logo=
-
-SLK_EOF
+LIGHTDM_EOF
 
 mkdir -p /home/liveuser/Desktop
 # make the installer show up, when exits
@@ -420,6 +390,9 @@ restorecon -R /home/liveuser
 
 EOF
 
+# enable PowerTools repo
+dnf config-manager --enable powertools
+
 %end
 
 %post --nochroot
@@ -434,6 +407,17 @@ fi
 %end
 
 %packages
+@anaconda-tools
+@guest-desktop-agents
+GConf2
+ModemManager
+ModemManager-glib
+NetworkManager
+NetworkManager-libnm
+NetworkManager-team
+NetworkManager-tui
+NetworkManager-wifi
+Thunar
 abattis-cantarell-fonts
 accountsservice
 accountsservice-libs
@@ -448,15 +432,17 @@ almalinux-logos
 almalinux-release
 alsa-lib
 alsa-sof-firmware
+alsa-ucm
+alsa-utils
 anaconda
 anaconda-install-env-deps
 anaconda-live
-@anaconda-tools
 aspell
-atk
-atkmm
 at-spi2-atk
 at-spi2-core
+atk
+atkmm
+atril
 audit
 audit-libs
 authselect
@@ -466,8 +452,11 @@ avahi-glib
 avahi-libs
 basesystem
 bash
+bash-color-prompt
+bash-completion
 bind-export-libs
 biosdevname
+bluez
 bluez
 bluez-libs
 bluez-obexd
@@ -481,12 +470,13 @@ boost-system
 boost-thread
 brotli
 bubblewrap
+bzip2
 bzip2-libs
+c-ares
 ca-certificates
 cairo
 cairo-gobject
 cairomm
-c-ares
 checkpolicy
 cheese-libs
 chkconfig
@@ -497,10 +487,10 @@ clutter
 clutter-gst3
 clutter-gtk
 cogl
+color-filesystem
 colord
 colord-gtk
 colord-libs
-color-filesystem
 copy-jdk-configs
 coreutils
 coreutils-common
@@ -553,9 +543,9 @@ dracut-network
 dracut-squash
 e2fsprogs
 e2fsprogs-libs
-efibootmgr
 efi-filesystem
 efi-srpm-macros
+efibootmgr
 efivar-libs
 elfutils-debuginfod-client
 elfutils-default-yama-scope
@@ -574,6 +564,7 @@ file-libs
 filesystem
 findutils
 firefox
+firewall-config
 firewalld
 firewalld-filesystem
 flac-libs
@@ -590,7 +581,6 @@ fuse-libs
 fwupd
 garcon
 gawk
-GConf2
 gcr
 gdbm
 gdbm-libs
@@ -607,12 +597,12 @@ geolite2-country
 gettext
 gettext-libs
 gjs
+glib-networking
 glib2
 glibc
 glibc-all-langpacks
 glibc-common
 glibmm24
-glib-networking
 glx-utils
 gmp
 gnupg2
@@ -625,30 +615,19 @@ google-droid-sans-fonts
 google-noto-cjk-fonts-common
 google-noto-fonts-common
 google-noto-sans-cjk-ttc-fonts
+google-noto-sans-khmer-fonts
 google-noto-sans-lisu-fonts
 google-noto-sans-mandaic-fonts
 google-noto-sans-meetei-mayek-fonts
+google-noto-sans-myanmar-fonts
+google-noto-sans-oriya-fonts
 google-noto-sans-sinhala-fonts
 google-noto-sans-tagalog-fonts
 google-noto-sans-tai-tham-fonts
 google-noto-sans-tai-viet-fonts
-google-noto-serif-cjk-ttc-fonts
-google-noto-sans-khmer-fonts
-google-noto-sans-myanmar-fonts
-google-noto-sans-oriya-fonts
 google-noto-sans-tibetan-fonts
-lohit-assamese-fonts
-lohit-bengali-fonts
-lohit-devanagari-fonts
-lohit-gujarati-fonts
-lohit-gurmukhi-fonts
-lohit-kannada-fonts
-lohit-malayalam-fonts
-lohit-marathi-fonts
-lohit-nepali-fonts
-lohit-odia-fonts
-lohit-tamil-fonts
-lohit-telugu-fonts
+google-noto-serif-cjk-ttc-fonts
+gparted
 gpgme
 gpgmepp
 graphite2
@@ -669,12 +648,11 @@ gstreamer1
 gstreamer1-plugins-base
 gstreamer1-plugins-good
 gstreamer1-plugins-good-gtk
+gtk-update-icon-cache
 gtk2
 gtk3
 gtkmm30
 gtksourceview3
-gtk-update-icon-cache
-@guest-desktop-agents
 gzip
 hardlink
 harfbuzz
@@ -709,8 +687,8 @@ irqbalance
 iso-codes
 isomd5sum
 iw
-iwl1000-firmware
 iwl100-firmware
+iwl1000-firmware
 iwl105-firmware
 iwl135-firmware
 iwl2000-firmware
@@ -729,6 +707,7 @@ jasper-libs
 java-1.8.0-openjdk-headless
 javapackages-filesystem
 jbigkit-libs
+jq
 json-c
 json-glib
 kbd
@@ -749,6 +728,32 @@ krb5-libs
 lame-libs
 lcms2
 less
+libICE
+libSM
+libX11
+libX11-common
+libX11-xcb
+libXScrnSaver
+libXau
+libXcomposite
+libXcursor
+libXdamage
+libXdmcp
+libXext
+libXfixes
+libXfont2
+libXft
+libXi
+libXinerama
+libXmu
+libXrandr
+libXrender
+libXres
+libXt
+libXtst
+libXv
+libXxf86misc
+libXxf86vm
 libabw
 libacl
 libaio
@@ -822,7 +827,6 @@ libgusb
 libgweather
 libibverbs
 libical
-libICE
 libicu
 libidn2
 libiec61883
@@ -911,7 +915,6 @@ libsepol
 libshout
 libsigc++20
 libsigsegv
-libSM
 libsmartcols
 libsmbclient
 libsmbios
@@ -965,53 +968,39 @@ libwnck3
 libwpd
 libwpg
 libwps
-libX11
-libX11-common
-libX11-xcb
-libXau
 libxcb
-libXcomposite
 libxcrypt
-libXcursor
-libXdamage
-libXdmcp
-libXext
 libxfce4ui
 libxfce4util
-libXfixes
-libXfont2
-libXft
-libXi
-libXinerama
 libxkbcommon
 libxkbcommon-x11
 libxkbfile
 libxklavier
 libxml2
 libxmlb
-libXmu
-libXrandr
-libXrender
-libXres
-libXScrnSaver
 libxshmfence
 libxslt
-libXt
-libXtst
-libXv
-libXxf86misc
-libXxf86vm
 libyaml
 libzmf
 libzstd
 lightdm
-lightdm-gobject
-lightdm-gtk
 linux-firmware
 lksctp-tools
 llvm-libs
 lmdb-libs
 logrotate
+lohit-assamese-fonts
+lohit-bengali-fonts
+lohit-devanagari-fonts
+lohit-gujarati-fonts
+lohit-gurmukhi-fonts
+lohit-kannada-fonts
+lohit-malayalam-fonts
+lohit-marathi-fonts
+lohit-nepali-fonts
+lohit-odia-fonts
+lohit-tamil-fonts
+lohit-telugu-fonts
 lpsolve
 lshw
 lsscsi
@@ -1035,13 +1024,11 @@ memtest86+
 mesa-dri-drivers
 mesa-filesystem
 mesa-libEGL
-mesa-libgbm
 mesa-libGL
+mesa-libgbm
 mesa-libglapi
 microcode_ctl
 mobile-broadband-provider-info
-ModemManager
-ModemManager-glib
 mokutil
 mousepad
 mozilla-filesystem
@@ -1058,11 +1045,6 @@ ncurses-base
 ncurses-libs
 neon
 nettle
-NetworkManager
-NetworkManager-libnm
-NetworkManager-team
-NetworkManager-tui
-NetworkManager-wifi
 newt
 nftables
 nm-connection-editor
@@ -1073,7 +1055,12 @@ nss-softokn
 nss-softokn-freebl
 nss-sysinit
 nss-util
+ntfs-3g
+ntfs-3g-system-compression
+ntfsprogs
 numactl-libs
+open-vm-tools
+open-vm-tools-desktop
 openjpeg2
 openldap
 openssh
@@ -1083,8 +1070,6 @@ openssh-server
 openssl
 openssl-libs
 openssl-pkcs11
-open-vm-tools
-open-vm-tools-desktop
 opus
 orc
 os-prober
@@ -1092,10 +1077,13 @@ ostree-libs
 p11-kit
 p11-kit-server
 p11-kit-trust
+p7zip
+p7zip-plugins
 pakchois
 pam
 pango
 pangomm
+parole
 parted
 passwd
 pavucontrol
@@ -1105,7 +1093,6 @@ pcre
 pcre2
 pcre2-utf16
 perl-Carp
-perl-constant
 perl-Data-Dumper
 perl-Digest
 perl-Digest-MD5
@@ -1116,20 +1103,14 @@ perl-File-Path
 perl-File-Temp
 perl-Getopt-Long
 perl-HTTP-Tiny
-perl-interpreter
 perl-IO
 perl-IO-Socket-IP
 perl-IO-Socket-SSL
-perl-libnet
-perl-libs
-perl-macros
 perl-MIME-Base64
 perl-Mozilla-CA
 perl-Net-SSLeay
-perl-parent
 perl-PathTools
 perl-Pod-Escapes
-perl-podlators
 perl-Pod-Perldoc
 perl-Pod-Simple
 perl-Pod-Usage
@@ -1140,17 +1121,25 @@ perl-Term-ANSIColor
 perl-Term-Cap
 perl-Text-ParseWords
 perl-Text-Tabs+Wrap
+perl-Time-Local
+perl-URI
+perl-Unicode-Normalize
+perl-constant
+perl-interpreter
+perl-libnet
+perl-libs
+perl-macros
+perl-parent
+perl-podlators
 perl-threads
 perl-threads-shared
-perl-Time-Local
-perl-Unicode-Normalize
-perl-URI
 pigz
 pinentry
 pinentry-gtk
 pipewire
-pipewire0.2-libs
 pipewire-libs
+pipewire-utils
+pipewire0.2-libs
 pixman
 pkgconf
 pkgconf-m4
@@ -1175,7 +1164,6 @@ pulseaudio
 pulseaudio-libs
 pulseaudio-libs-glib2
 pulseaudio-module-bluetooth
-python36
 python3-audit
 python3-cairo
 python3-chardet
@@ -1218,6 +1206,7 @@ python3-slip-dbus
 python3-syspurpose
 python3-unbound
 python3-urllib3
+python36
 qt5-qtbase
 qt5-qtbase-common
 qt5-qtbase-gui
@@ -1228,6 +1217,7 @@ rdma-core
 readline
 redland
 rest
+ristretto
 rng-tools
 rootfiles
 rpm
@@ -1273,7 +1263,6 @@ systemd-udev
 taglib
 tar
 teamd
-Thunar
 thunar-volman
 thunderbird
 timedatex
@@ -1288,14 +1277,15 @@ tzdata-java
 udisks2
 unbound-libs
 unzip
+unzip
 upower
 util-linux
 vim-minimal
 vino
 virt-what
 volume_key-libs
-vte291
 vte-profile
+vte291
 wavpack
 webkit2gtk3
 webkit2gtk3-jsc
@@ -1312,9 +1302,13 @@ xdg-desktop-portal
 xdg-desktop-portal-gtk
 xdg-user-dirs-gtk
 xdg-utils
+xfce-polkit
+xfce4-about
 xfce4-about
 xfce4-appfinder
+xfce4-notifyd
 xfce4-panel
+xfce4-panel-profiles
 xfce4-power-manager
 xfce4-pulseaudio-plugin
 xfce4-screensaver
@@ -1322,8 +1316,8 @@ xfce4-screenshooter
 xfce4-session
 xfce4-settings
 xfce4-taskmanager
+xfce4-taskmanager
 xfce4-terminal
-xfce-polkit
 xfconf
 xfdesktop
 xfsprogs
@@ -1336,10 +1330,10 @@ xmlsec1-openssl
 xorg-x11-drv-fbdev
 xorg-x11-drv-libinput
 xorg-x11-drv-vesa
-xorg-x11-server-common
-xorg-x11-server-utils
 xorg-x11-server-Xorg
 xorg-x11-server-Xwayland
+xorg-x11-server-common
+xorg-x11-server-utils
 xorg-x11-xauth
 xorg-x11-xinit
 xorg-x11-xkb-utils
