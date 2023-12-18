@@ -1067,6 +1067,7 @@ mate-settings-daemon
 mate-system-log
 mate-system-monitor
 mate-terminal
+mate-themes
 mate-user-admin
 mate-user-guide
 mate-utils-common
