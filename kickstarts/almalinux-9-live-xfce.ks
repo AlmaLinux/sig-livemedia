@@ -99,6 +99,22 @@ PREFERRED=/usr/bin/startxfce4
 DISPLAYMANAGER=/usr/sbin/lightdm
 EOF
 
+# add bookmarks for popular folders on Thunar’s Places
+cat > /var/lib/livesys/livesys-session-late-extra <<EOF
+#!/bin/bash
+
+gtk_user_path=/home/liveuser/.config/gtk-3.0
+mkdir -p -m 0755 \$gtk_user_path
+chown liveuser:liveuser \$gtk_user_path
+for favorite in Documents Downloads Music Pictures Videos; do
+  # That's good idea to check whether /home/liveuser/\$favorite exists, 
+  # but it does not at the time livesys-session-late-extra runs
+  grep \$favorite \$gtk_user_path/bookmarks >/dev/null 2>&1 || echo "file:///home/liveuser/\$favorite" >> \$gtk_user_path/bookmarks
+done
+chown liveuser:liveuser \$gtk_user_path/bookmarks
+EOF
+chmod +x /var/lib/livesys/livesys-session-late-extra
+
 # enable CRB repo
 dnf config-manager --enable crb
 
