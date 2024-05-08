@@ -190,6 +190,7 @@ xfce4-notifyd
 xfce4-screenshooter
 xfce4-taskmanager
 xdg-user-dirs-gtk
+xdg-utils
 
 # @xfce-apps packages
 claws-mail
