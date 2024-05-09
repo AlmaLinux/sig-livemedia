@@ -247,14 +247,6 @@ fuse
 # minimization
 -hplip
 
-# Remove OpenVPN (#59)
--openvpn
--NetworkManager-openvpn*
--plasma-nm-openvpn
-
-# Do not install the kdepim-addons package because of a dependency issue on AlmaLinux OS 9.3 builds.
--kdepim-addons
-
 # Add alsa-sof-firmware to all images PR #51
 alsa-sof-firmware
 %end
