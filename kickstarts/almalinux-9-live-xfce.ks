@@ -118,6 +118,13 @@ chmod +x /var/lib/livesys/livesys-session-late-extra
 # enable CRB repo
 dnf config-manager --enable crb
 
+# Workaround to add openvpn user and group in case they didn't added during
+# openvpn package installation
+getent group openvpn &>/dev/null || groupadd -r openvpn
+getent passwd openvpn &>/dev/null || \
+    /usr/sbin/useradd -r -g openvpn -s /sbin/nologin -c OpenVPN \
+        -d /etc/openvpn openvpn
+
 %end
 
 %post --nochroot
@@ -245,6 +252,10 @@ parole
 -aspell-*                   # dictionaries are big
 -xfce4-sensors-plugin
 -xfce4-eyes-plugin
+
+# OpenVPN
+openvpn
+NetworkManager-openvpn
 
 # minimization
 -hplip

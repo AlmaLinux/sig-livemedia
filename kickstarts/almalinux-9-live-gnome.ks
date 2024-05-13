@@ -91,6 +91,14 @@ touch /etc/machine-id
 
 # set livesys session type
 sed -i 's/^livesys_session=.*/livesys_session="gnome"/' /etc/sysconfig/livesys
+
+# Workaround to add openvpn user and group in case they didn't added during
+# openvpn package installation
+getent group openvpn &>/dev/null || groupadd -r openvpn
+getent passwd openvpn &>/dev/null || \
+    /usr/sbin/useradd -r -g openvpn -s /sbin/nologin -c OpenVPN \
+        -d /etc/openvpn openvpn
+
 %end
 
 # Packages
@@ -153,6 +161,11 @@ toolbox
 unoconv
 uresourced
 whois
+
+# OpenVPN
+openvpn
+NetworkManager-openvpn
+NetworkManager-openvpn-gnome
 
 # minimization
 -hplip
