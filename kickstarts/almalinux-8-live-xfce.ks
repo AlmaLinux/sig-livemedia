@@ -131,6 +131,13 @@ if [ "$(uname -i)" = "i386" -o "$(uname -i)" = "x86_64" ]; then
   cp /usr/bin/livecd-iso-to-disk $LIVE_ROOT/LiveOS
 fi
 
+# Workaround to add openvpn user and group in case they didn't added during
+# openvpn package installation
+getent group openvpn &>/dev/null || groupadd -r openvpn
+getent passwd openvpn &>/dev/null || \
+    /usr/sbin/useradd -r -g openvpn -s /sbin/nologin -c OpenVPN \
+        -d /etc/openvpn openvpn
+
 %end
 
 %packages
@@ -231,6 +238,10 @@ parole
 -aspell-*                   # dictionaries are big
 -xfce4-sensors-plugin
 -xfce4-eyes-plugin
+
+# OpenVPN
+openvpn
+NetworkManager-openvpn
 
 # minimization
 -hplip

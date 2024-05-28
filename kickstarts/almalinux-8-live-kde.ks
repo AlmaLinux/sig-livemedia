@@ -172,6 +172,13 @@ sed -i 's/^livesys_session=.*/livesys_session="kde"/' /etc/sysconfig/livesys
 # enable PowerTools repo
 dnf config-manager --enable powertools
 
+# Workaround to add openvpn user and group in case they didn't added during
+# openvpn package installation
+getent group openvpn &>/dev/null || groupadd -r openvpn
+getent passwd openvpn &>/dev/null || \
+    /usr/sbin/useradd -r -g openvpn -s /sbin/nologin -c OpenVPN \
+        -d /etc/openvpn openvpn
+
 %end
 
 %post --nochroot
@@ -250,11 +257,6 @@ fuse
 
 # minimization
 -hplip
-
-# Remove OpenVPN (#59)
--openvpn
--NetworkManager-openvpn*
--plasma-nm-openvpn
 
 # Do not install the kdepim-addons package because of a dependency issue on AlmaLinux OS 9.3 builds.
 -kdepim-addons
