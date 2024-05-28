@@ -102,6 +102,13 @@ sed -i 's/^livesys_session=.*/livesys_session="mate"/' /etc/sysconfig/livesys
 # enable PowerTools repo
 dnf config-manager --enable powertools
 
+# Workaround to add openvpn user and group in case they didn't added during
+# openvpn package installation
+getent group openvpn &>/dev/null || groupadd -r openvpn
+getent passwd openvpn &>/dev/null || \
+    /usr/sbin/useradd -r -g openvpn -s /sbin/nologin -c OpenVPN \
+        -d /etc/openvpn openvpn
+
 %end
 
 %packages
@@ -276,9 +283,9 @@ tigervnc
 # minimization
 -hplip
 
-# Remove OpenVPN (#59)
--openvpn
--NetworkManager-openvpn*
+# OpenVPN
+openvpn
+NetworkManager-openvpn
 
 # Add alsa-sof-firmware to all images PR #51
 alsa-sof-firmware
