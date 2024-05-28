@@ -20,8 +20,6 @@ repo --name="appstream" --baseurl=https://atl.mirrors.knownhost.com/almalinux/9/
 repo --name="extras" --baseurl=https://atl.mirrors.knownhost.com/almalinux/9/extras/$basearch/os/
 repo --name="crb" --baseurl=https://atl.mirrors.knownhost.com/almalinux/9/CRB/$basearch/os/
 repo --name="epel" --baseurl=https://dl.fedoraproject.org/pub/epel/9/Everything/$basearch/
-# Install 'mate-applets' package from EPEL testing repository. This should be later removed
-repo --name="epel-testing" --baseurl=https://dl.fedoraproject.org/pub/epel/testing/9/Everything/$basearch/ --includepkgs=mate-applets*
 
 # Firewall configuration
 firewall --enabled --service=mdns
