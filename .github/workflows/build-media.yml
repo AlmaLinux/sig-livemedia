@@ -1,0 +1,334 @@
+name: Build Live images
+
+on:
+  workflow_dispatch:
+    inputs:
+
+      GNOME:
+        description: 'GNOME'
+        required: true
+        type: boolean
+        default: true
+
+      GNOME-Mini:
+        description: 'GNOME-Mini'
+        required: true
+        type: boolean
+        default: true
+
+      KDE:
+        description: 'KDE'
+        required: true
+        type: boolean
+        default: true
+
+      MATE:
+        description: 'MATE'
+        required: true
+        type: boolean
+        default: true
+
+      XFCE:
+        description: 'XFCE'
+        required: true
+        type: boolean
+        default: true
+
+      version_major:
+        description: 'AlmaLinux major version'
+        required: true
+        default: '9'
+        type: choice
+        options:
+          - 9
+          - 8
+
+      store_as_artifact:
+        description: "Store ISO to the workflow Artifacts"
+        required: true
+        type: boolean
+        default: false
+
+      upload_to_s3:
+        description: "Upload to S3 Bucket"
+        required: true
+        type: boolean
+        default: true
+
+      notify_mattermost:
+        description: "Send notification to Mattermost"
+        required: true
+        type: boolean
+        default: false
+
+jobs:
+  build-media:
+    name: AlmaLinux ${{ inputs.version_major }} ${{ matrix.image_types }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Set image types matrix based on boolean inputs.* with true value
+        image_types: ${{ fromJSON(format('["{0}", "{1}", "{2}", "{3}", "{4}"]', ( inputs.GNOME && 'GNOME' ), ( inputs.GNOME-Mini && 'GNOME-Mini' ), ( inputs.KDE && 'KDE' ), ( inputs.MATE && 'MATE' ), ( inputs.XFCE && 'XFCE' ) )) }}
+        exclude:
+          - image_types: 'false'
+
+    steps:
+
+    - uses: actions/checkout@v4
+      name: Checkout ${{ github.action_repository }}
+
+    - name: Prepare AlmaLinux Minor version number
+      run: |
+        case ${{ inputs.version_major }} in
+        8)
+            version_minor="10" ;;
+        9)
+            version_minor="4"  ;;
+        10)
+            version_minor="0" ;;
+        *)
+            echo "Almalinux ${{ inputs.version_major }} is not supported!" && false
+        esac
+        echo "version_minor=${version_minor}" >> $GITHUB_ENV
+
+        # [Debug]
+        echo "version_minor=${version_minor}"
+
+    - name: Prepare other stuff
+      run: |
+        # Name of repository to enable (PowerTools/CRB)
+        dnf_crb_repo="PowerTools"
+        if [ "${{ inputs.version_major }}" = "9" ]; then
+          dnf_crb_repo="CRB"
+        fi
+        echo "dnf_crb_repo=${dnf_crb_repo}" >> $GITHUB_ENV
+
+        # List of the packages to prepare build env
+        need_pkgs="lorax anaconda zstd"
+        if [ "${{ inputs.version_major }}" = "9" ]; then
+          need_pkgs="${need_pkgs} libblockdev-nvme"
+        fi
+        echo "need_pkgs=${need_pkgs}" >> $GITHUB_ENV
+
+        # Verify that CPU supports hardware virtualization
+        echo -n "Number of vmx|svm CPUs: " && grep -E -c '(vmx|svm)' /proc/cpuinfo
+
+        # Set ENV variable of for vagrant's config.vm.box
+        cp -av ci/vagrant/Vagrantfile ./
+        echo vm_box='almalinux/${{ inputs.version_major }}' > .env
+
+        # Kickstart file name
+        image_type=${{ matrix.image_types }}
+        image_type="${image_type,,}"
+        kickstart="almalinux-${{ inputs.version_major }}-live-${image_type}.ks"
+        echo "kickstart=${kickstart}" >> $GITHUB_ENV
+
+        # Livemedia creator results directory
+        livemedia_resultdir="/sig-livemedia"
+        echo "livemedia_resultdir=${livemedia_resultdir}" >> $GITHUB_ENV
+
+        # Volume ID
+        volid="AlmaLinux-${{ inputs.version_major }}_${{ env.version_minor }}-x86_64-Live-${{ matrix.image_types }}"
+        echo ${{ matrix.image_types }} | grep -i mini >/dev/null && volid="AlmaLinux-${{ inputs.version_major }}_${{ env.version_minor }}-x86_64-Live-Mini"
+        echo "volid=${volid}" >> $GITHUB_ENV
+
+        # Results file base name
+        results_name="AlmaLinux-${{ inputs.version_major }}.${{ env.version_minor }}-x86_64-Live-${{ matrix.image_types }}"
+        echo "results_name=${results_name}" >> $GITHUB_ENV
+
+        # date+time stamp
+        date_stamp=$(date -u '+%Y%m%d%H%M%S')
+        echo "date_stamp=${date_stamp}" >> $GITHUB_ENV
+
+        # Results path on host
+        results_path="${{ github.workspace }}/results"
+        mkdir -p ${results_path}
+        echo "results_path=${results_path}" >> $GITHUB_ENV
+
+    - name: Create media creator script
+      run: |
+        cat <<'EOF'>./livemedia-creator.sh
+        livemedia-creator \
+        --ks=/vagrant/kickstarts/${{ env.kickstart }} \
+        --no-virt \
+        --resultdir ${{ env.livemedia_resultdir }}/iso_${{ matrix.image_types}} \
+        --project "AlmaLinux Live" \
+        --make-iso \
+        --iso-only \
+        --iso-name "${{ env.results_name }}.iso" \
+        --releasever 9.${{ env.version_minor }} \
+        --volid "${{ env.volid }}" \
+        --nomacboot \
+        --logfile ${{ env.livemedia_resultdir }}/logs/livemedia.log \
+        --anaconda-arg="--product AlmaLinux"
+        EOF
+
+    - name: Install KVM Packages and Start libvirt
+      run: |
+        sudo apt-get -y update
+        sudo apt-get -y install qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils
+        sudo systemctl enable --now libvirtd
+        sudo adduser "$(id -un)" libvirt
+        sudo adduser "$(id -un)" kvm
+
+    - name: Enable KVM group perms
+      run: |
+        echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+        sudo udevadm control --reload-rules
+        sudo udevadm trigger --name-match=kvm
+
+    - name: Install the Vagrant and need plugins
+      run: |
+        sudo apt-get -y install vagrant
+
+        sudo vagrant plugin install vagrant-reload
+        sudo vagrant plugin install vagrant-env
+        sudo vagrant plugin install vagrant-scp
+
+    - name: Install Libvirt Plugins
+      run: |
+        sudo cp /etc/apt/sources.list /etc/apt/sources.list."$(date +"%F")"
+        sudo sed -i -e '/^# deb-src.*universe$/s/# //g' /etc/apt/sources.list
+        sudo apt-get -y update
+
+        sudo apt-get -y install nfs-kernel-server
+        sudo systemctl enable --now nfs-server
+
+        sudo apt-get -y build-dep vagrant ruby-libvirt
+        sudo apt-get -y install ebtables dnsmasq-base
+        sudo apt-get -y install libxslt-dev libxml2-dev libvirt-dev zlib1g-dev ruby-dev
+        sudo vagrant plugin install vagrant-libvirt
+
+    - name: Create 'mnt' Storage Pull
+      run: |
+        sudo virsh pool-define-as --name mnt --type dir --target /mnt
+        sudo virsh pool-autostart mnt
+        sudo virsh pool-start mnt
+        sudo virsh pool-list
+
+    - name: Run vagrant up
+      run: sudo vagrant up almalinux
+
+    - name: Prepare build infrastructure
+      run: |
+        # Install need packages
+        enable_repo=${{ env.dnf_crb_repo }}
+        sudo vagrant ssh almalinux -c "sudo dnf install -y --enablerepo=${enable_repo,,} ${{ env.need_pkgs }}"
+
+        # Create file-system and mount additional disk inside the VM
+        sudo vagrant ssh almalinux -c "sudo mkfs.xfs -f /dev/vdb"
+        sudo vagrant ssh almalinux -c "sudo sh -c 'mkdir -p ${{ env.livemedia_resultdir }}; mount /dev/vdb ${{ env.livemedia_resultdir }}'"
+
+    - name: Build media
+      run: |
+        sudo vagrant ssh almalinux -c "sudo bash /vagrant/livemedia-creator.sh"
+
+    - name: Get media
+      if: inputs.store_as_artifact || inputs.upload_to_s3
+      id: get-media
+      run: |
+        sudo vagrant scp almalinux:${{ env.livemedia_resultdir }}/iso_${{ matrix.image_types}}/${{ env.results_name }}.iso ${{ env.results_path }}/
+        # Compute SHA256 digest for the .iso
+        cd ${{ env.results_path }} && sha256sum ${{ env.results_name }}.iso > ${{ env.results_name }}.iso.CHECKSUM
+
+    - name: Collect and prepare logs
+      if: success() || failure()
+      run: |
+        # Pack and compress logs in the VM
+        sudo vagrant ssh almalinux -c "sudo sh -c 'cd ${{ env.livemedia_resultdir }}; tar -cvf ${{ env.results_name }}-logs.tar logs/'"
+        sudo vagrant ssh almalinux -c "sudo sh -c 'cd ${{ env.livemedia_resultdir }}; zstd -T0 -19 ${{ env.results_name }}-logs.tar -o ${{ env.results_name }}-logs.tar.zst'"
+
+        # Get logs into the host
+        sudo vagrant scp almalinux:${{ env.livemedia_resultdir }}/${{ env.results_name }}-logs.tar* ${{ env.results_path }}/
+
+    - uses: actions/upload-artifact@v4
+      name: Store logs as artifact
+      id: logs-artifact
+      if: success() || failure()
+      with:
+        name: AlmaLinux-${{ inputs.version_major }}.${{ env.version_minor }}-x86_64-Live-${{ matrix.image_types }}-logs.tar
+        path: ${{ env.results_path }}/*.tar
+
+    - uses: actions/upload-artifact@v4
+      name: Store CHECKSUM as artifact
+      id: checksum-artifact
+      if: steps.get-media.outcome == 'success' && inputs.store_as_artifact
+      with:
+        name: "${{ env.results_name }}.iso.CHECKSUM"
+        path: ${{ env.results_path }}/${{ env.results_name }}.iso.CHECKSUM
+
+    - uses: actions/upload-artifact@v4
+      name: Store ISO as artifact
+      id: iso-artifact
+      if: steps.get-media.outcome == 'success' && inputs.store_as_artifact
+      with:
+        name: "${{ env.results_name }}.iso"
+        compression-level: 1
+        path: ${{ env.results_path }}/${{ env.results_name }}.iso
+
+    - name: Configure AWS credentials
+      if: steps.get-media.outcome == 'success' && inputs.upload_to_s3
+      uses: aws-actions/configure-aws-credentials@v4.0.2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Publish to S3 Bucket and put object tagging with aws CLI
+      if: steps.get-media.outcome == 'success' && inputs.upload_to_s3
+      run: |
+        cd ${{ env.results_path }}
+        for object in ${{ env.results_name }}.iso ${{ env.results_name }}-logs.tar.zst ${{ env.results_name }}.iso.CHECKSUM; do
+          aws s3 cp ${object} s3://${{ vars.AWS_S3_BUCKET }}/${{ env.date_stamp }}/
+          aws s3api put-object-tagging --bucket ${{ vars.AWS_S3_BUCKET }} --key ${{ env.date_stamp }}/${object} --tagging 'TagSet={Key=public,Value=yes}'
+        done
+
+    - name: Put S3 Bucket download URLs
+      if: steps.get-media.outcome == 'success' && inputs.upload_to_s3
+      uses: actions/github-script@v7
+      with:
+        result-encoding: string
+        script: |
+          core.summary
+              .addHeading('S3 Bucket download URLs', '4')
+              .addLink('${{ env.results_name }}.iso.CHECKSUM', 'https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.date_stamp }}/${{ env.results_name }}.iso.CHECKSUM')
+              .addBreak()
+              .addLink('${{ env.results_name }}.iso', 'https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.date_stamp }}/${{ env.results_name }}.iso')
+              .addBreak()
+              .addLink('${{ env.results_name }}-logs.tar.zst', 'https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.date_stamp }}/${{ env.results_name }}-logs.tar.zst')
+              .write()
+
+    - name: Send notification to Mattermost (AWS S3 links)
+      uses: mattermost/action-mattermost-notify@master
+      if: steps.get-media.outcome == 'success' && inputs.upload_to_s3 && inputs.notify_mattermost
+      with:
+        MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
+        MATTERMOST_CHANNEL: ${{ vars.MATTERMOST_CHANNEL }}
+        MATTERMOST_USERNAME: ${{ github.triggering_actor }}
+        TEXT: |
+          **AlmaLinux OS 9.${{ env.version_minor }} Live Media Build** `${{ env.date_stamp }}` generated by the GitHub [Action](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          **CHECKSUM(SHA256):** https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.date_stamp }}/${{ env.results_name }}.iso.CHECKSUM
+
+          **ISO:**
+          - ${{ matrix.image_types }}: https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.date_stamp }}/${{ env.results_name }}.iso
+
+          **Logs:**
+          - ${{ matrix.image_types }}: https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.date_stamp }}/${{ env.results_name }}-logs.tar.zst
+
+    - name: Send notification to Mattermost (Artifacts)
+      uses: mattermost/action-mattermost-notify@master
+      if: steps.get-media.outcome == 'success' && inputs.store_as_artifact && inputs.notify_mattermost && ! inputs.upload_to_s3
+      with:
+        MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
+        MATTERMOST_CHANNEL: ${{ vars.MATTERMOST_CHANNEL }}
+        MATTERMOST_USERNAME: ${{ github.triggering_actor }}
+        TEXT: |
+          **AlmaLinux OS 9.${{ env.version_minor }} Live Media Build** `${{ env.date_stamp }}` generated by the GitHub [Action](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          **CHECKSUM(SHA256) [zipped]:** ${{ steps.checksum-artifact.outputs.artifact-url }}
+
+          **ISO [zipped]:**
+          - ${{ matrix.image_types }}: ${{ steps.iso-artifact.outputs.artifact-url }}
+
+          **Logs [zipped]:**
+          - ${{ matrix.image_types }}: ${{ steps.logs-artifact.outputs.artifact-url }}
