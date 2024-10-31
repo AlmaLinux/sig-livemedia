@@ -13,11 +13,11 @@ lang en_US.UTF-8
 firewall --enabled --service=mdns
 
 # Repos
-url --url=https://kitten.repo.almalinux.org/10-kitten/BaseOS/x86_64_v2/os/
-repo --name="appstream" --baseurl=https://kitten.repo.almalinux.org/10-kitten/AppStream/x86_64_v2/os/
-repo --name="extras" --baseurl=https://kitten.repo.almalinux.org/10-kitten/extras-common/x86_64_v2/os/
-repo --name="crb" --baseurl=https://kitten.repo.almalinux.org/10-kitten/CRB/x86_64_v2/os/
-
+url --url=https://atl.mirrors.knownhost.com/almalinux/9/BaseOS/$basearch/os/
+repo --name="appstream" --baseurl=https://atl.mirrors.knownhost.com/almalinux/9/AppStream/$basearch/os/
+repo --name="extras" --baseurl=https://atl.mirrors.knownhost.com/almalinux/9/extras/$basearch/os/
+repo --name="crb" --baseurl=https://atl.mirrors.knownhost.com/almalinux/9/CRB/$basearch/os/
+repo --name="epel" --baseurl=https://dl.fedoraproject.org/pub/epel/9/Everything/$basearch/
 
 # Network information
 network --activate --bootproto=dhcp --device=link --onboot=on
@@ -119,7 +119,7 @@ anaconda-live
 -sdubby
 
 # Need aajohan-comfortaa-fonts for the SVG rnotes images
-#aajohan-comfortaa-fonts
+aajohan-comfortaa-fonts
 
 # Without this, initramfs generation during live image creation fails: #1242586
 dracut-live
@@ -130,30 +130,44 @@ glibc-all-langpacks
 # provide the livesys scripts
 livesys-scripts
 
-# Mandatory to build media with livemedia-creator
-memtest86+
-
-# firefox
-#@internet-browser
-firefox
+# libreoffice group
+@office-suite
 
 # Workstation environment group
-@^workstation-product-environment
-
-# Workstation specific
--@workstation-product
-
-# GNOME specific
+@core
 @gnome-desktop
-
-# OpenVPN
-#openvpn
-#NetworkManager-openvpn
-#NetworkManager-openvpn-gnome
+@standard
+@base-x
+@fonts
+@guest-desktop-agents
+@hardware-support
+@multimedia
+@networkmanager-submodules
+@print-client
 
 # Exclude unwanted packages from @anaconda-tools group
 -gfs2-utils
 -reiserfs-utils
+
+# Workstation specific
+bash-color-prompt
+exfatprogs
+fpaste
+iptstate
+nss-mdns
+ntfs-3g
+ntfsprogs
+policycoreutils-python-utils
+psmisc
+python3-dnf-plugin-system-upgrade
+toolbox
+uresourced
+whois
+
+# OpenVPN
+openvpn
+NetworkManager-openvpn
+NetworkManager-openvpn-gnome
 
 # minimization
 -hplip

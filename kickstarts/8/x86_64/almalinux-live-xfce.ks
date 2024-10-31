@@ -1,42 +1,44 @@
-#version=DEVEL
+# AlmaLinux Live Media (Beta - experimental), with optional install option.
+# Build: sudo livecd-creator --cache=~/livecd-creator/package-cache -c almalinux-8-live-xfce.ks -f AlmaLinux-8-Live-XFCE
 # X Window System configuration information
 xconfig  --startxonboot
 # Keyboard layouts
 keyboard 'us'
-# Root password
-rootpw --plaintext rootme
-# System language
-lang en_US.UTF-8
-# Shutdown after installation
-shutdown
+
 # System timezone
 timezone US/Eastern
-# Network information
-network  --bootproto=dhcp --device=link --activate
-
-# Repos
-url --url=https://kitten.repo.almalinux.org/10-kitten/BaseOS/$basearch/os/
-repo --name="appstream" --baseurl=https://kitten.repo.almalinux.org/10-kitten/AppStream/$basearch/os/
-repo --name="extras" --baseurl=https://kitten.repo.almalinux.org/10-kitten/extras-common/$basearch/os/
-repo --name="crb" --baseurl=https://kitten.repo.almalinux.org/10-kitten/CRB/$basearch/os/
-repo --name="epel" --baseurl=https://dl.fedoraproject.org/pub/epel/10/Everything/$basearch/
-
+# System language
+lang en_US.UTF-8
 # Firewall configuration
 firewall --enabled --service=mdns
+
+# Repos
+url --url=https://atl.mirrors.knownhost.com/almalinux/8/BaseOS/$basearch/os/
+repo --name="appstream" --baseurl=https://atl.mirrors.knownhost.com/almalinux/8/AppStream/$basearch/os/
+repo --name="extras" --baseurl=https://atl.mirrors.knownhost.com/almalinux/8/extras/$basearch/os/
+repo --name="powertools" --baseurl=https://atl.mirrors.knownhost.com/almalinux/8/PowerTools/$basearch/os/
+repo --name="epel" --baseurl=https://dl.fedoraproject.org/pub/epel/8/Everything/$basearch/
+
+# Network information
+network --activate --bootproto=dhcp --device=link --onboot=on
+
 # SELinux configuration
 selinux --enforcing
 
 # System services
 services --disabled="sshd" --enabled="NetworkManager,ModemManager"
+
+# livemedia-creator modifications.
+shutdown
 # System bootloader configuration
 bootloader --location=none
-# Partition clearing information
+# Clear blank disks or all existing partitions
 clearpart --all --initlabel
+rootpw rootme
 # Disk partitioning information
 part / --size=10238
 
 %post
-
 # Enable livesys services
 systemctl enable livesys.service
 systemctl enable livesys-late.service
@@ -87,9 +89,6 @@ systemctl disable network
 rm -f /etc/machine-id
 touch /etc/machine-id
 
-# set livesys session type
-sed -i 's/^livesys_session=.*/livesys_session="xfce"/' /etc/sysconfig/livesys
-
 # xfce configuration
 
 # create /etc/sysconfig/desktop (needed for installation)
@@ -107,7 +106,7 @@ gtk_user_path=/home/liveuser/.config/gtk-3.0
 mkdir -p -m 0755 \$gtk_user_path
 chown liveuser:liveuser \$gtk_user_path
 for favorite in Documents Downloads Music Pictures Videos; do
-  # That's good idea to check whether /home/liveuser/\$favorite exists, 
+  # That's good idea to check whether /home/liveuser/\$favorite exists,
   # but it does not at the time livesys-session-late-extra runs
   grep \$favorite \$gtk_user_path/bookmarks >/dev/null 2>&1 || echo "file:///home/liveuser/\$favorite" >> \$gtk_user_path/bookmarks
 done
@@ -115,15 +114,11 @@ chown liveuser:liveuser \$gtk_user_path/bookmarks
 EOF
 chmod +x /var/lib/livesys/livesys-session-late-extra
 
-# enable CRB repo
-dnf config-manager --enable crb
+# set livesys session type
+sed -i 's/^livesys_session=.*/livesys_session="xfce"/' /etc/sysconfig/livesys
 
-# Workaround to add openvpn user and group in case they didn't added during
-# openvpn package installation
-getent group openvpn &>/dev/null || groupadd -r openvpn
-getent passwd openvpn &>/dev/null || \
-    /usr/sbin/useradd -r -g openvpn -s /sbin/nologin -c OpenVPN \
-        -d /etc/openvpn openvpn
+# enable PowerTools repo
+dnf config-manager --enable powertools
 
 %end
 
@@ -131,10 +126,17 @@ getent passwd openvpn &>/dev/null || \
 # cp $INSTALL_ROOT/usr/share/licenses/*-release/* $LIVE_ROOT/
 
 # only works on x86, x86_64
-if [ "$(uname -i)" = "i386" -o "$(uname -i)" = "x86_64" ]; then
+if [ "$(uname -m)" = "i386" -o "$(uname -m)" = "x86_64" ]; then
   if [ ! -d $LIVE_ROOT/LiveOS ]; then mkdir -p $LIVE_ROOT/LiveOS ; fi
   cp /usr/bin/livecd-iso-to-disk $LIVE_ROOT/LiveOS
 fi
+
+# Workaround to add openvpn user and group in case they didn't added during
+# openvpn package installation
+getent group openvpn &>/dev/null || groupadd -r openvpn
+getent passwd openvpn &>/dev/null || \
+    /usr/sbin/useradd -r -g openvpn -s /sbin/nologin -c OpenVPN \
+        -d /etc/openvpn openvpn
 
 %end
 
@@ -151,7 +153,6 @@ anaconda-live
 @anaconda-tools
 # Anaconda has a weak dep on this and we don't want it on livecds, see
 # https://fedoraproject.org/wiki/Changes/RemoveDeviceMapperMultipathFromWorkstationLiveCD
--fcoe-utils
 -sdubby
 
 # Need aajohan-comfortaa-fonts for the SVG rnotes images
@@ -199,20 +200,6 @@ xfce4-taskmanager
 xdg-user-dirs-gtk
 
 # @xfce-apps packages
-claws-mail
-claws-mail-plugins-archive
-claws-mail-plugins-att-remover
-claws-mail-plugins-attachwarner
-claws-mail-plugins-fetchinfo
-claws-mail-plugins-mailmbox
-claws-mail-plugins-newmail
-claws-mail-plugins-notification
-claws-mail-plugins-pgp
-claws-mail-plugins-rssyl
-claws-mail-plugins-smime
-claws-mail-plugins-spam-report
-claws-mail-plugins-tnef
-claws-mail-plugins-vcalendar
 geany
 gparted
 mousepad
@@ -220,11 +207,10 @@ pidgin
 ristretto
 seahorse
 transmission
-xarchiver
 xfce4-clipman-plugin
 xfce4-dict-plugin
 
-# @xfce-extra-plugins
+# @xfce-extra-plugins packages
 xfce4-cpugraph-plugin
 xfce4-eyes-plugin
 xfce4-fsguard-plugin

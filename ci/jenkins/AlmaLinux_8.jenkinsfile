@@ -220,7 +220,7 @@ def liveMediaSpec(type) {
     switch (type) {
         case 'GNOME':
             vm = 'almalinux_8_gnome'
-            ks = 'almalinux-8-live-gnome.ks'
+            ks = '8/x86_64/almalinux-live-gnome.ks'
             dir = 'gnome_8'
             fname = 'GNOME'
             id = 'GNOME'
@@ -235,7 +235,7 @@ def liveMediaSpec(type) {
             break
         case 'GNOME-MINI':
             vm = 'almalinux_8_gnomemini'
-            ks = 'almalinux-8-live-gnome-mini.ks'
+            ks = '8/x86_64/almalinux-live-gnome-mini.ks'
             dir = 'gnome_mini_8'
             fname = 'GNOME-Mini'
             id = 'Mini'
@@ -250,7 +250,7 @@ def liveMediaSpec(type) {
             break
         case 'KDE':
             vm = 'almalinux_8_kde'
-            ks = 'almalinux-8-live-kde.ks'
+            ks = '8/x86_64/almalinux-live-kde.ks'
             dir = 'kde_8'
             fname = 'KDE'
             id = 'KDE'
@@ -265,7 +265,7 @@ def liveMediaSpec(type) {
             break
         case 'XFCE':
             vm = 'almalinux_8_xfce'
-            ks = 'almalinux-8-live-xfce.ks'
+            ks = '8/x86_64/almalinux-live-xfce.ks'
             dir = 'xfce_8'
             fname = 'XFCE'
             id = 'XFCE'
@@ -280,7 +280,7 @@ def liveMediaSpec(type) {
             break
         case 'MATE':
             vm = 'almalinux_8_mate'
-            ks = 'almalinux-8-live-mate.ks'
+            ks = '8/x86_64/almalinux-live-mate.ks'
             dir = 'mate_8'
             fname = 'MATE'
             id = 'MATE'

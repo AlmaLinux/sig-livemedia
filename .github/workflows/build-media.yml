@@ -68,340 +68,245 @@ on:
         default: false
 
 jobs:
-  build-media:
-    name: ${{ matrix.release_variant }} ${{ matrix.image_types }}
+  init-data:
+    name: Initialize common data
+    runs-on: ubuntu-latest
+    outputs:
+      time_stamp: ${{ steps.time-stamp.outputs.time_stamp }}
+    steps:
+      - name: Date+time stamp
+        id: time-stamp
+        run: |
+          # date+time stamp, YYYYMMDDhhmmss
+          time_stamp=$(date -u '+%Y%m%d%H%M%S')
+          echo "time_stamp=${time_stamp}" >> $GITHUB_OUTPUT
+
+  build-x86_64:
+    name: ${{ matrix.version }} ${{ matrix.arch }} ${{ matrix.image_type }}
+    needs: [init-data]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         # Set image types matrix based on boolean inputs.* with true value
-        image_types: ${{ fromJSON(format('["{0}", "{1}", "{2}", "{3}", "{4}"]', ( inputs.GNOME && 'GNOME' ), ( inputs.GNOME-Mini && 'GNOME-Mini' ), ( inputs.KDE && 'KDE' ), ( inputs.MATE && 'MATE' ), ( inputs.XFCE && 'XFCE' ) )) }}
-        release_variant: ${{ fromJSON(format('["{0}"]', ( inputs.version_major == '10-kitten' && '10-kitten", "10-kitten-x86_64_v2' || inputs.version_major ) )) }}
+        image_type: ${{ fromJSON(format('["{0}", "{1}", "{2}", "{3}", "{4}"]', ( inputs.GNOME && 'GNOME' ), ( inputs.GNOME-Mini && 'GNOME-Mini' ), ( inputs.KDE && 'KDE' ), ( inputs.MATE && 'MATE' ), ( inputs.XFCE && 'XFCE' ) )) }}
+        version: ${{ fromJSON(format('["{0}"]', inputs.version_major)) }}
+        arch: [x86_64, x86_64_v2]
         exclude:
-          - image_types: 'false'
-          - release_variant: '10-kitten-x86_64_v2'
-            image_types: 'KDE'
-          - release_variant: '10-kitten-x86_64_v2'
-            image_types: 'MATE'
-          - release_variant: '10-kitten-x86_64_v2'
-            image_types: 'XFCE'
-          # TODO: these excludes need to be later removed
-          - release_variant: '10-kitten'
-            image_types: 'KDE'
-          - release_variant: '10-kitten'
-            image_types: 'MATE'
-          - release_variant: '10-kitten'
-            image_types: 'XFCE'
+          - image_type: 'false'
+          - version: 8
+            arch: x86_64_v2
+          - version: 9
+            arch: x86_64_v2
+          # TODO: the excludes below should be removed when '10-kitten' provides need packages
+          - version: 10-kitten
+            arch: x86_64_v2
+            image_type: KDE
+          - version: 10-kitten
+            arch: x86_64_v2
+            image_type: MATE
+          - version: 10-kitten
+            arch: x86_64_v2
+            image_type: XFCE
+          # TODO: the excludes below should be removed when EPEL for 10 provides need packages
+          - version: 10-kitten
+            arch: x86_64
+            image_type: KDE
+          - version: 10-kitten
+            arch: x86_64
+            image_type: MATE
+          - version: 10-kitten
+            arch: x86_64
+            image_type: XFCE
+    env:
+      RUNNER: github-hosted
+      TIME_STAMP: ${{ needs.init-data.outputs.time_stamp }}
+      RESULT_DIR: /sig-livemedia
 
     steps:
+      - name: Checkout ${{ github.action_repository }}
+        uses: actions/checkout@v4
 
-    - uses: actions/checkout@v4
-      name: Checkout ${{ github.action_repository }}
+      - name: Install KVM Packages and Start libvirt
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils
+          sudo systemctl enable --now libvirtd
+          sudo adduser "$(id -un)" libvirt
+          sudo adduser "$(id -un)" kvm
 
-    - name: Prepare envirounment variables
-      run: |
-        # date stamp, YYYYMMDD
-        date_stamp=$(date -u '+%Y%m%d')
+      - name: Enable KVM group perms
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
 
-        # Various environment variables
-        code_name_var=                                            # For the "AlmaLinux OS" string, empty or ' Kitten'
-        livemedia_creator_opts=                                   # livemedia-creator additional option(s)
-        arch=x86_64                                               # Arch, 'x86_64' or 'x86_64_v2'
-        dnf_crb_repo="CRB"                                        # YUM repository to enable, 'CRB' or 'PowerTools'
-        image_type=${{ matrix.image_types }}
-        need_pkgs="lorax lorax-templates-almalinux anaconda zstd"
-        vm_box='almalinux/${{ inputs.version_major }}'            # Vagrant image name, like 'almalinux/8', ...
+      - name: Install the Vagrant and need plugins
+        run: |
+          sudo apt-get -y install vagrant
 
-        case ${{ matrix.release_variant }} in
-          8)
-            version_minor=".10"
-            releasever=${{ inputs.version_major }}${version_minor}
-            results_name="AlmaLinux-${releasever}-${arch}-Live-${{ matrix.image_types }}"
-            volid="AlmaLinux-${releasever//./_}-${arch}-Live"
-            kickstart="almalinux-${{ inputs.version_major }}-live-${image_type,,}.ks"
-            livemedia_creator_opts='--anaconda-arg="--product AlmaLinux"'
-            dnf_crb_repo="PowerTools"
-            ;;
-          9)
-            version_minor=".4"
-            releasever=${{ inputs.version_major }}${version_minor}
-            results_name="AlmaLinux-${releasever}-${arch}-Live-${{ matrix.image_types }}"
-            volid="AlmaLinux-${releasever//./_}-${arch}-Live"
-            kickstart="almalinux-${{ inputs.version_major }}-live-${image_type,,}.ks"
-            need_pkgs="${need_pkgs} libblockdev-nvme"
-            ;;
-          10)
-            version_minor=".0"
-            releasever=${{ inputs.version_major }}${version_minor}
-            results_name="AlmaLinux-${releasever}-${arch}-Live-${{ matrix.image_types }}"
-            volid="AlmaLinux-${releasever//./_}-${arch}"
-            kickstart="almalinux-${{ inputs.version_major }}-live-${image_type,,}.ks"
-            need_pkgs="${need_pkgs} libblockdev-nvme"
-            ;;
-          10-kitten)
-            version_minor=
-            releasever=10
-            code_name_var=" Kitten"
-            results_name="AlmaLinux-Kitten-10-${date_stamp}.${{ inputs.iteration }}-${arch}-Live-${{ matrix.image_types }}"
-            volid="AlmaLinux-${releasever}-${arch}"
-            kickstart="almalinux-${{ inputs.version_major }}-live-${image_type,,}.ks"
-            need_pkgs="${need_pkgs} libblockdev-nvme"
+          sudo vagrant plugin install vagrant-reload
+          sudo vagrant plugin install vagrant-env
+          sudo vagrant plugin install vagrant-scp
+
+      - name: Install Libvirt Plugins
+        run: |
+          sudo cp /etc/apt/sources.list /etc/apt/sources.list."$(date +"%F")"
+          sudo sed -i -e '/^# deb-src.*universe$/s/# //g' /etc/apt/sources.list
+          sudo apt-get -y update
+
+          sudo apt-get -y install nfs-kernel-server
+          sudo systemctl enable --now nfs-server
+
+          sudo apt-get -y build-dep vagrant ruby-libvirt
+          sudo apt-get -y install ebtables dnsmasq-base
+          sudo apt-get -y install libxslt-dev libxml2-dev libvirt-dev zlib1g-dev ruby-dev
+          sudo vagrant plugin install vagrant-libvirt
+
+      - name: Create 'mnt' Storage Pull
+        run: |
+          sudo virsh pool-define-as --name mnt --type dir --target /mnt
+          sudo virsh pool-autostart mnt
+          sudo virsh pool-start mnt
+          sudo virsh pool-list
+
+      - name: Run vagrant up
+        run: |
+          vm_box='almalinux/${{ inputs.version_major }}'
+          # TODO: use official Vagrant images when available
+          if [ "${{ inputs.version_major }}" = "10-kitten" ]; then
             vm_box='lkhn/almalinux-kitten'
-            ;;
-          10-kitten-x86_64_v2)
-            version_minor=
-            releasever=10
-            arch=x86_64_v2
-            code_name_var=" Kitten"
-            results_name="AlmaLinux-Kitten-10-${date_stamp}.${{ inputs.iteration }}-${arch}-Live-${{ matrix.image_types }}"
-            volid="AlmaLinux-${releasever}-${arch}"
-            kickstart="almalinux-${{ inputs.version_major }}-${arch}-live-${image_type,,}.ks"
-            need_pkgs="${need_pkgs} libblockdev-nvme"
-            vm_box='lkhn/almalinux-kitten-x86-64-v2'
-            ;;
-          *)
-            echo "Almalinux ${{ inputs.version_major }} is not supported!" && false
-            ;;
-        esac
+            [ "${{ matrix.arch }}" = "x86_64_v2" ] && vm_box='lkhn/almalinux-kitten-x86-64-v2'
+          fi
+          echo vm_box=${vm_box} > .env
 
-        # Minor version
-        echo "version_minor=${version_minor}" >> $GITHUB_ENV
+          cp -av ci/vagrant/Vagrantfile ./
+          sudo vagrant up --no-tty almalinux
 
-        # AlmaLinux name
-        echo "code_name_var=${code_name_var}" >> $GITHUB_ENV
+      - name: Extend disk space on ${{ env.RESULT_DIR }}
+        run: |
+          # Create file-system and mount additional disk inside the VM
+          sudo vagrant ssh almalinux -c "sudo mkfs.xfs -f /dev/vdb"
+          sudo vagrant ssh almalinux -c "sudo sh -c 'mkdir -p ${{ env.RESULT_DIR }}; mount /dev/vdb ${{ env.RESULT_DIR }}'"
 
-        # Release version full
-        echo "releasever=${releasever}" >> $GITHUB_ENV
+      - uses: ./.github/actions/shared-steps
+        name: ${{ matrix.version }} ${{ matrix.arch }} ${{ matrix.image_type }}
+        with:
+          image_type: ${{ matrix.image_type }}
+          version_major: ${{ inputs.version_major }}
+          arch: ${{ matrix.arch }}
+          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_S3_BUCKET: ${{ vars.AWS_S3_BUCKET }}
+          MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
+          MATTERMOST_CHANNEL: ${{ vars.MATTERMOST_CHANNEL }}
+          iteration: ${{ inputs.iteration }}
+          store_as_artifact: ${{ inputs.store_as_artifact }}
+          upload_to_s3: ${{ inputs.upload_to_s3 }}
+          notify_mattermost: ${{ inputs.notify_mattermost }}
 
-        # Name of repository to enable (PowerTools/CRB)
-        echo "dnf_crb_repo=${dnf_crb_repo}" >> $GITHUB_ENV
 
-        # List of the packages to prepare build env
-        echo "need_pkgs=${need_pkgs}" >> $GITHUB_ENV
+  start-aarch64-runner:
+    name: ${{ inputs.version_major != '8' && format('Runner for {0} {1} {2}', inputs.version_major, matrix.arch, matrix.image_type) || format('{0} aarch64 runner [EXCLUDED]', inputs.version_major) }}
+    runs-on: ubuntu-latest
+    needs: [init-data]
+    strategy:
+      fail-fast: false
+      matrix:
+        # Set image types matrix based on boolean inputs.* with true value
+        image_type: ${{ fromJSON(format('["{0}", "{1}", "{2}", "{3}", "{4}"]', ( inputs.GNOME && 'GNOME' ), ( inputs.GNOME-Mini && 'GNOME-Mini' ), ( inputs.KDE && 'KDE' ), ( inputs.MATE && 'MATE' ), ( inputs.XFCE && 'XFCE' ) )) }}
+        version: ${{ fromJSON(format('["{0}"]', inputs.version_major)) }}
+        arch: [aarch64]
+        exclude:
+          - image_type: 'false'
+          - version: 8
+            arch: aarch64
+          # TODO: the excludes below should be removed when EPEL for 10 provides need packages
+          - version: 10-kitten
+            arch: aarch64
+            image_type: KDE
+          - version: 10-kitten
+            arch: aarch64
+            image_type: MATE
+          - version: 10-kitten
+            arch: aarch64
+            image_type: XFCE
 
-        # livemedia-creator additional options
-        echo "livemedia_creator_opts=${livemedia_creator_opts}" >> $GITHUB_ENV
+    steps:
+      - name: Setup and start the runner
+        if: ${{ inputs.version_major != '8' }}
+        id: start-ec2-runner
+        uses: NextChapterSoftware/ec2-action-builder@v1.7
+        with:
+          github_token: ${{ secrets.GIT_HUB_TOKEN }}
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_region: ${{ secrets.AWS_REGION }}
+          ec2_ami_id: ${{ secrets[format('EC2_AMI_ID_AL{0}',  ( matrix.version == '10-kitten' && '10_KITTEN' || matrix.version))] }}
+          ec2_subnet_id: ${{ secrets.EC2_SUBNET_ID}}
+          ec2_security_group_id: ${{ secrets.EC2_SECURITY_GROUP_ID }}
 
-        # Architecture
-        echo "arch=${arch}" >> $GITHUB_ENV
+          ec2_instance_type: t4g.medium       # 2 vCPU and 4 GiM Memory
+          ec2_root_disk_size_gb: "24"         # override default size which is too small for images
+          ec2_root_disk_ebs_class: "gp3"      # use faster and cheeper storage instead of default 'gp2'
+          ec2_instance_ttl: 60                # Optional (default is 60 minutes)
+          ec2_spot_instance_strategy: None    # Other options are: SpotOnly, BestEffort, MaxPerformance
+          ec2_instance_tags: >                # Required for IAM role resource permission scoping
+            [
+                {"Key": "Project", "Value": "GitHub Actions Self-hosted Runners"}
+            ]
 
-        # Kickstart file name
-        echo "kickstart=${kickstart}" >> $GITHUB_ENV
+  build-aarch64:
+    name: ${{ inputs.version_major != '8' && format('{0} {1} {2}', inputs.version_major, matrix.arch, matrix.image_type) || format('{0} aarch64 [EXCLUDED]', inputs.version_major) }}
+    runs-on: ${{ inputs.version_major != '8' && github.run_id || 'ubuntu-latest' }}
+    if: ${{ always() && contains(join(needs.start-aarch64-runner.result, ','), 'success') }}
+    needs: [init-data, start-aarch64-runner]
+    strategy:
+      fail-fast: false
+      matrix:
+        # Set image types matrix based on boolean inputs.* with true value
+        image_type: ${{ fromJSON(format('["{0}", "{1}", "{2}", "{3}", "{4}"]', ( inputs.GNOME && 'GNOME' ), ( inputs.GNOME-Mini && 'GNOME-Mini' ), ( inputs.KDE && 'KDE' ), ( inputs.MATE && 'MATE' ), ( inputs.XFCE && 'XFCE' ) )) }}
+        version: ${{ fromJSON(format('["{0}"]', inputs.version_major)) }}
+        arch: [aarch64]
+        exclude:
+          - image_type: 'false'
+          - version: 8
+            arch: aarch64
+          # TODO: the excludes below should be removed when EPEL for 10 provides need packages
+          - version: 10-kitten
+            arch: aarch64
+            image_type: KDE
+          - version: 10-kitten
+            arch: aarch64
+            image_type: MATE
+          - version: 10-kitten
+            arch: aarch64
+            image_type: XFCE
+    env:
+      RUNNER: self-hosted
+      TIME_STAMP: ${{ needs.init-data.outputs.time_stamp }}
+      RESULT_DIR: /sig-livemedia
 
-        # Livemedia creator results directory
-        livemedia_resultdir="/sig-livemedia"
-        echo "livemedia_resultdir=${livemedia_resultdir}" >> $GITHUB_ENV
+    steps:
+      - name: Checkout ${{ github.action_repository }}
+        if: inputs.version_major != '8'
+        uses: actions/checkout@v4
 
-        # Volume ID
-        if [[ ${{ matrix.image_types }} = *'Mini'* ]]; then
-          volid="${volid}-Mini"
-        else
-          volid="${volid}-${{ matrix.image_types }}"
-        fi
-        echo "volid=${volid}" >> $GITHUB_ENV
-
-        # Results file base name
-        echo "results_name=${results_name}" >> $GITHUB_ENV
-
-        # date+time stamp, YYYYMMDDhhmmss
-        time_stamp=$(date -u '+%Y%m%d%H%M%S')
-        echo "time_stamp=${time_stamp}" >> $GITHUB_ENV
-
-        # Results path on host
-        results_path="${{ github.workspace }}/results"
-        mkdir -p ${results_path}
-        echo "results_path=${results_path}" >> $GITHUB_ENV
-
-        # Set ENV variable of for vagrant's config.vm.box
-        cp -av ci/vagrant/Vagrantfile ./
-        echo vm_box=${vm_box} > .env
-
-        echo -e "[Debug]\nKickstart file: ${kickstart}\nVolume ID: ${volid}\nISO name: ${results_name}.iso\n"
-
-    - name: Create media creator script
-      run: |
-        cat <<'EOF'>./livemedia-creator.sh
-        livemedia-creator \
-        --ks=/vagrant/kickstarts/${{ env.kickstart }} \
-        --no-virt \
-        --resultdir ${{ env.livemedia_resultdir }}/iso_${{ matrix.image_types}} \
-        --project "Live AlmaLinux${{ env.code_name_var }}" \
-        --make-iso \
-        --iso-only \
-        --iso-name "${{ env.results_name }}.iso" \
-        --releasever "${{ env.releasever }}" \
-        --volid "${{ env.volid }}" \
-        --nomacboot \
-        --logfile ${{ env.livemedia_resultdir }}/logs/livemedia.log ${{ env.livemedia_creator_opts }}
-        EOF
-
-    - name: Install KVM Packages and Start libvirt
-      run: |
-        sudo apt-get -y update
-        sudo apt-get -y install qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils
-        sudo systemctl enable --now libvirtd
-        sudo adduser "$(id -un)" libvirt
-        sudo adduser "$(id -un)" kvm
-
-    - name: Enable KVM group perms
-      run: |
-        echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-        sudo udevadm control --reload-rules
-        sudo udevadm trigger --name-match=kvm
-
-    - name: Install the Vagrant and need plugins
-      run: |
-        sudo apt-get -y install vagrant
-
-        sudo vagrant plugin install vagrant-reload
-        sudo vagrant plugin install vagrant-env
-        sudo vagrant plugin install vagrant-scp
-
-    - name: Install Libvirt Plugins
-      run: |
-        sudo cp /etc/apt/sources.list /etc/apt/sources.list."$(date +"%F")"
-        sudo sed -i -e '/^# deb-src.*universe$/s/# //g' /etc/apt/sources.list
-        sudo apt-get -y update
-
-        sudo apt-get -y install nfs-kernel-server
-        sudo systemctl enable --now nfs-server
-
-        sudo apt-get -y build-dep vagrant ruby-libvirt
-        sudo apt-get -y install ebtables dnsmasq-base
-        sudo apt-get -y install libxslt-dev libxml2-dev libvirt-dev zlib1g-dev ruby-dev
-        sudo vagrant plugin install vagrant-libvirt
-
-    - name: Create 'mnt' Storage Pull
-      run: |
-        sudo virsh pool-define-as --name mnt --type dir --target /mnt
-        sudo virsh pool-autostart mnt
-        sudo virsh pool-start mnt
-        sudo virsh pool-list
-
-    - name: Run vagrant up
-      run: sudo vagrant up --no-tty almalinux
-
-    - name: Prepare build infrastructure
-      run: |
-        # Install need packages
-        enable_repo=${{ env.dnf_crb_repo }}
-        sudo vagrant ssh almalinux -c "sudo dnf install -y --enablerepo=${enable_repo,,} ${{ env.need_pkgs }}"
-
-        # Create file-system and mount additional disk inside the VM
-        sudo vagrant ssh almalinux -c "sudo mkfs.xfs -f /dev/vdb"
-        sudo vagrant ssh almalinux -c "sudo sh -c 'mkdir -p ${{ env.livemedia_resultdir }}; mount /dev/vdb ${{ env.livemedia_resultdir }}'"
-
-    - name: Build media
-      run: |
-        sudo vagrant ssh almalinux -c "sudo bash /vagrant/livemedia-creator.sh"
-
-    - name: Get media
-      if: inputs.store_as_artifact || inputs.upload_to_s3
-      id: get-media
-      run: |
-        sudo vagrant scp almalinux:${{ env.livemedia_resultdir }}/iso_${{ matrix.image_types}}/${{ env.results_name }}.iso ${{ env.results_path }}/
-        # Compute SHA256 digest for the .iso
-        cd ${{ env.results_path }} && sha256sum ${{ env.results_name }}.iso > ${{ env.results_name }}.iso.CHECKSUM
-
-    - name: Collect and prepare logs
-      if: success() || failure()
-      run: |
-        # Pack and compress logs in the VM
-        sudo vagrant ssh almalinux -c "sudo sh -c 'cd ${{ env.livemedia_resultdir }}; tar -cvf ${{ env.results_name }}-logs.tar logs/'"
-        sudo vagrant ssh almalinux -c "sudo sh -c 'cd ${{ env.livemedia_resultdir }}; zstd -T0 -19 ${{ env.results_name }}-logs.tar -o ${{ env.results_name }}-logs.tar.zst'"
-
-        # Get logs into the host
-        sudo vagrant scp almalinux:${{ env.livemedia_resultdir }}/${{ env.results_name }}-logs.tar* ${{ env.results_path }}/
-
-    - uses: actions/upload-artifact@v4
-      name: Store logs as artifact
-      id: logs-artifact
-      if: success() || failure()
-      with:
-        name: AlmaLinux-${{ inputs.version_major }}${{ env.version_minor }}-${{ env.arch }}-Live-${{ matrix.image_types }}-logs.tar
-        path: ${{ env.results_path }}/*.tar
-
-    - uses: actions/upload-artifact@v4
-      name: Store CHECKSUM as artifact
-      id: checksum-artifact
-      if: steps.get-media.outcome == 'success' && inputs.store_as_artifact
-      with:
-        name: "${{ env.results_name }}.iso.CHECKSUM"
-        path: ${{ env.results_path }}/${{ env.results_name }}.iso.CHECKSUM
-
-    - uses: actions/upload-artifact@v4
-      name: Store ISO as artifact
-      id: iso-artifact
-      if: steps.get-media.outcome == 'success' && inputs.store_as_artifact
-      with:
-        name: "${{ env.results_name }}.iso"
-        compression-level: 1
-        path: ${{ env.results_path }}/${{ env.results_name }}.iso
-
-    - name: Configure AWS credentials
-      if: steps.get-media.outcome == 'success' && inputs.upload_to_s3
-      uses: aws-actions/configure-aws-credentials@v4.0.2
-      with:
-        aws-access-key-id: ${{ secrets.S3_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.S3_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_REGION }}
-
-    - name: Publish to S3 Bucket and put object tagging with aws CLI
-      if: steps.get-media.outcome == 'success' && inputs.upload_to_s3
-      run: |
-        cd ${{ env.results_path }}
-        for object in ${{ env.results_name }}.iso ${{ env.results_name }}-logs.tar.zst ${{ env.results_name }}.iso.CHECKSUM; do
-          aws s3 cp ${object} s3://${{ vars.AWS_S3_BUCKET }}/${{ env.time_stamp }}/
-          aws s3api put-object-tagging --bucket ${{ vars.AWS_S3_BUCKET }} --key ${{ env.time_stamp }}/${object} --tagging 'TagSet={Key=public,Value=yes}'
-        done
-
-    - name: Put S3 Bucket download URLs
-      if: steps.get-media.outcome == 'success' && inputs.upload_to_s3
-      uses: actions/github-script@v7
-      with:
-        result-encoding: string
-        script: |
-          core.summary
-              .addHeading('S3 Bucket download URLs', '4')
-              .addLink('${{ env.results_name }}.iso.CHECKSUM', 'https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.time_stamp }}/${{ env.results_name }}.iso.CHECKSUM')
-              .addBreak()
-              .addLink('${{ env.results_name }}.iso', 'https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.time_stamp }}/${{ env.results_name }}.iso')
-              .addBreak()
-              .addLink('${{ env.results_name }}-logs.tar.zst', 'https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.time_stamp }}/${{ env.results_name }}-logs.tar.zst')
-              .write()
-
-    - name: Send notification to Mattermost (AWS S3 links)
-      uses: mattermost/action-mattermost-notify@master
-      if: steps.get-media.outcome == 'success' && inputs.upload_to_s3 && inputs.notify_mattermost
-      with:
-        MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
-        MATTERMOST_CHANNEL: ${{ vars.MATTERMOST_CHANNEL }}
-        MATTERMOST_USERNAME: ${{ github.triggering_actor }}
-        TEXT: |
-          **AlmaLinux OS${{ env.code_name_var }} ${{ env.releasever }} ${{ env.arch }} Live Media Build** `${{ env.time_stamp }}` generated by the GitHub [Action](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-
-          :almalinux: **${{ matrix.image_types }}**
-
-          - CHECKSUM(SHA256): [${{ env.results_name }}.iso.CHECKSUM](https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.time_stamp }}/${{ env.results_name }}.iso.CHECKSUM)
-
-          - ISO: [${{ env.results_name }}.iso](https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.time_stamp }}/${{ env.results_name }}.iso)
-
-          - Logs: [${{ env.results_name }}-logs.tar.zst](https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.time_stamp }}/${{ env.results_name }}-logs.tar.zst)
-
-    - name: Send notification to Mattermost (Artifacts)
-      uses: mattermost/action-mattermost-notify@master
-      if: steps.get-media.outcome == 'success' && inputs.store_as_artifact && inputs.notify_mattermost && ! inputs.upload_to_s3
-      with:
-        MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
-        MATTERMOST_CHANNEL: ${{ vars.MATTERMOST_CHANNEL }}
-        MATTERMOST_USERNAME: ${{ github.triggering_actor }}
-        TEXT: |
-          **AlmaLinux OS${{ env.code_name_var }} ${{ env.releasever }} ${{ env.arch }} Live Media Build** `${{ env.time_stamp }}` generated by the GitHub [Action](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-
-          :almalinux: **${{ matrix.image_types }}**
-
-          - CHECKSUM(SHA256) [zipped]: [${{ env.results_name }}.iso.CHECKSUM](${{ steps.checksum-artifact.outputs.artifact-url }})
-
-          - ISO [zipped]: [${{ env.results_name }}.iso](${{ steps.iso-artifact.outputs.artifact-url }})
-
-          - Logs [zipped]: [${{ env.results_name }}-logs.tar.zst](${{ steps.logs-artifact.outputs.artifact-url }})
+      - uses: ./.github/actions/shared-steps
+        name: ${{ matrix.version }} ${{ matrix.arch }} ${{ matrix.image_type }}
+        if: inputs.version_major != '8'
+        with:
+          image_type: ${{ matrix.image_type }}
+          version_major: ${{ inputs.version_major }}
+          arch: ${{ matrix.arch }}
+          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_S3_BUCKET: ${{ vars.AWS_S3_BUCKET }}
+          MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
+          MATTERMOST_CHANNEL: ${{ vars.MATTERMOST_CHANNEL }}
+          iteration: ${{ inputs.iteration }}
+          store_as_artifact: ${{ inputs.store_as_artifact }}
+          upload_to_s3: ${{ inputs.upload_to_s3 }}
+          notify_mattermost: ${{ inputs.notify_mattermost }}
