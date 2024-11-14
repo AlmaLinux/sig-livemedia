@@ -1,0 +1,305 @@
+name: "Live Image build, upload and notify"
+
+inputs:
+  image_type:
+    required: true
+  version_major:
+    required: true
+  arch:
+    required: true
+  S3_ACCESS_KEY_ID:
+    required: true
+  S3_SECRET_ACCESS_KEY:
+    required: true
+  AWS_REGION:
+    required: true
+  AWS_S3_BUCKET:
+    required: true
+  MATTERMOST_WEBHOOK_URL:
+    required: true
+  MATTERMOST_CHANNEL:
+    required: true
+  iteration:
+    required: true
+  store_as_artifact:
+    required: true
+  upload_to_s3:
+    required: true
+  notify_mattermost:
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set environment variables
+      shell: bash
+      run: |
+        # Set environment variables
+        code_name_var=                                    # empty or ' Kitten', used for --project
+        livemedia_creator_opts=                           # livemedia-creator additional option(s)                                            # Arch, 'x86_64' or 'x86_64_v2'
+        dnf_crb_repo="CRB"                                # YUM repository to enable, 'CRB' or 'PowerTools'
+        image_type=${{ inputs.image_type }}
+        kickstart="almalinux-live-${image_type,,}.ks"
+        need_pkgs="lorax lorax-templates-almalinux anaconda unzip zstd"
+        date_stamp=${{ env.TIME_STAMP }}
+        date_stamp=${date_stamp::-6}
+
+        case ${{ inputs.version_major }} in
+          8)
+            version_minor=".10"
+            releasever=${{ inputs.version_major }}${version_minor}
+            results_name="AlmaLinux-${releasever}-${{ inputs.arch }}-Live-${{ inputs.image_type }}"
+            volid="AlmaLinux-${releasever//./_}-${{ inputs.arch }}-Live"
+            livemedia_creator_opts='--anaconda-arg="--product AlmaLinux"'
+            dnf_crb_repo="PowerTools"
+            ;;
+          9)
+            version_minor=".4"
+            releasever=${{ inputs.version_major }}${version_minor}
+            results_name="AlmaLinux-${releasever}-${{ inputs.arch }}-Live-${{ inputs.image_type }}"
+            volid="AlmaLinux-${releasever//./_}-${{ inputs.arch }}-Live"
+            need_pkgs="${need_pkgs} libblockdev-nvme"
+            ;;
+          10)
+            version_minor=".0"
+            releasever=${{ inputs.version_major }}${version_minor}
+            results_name="AlmaLinux-${releasever}-${{ inputs.arch }}-Live-${{ inputs.image_type }}"
+            volid="AlmaLinux-${releasever//./_}-${{ inputs.arch }}-Live"
+            need_pkgs="${need_pkgs} libblockdev-nvme"
+            ;;
+          10-kitten)
+            version_minor=
+            releasever=10
+            code_name_var=" Kitten"
+            results_name="AlmaLinux-Kitten-10-${date_stamp}.${{ inputs.iteration }}-${{ inputs.arch }}-Live-${{ inputs.image_type }}"
+            volid="AlmaLinux-${releasever}-${{ inputs.arch }}"
+            need_pkgs="${need_pkgs} libblockdev-nvme"
+            ;;
+          *)
+            echo "Almalinux ${{ inputs.version_major }} is not supported!" && false
+            ;;
+        esac
+
+        # Minor version
+        echo "version_minor=${version_minor}" >> $GITHUB_ENV
+
+        # AlmaLinux "code" name
+        echo "code_name_var=${code_name_var}" >> $GITHUB_ENV
+
+        # Release version full
+        echo "releasever=${releasever}" >> $GITHUB_ENV
+
+        # Name of repository to enable (PowerTools/CRB)
+        echo "dnf_crb_repo=${dnf_crb_repo}" >> $GITHUB_ENV
+
+        # List of the packages to prepare build env
+        echo "need_pkgs=${need_pkgs}" >> $GITHUB_ENV
+
+        # livemedia-creator additional options
+        echo "livemedia_creator_opts=${livemedia_creator_opts}" >> $GITHUB_ENV
+
+        # Kickstart file name
+        echo "kickstart=${kickstart}" >> $GITHUB_ENV
+
+        # Volume ID
+        if [[ ${{ inputs.image_type }} = *'Mini'* ]]; then
+          volid="${volid}-Mini"
+        else
+          volid="${volid}-${{ inputs.image_type }}"
+        fi
+        echo "volid=${volid}" >> $GITHUB_ENV
+
+        # Results file base name
+        echo "results_name=${results_name}" >> $GITHUB_ENV
+
+        # Results path on host
+        results_path="${{ github.workspace }}/results"
+        mkdir -p ${results_path}
+        echo "results_path=${results_path}" >> $GITHUB_ENV
+
+        # Run/copy with local shell or vagrant+openssh
+        case ${{ env.RUNNER }} in
+          self-hosted)
+            mkdir -p /vagrant
+            run="sh -c"
+            copy_to='cp -av ${source} ${target}'
+            copy_from=$copy_to
+            ;;
+          github-hosted)
+            run="sudo vagrant ssh almalinux -c"
+            copy_to='sudo vagrant scp ${source} almalinux:${target}'
+            copy_from='sudo vagrant scp almalinux:${source} ${target}'
+            ;;
+        esac
+        echo "run=${run}" >> $GITHUB_ENV
+        echo "copy_to=${copy_to}" >> $GITHUB_ENV
+        echo "copy_from=${copy_from}" >> $GITHUB_ENV
+
+        echo -e "[Debug]\nKickstart file: ${kickstart}\nVolume ID: ${volid}\nISO name: ${results_name}.iso\n"
+
+    - name: Create media creator script
+      shell: bash
+      run: |
+        cat <<'EOF'>./livemedia-creator.sh
+        [ "${{ env.RUNNER }}" = "github-hosted" ] && cd /vagrant
+        livemedia-creator \
+        --ks=./kickstarts/${{ inputs.version_major }}/${{ inputs.arch }}/${{ env.kickstart }} \
+        --no-virt \
+        --resultdir ${{ env.RESULT_DIR }}/iso_${{ inputs.image_type }} \
+        --project "Live AlmaLinux${{ env.code_name_var }}" \
+        --make-iso \
+        --iso-only \
+        --iso-name "${{ env.results_name }}.iso" \
+        --releasever "${{ env.releasever }}" \
+        --volid "${{ env.volid }}" \
+        --nomacboot \
+        --logfile ${{ env.RESULT_DIR }}/logs/livemedia.log ${{ env.livemedia_creator_opts }}
+        EOF
+
+        # Put the script into common place
+        source="./livemedia-creator.sh"
+        target="/vagrant/"
+        ${{ env.copy_to }}
+
+    - name: Install livemedia-creator
+      shell: bash
+      run: |
+        # Install need packages
+        enable_repo=${{ env.dnf_crb_repo }}
+        ${{ env.run }} "sudo dnf update -y"
+        ${{ env.run }} "sudo dnf install -y --enablerepo=${enable_repo,,} ${{ env.need_pkgs }}"
+
+    - name: Build media
+      shell: bash
+      run: |
+        ${{ env.run }} "sudo bash /vagrant/livemedia-creator.sh"
+
+    - name: Get ISO media
+      if: inputs.store_as_artifact == 'true' || inputs.upload_to_s3 == 'true'
+      id: get-media
+      shell: bash
+      run: |
+        # Get media into the host
+        source="${{ env.RESULT_DIR }}/iso_${{ inputs.image_type }}/${{ env.results_name }}.iso"
+        target="${{ env.results_path }}/"
+        ${{ env.copy_from }}
+
+        # Compute SHA256 digest for the .iso
+        cd ${{ env.results_path }} && sha256sum ${{ env.results_name }}.iso > ${{ env.results_name }}.iso.CHECKSUM
+
+    - name: Collect logs
+      if: success() || failure()
+      shell: bash
+      run: |
+        # Pack and compress logs in the VM
+        ${{ env.run }} "sudo sh -c 'cd ${{ env.RESULT_DIR }}; tar -cvf ${{ env.results_name }}-logs.tar logs/'"
+        ${{ env.run }} "sudo sh -c 'cd ${{ env.RESULT_DIR }}; zstd -T0 -19 ${{ env.results_name }}-logs.tar -o ${{ env.results_name }}-logs.tar.zst'"
+
+        # Get logs into the host
+        source="${{ env.RESULT_DIR }}/${{ env.results_name }}-logs.tar*"
+        target="${{ env.results_path }}/"
+        ${{ env.copy_from }}
+
+    - name: Store logs as artifact
+      uses: actions/upload-artifact@v4
+      id: logs-artifact
+      if: success() || failure()
+      with:
+        name: "${{ env.results_name }}-logs.tar"
+        path: ${{ env.results_path }}/*.tar
+
+    - name: Store CHECKSUM as artifact
+      uses: actions/upload-artifact@v4
+      id: checksum-artifact
+      if: steps.get-media.outcome == 'success' && inputs.store_as_artifact == 'true'
+      with:
+        name: "${{ env.results_name }}.iso.CHECKSUM"
+        path: ${{ env.results_path }}/${{ env.results_name }}.iso.CHECKSUM
+
+    - name: Store ISO as artifact
+      uses: actions/upload-artifact@v4
+      id: iso-artifact
+      if: steps.get-media.outcome == 'success' && inputs.store_as_artifact == 'true'
+      with:
+        name: "${{ env.results_name }}.iso"
+        compression-level: 1
+        path: ${{ env.results_path }}/${{ env.results_name }}.iso
+
+    - name: Configure AWS credentials
+      if: steps.get-media.outcome == 'success' && inputs.upload_to_s3 == 'true'
+      uses: aws-actions/configure-aws-credentials@v4.0.2
+      with:
+        aws-access-key-id: ${{ inputs.S3_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ inputs.S3_SECRET_ACCESS_KEY }}
+        aws-region: ${{ inputs.AWS_REGION }}
+
+    - name: Install aws CLI
+      if: env.RUNNER == 'self-hosted' && steps.get-media.outcome == 'success' && inputs.upload_to_s3 == 'true'
+      shell: bash
+      run: |
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip"
+        unzip -qq awscliv2.zip
+        sudo ./aws/install
+        # [Debug]
+        aws --version
+
+    - name: Publish to S3 Bucket and put object tagging with aws CLI
+      if: steps.get-media.outcome == 'success' && inputs.upload_to_s3 == 'true'
+      shell: bash
+      run: |
+        cd ${{ env.results_path }}
+        for object in ${{ env.results_name }}.iso ${{ env.results_name }}-logs.tar.zst ${{ env.results_name }}.iso.CHECKSUM; do
+          aws s3 cp ${object} s3://${{ inputs.AWS_S3_BUCKET }}/${{ env.TIME_STAMP }}/
+          aws s3api put-object-tagging --bucket ${{ inputs.AWS_S3_BUCKET }} --key ${{ env.TIME_STAMP }}/${object} --tagging 'TagSet={Key=public,Value=yes}'
+        done
+
+    - name: Put S3 Bucket download URLs
+      if: steps.get-media.outcome == 'success' && inputs.upload_to_s3 == 'true'
+      uses: actions/github-script@v7
+      with:
+        result-encoding: string
+        script: |
+          core.summary
+              .addHeading('S3 Bucket download URLs', '4')
+              .addLink('${{ env.results_name }}.iso.CHECKSUM', 'https://${{ inputs.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.TIME_STAMP }}/${{ env.results_name }}.iso.CHECKSUM')
+              .addBreak()
+              .addLink('${{ env.results_name }}.iso', 'https://${{ inputs.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.TIME_STAMP }}/${{ env.results_name }}.iso')
+              .addBreak()
+              .addLink('${{ env.results_name }}-logs.tar.zst', 'https://${{ inputs.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.TIME_STAMP }}/${{ env.results_name }}-logs.tar.zst')
+              .write()
+
+    - name: Send notification to Mattermost (AWS S3 links)
+      uses: mattermost/action-mattermost-notify@master
+      if: ${{ steps.get-media.outcome == 'success' && inputs.upload_to_s3 == 'true' && inputs.notify_mattermost == 'true' }}
+      with:
+        MATTERMOST_WEBHOOK_URL: ${{ inputs.MATTERMOST_WEBHOOK_URL }}
+        MATTERMOST_CHANNEL: ${{ inputs.MATTERMOST_CHANNEL }}
+        MATTERMOST_USERNAME: ${{ github.triggering_actor }}
+        TEXT: |
+          **AlmaLinux OS${{ env.code_name_var }} ${{ env.releasever }} ${{ inputs.arch }} Live Media Build** `${{ env.TIME_STAMP }}` generated by the GitHub [Action](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+          :almalinux: **${{ inputs.image_type }}**
+
+          - CHECKSUM(SHA256): [${{ env.results_name }}.iso.CHECKSUM](https://${{ inputs.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.TIME_STAMP }}/${{ env.results_name }}.iso.CHECKSUM)
+
+          - ISO: [${{ env.results_name }}.iso](https://${{ inputs.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.TIME_STAMP }}/${{ env.results_name }}.iso)
+
+          - Logs: [${{ env.results_name }}-logs.tar.zst](https://${{ inputs.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.TIME_STAMP }}/${{ env.results_name }}-logs.tar.zst)
+
+    - name: Send notification to Mattermost (Artifacts)
+      uses: mattermost/action-mattermost-notify@master
+      if: ${{ steps.get-media.outcome == 'success' && inputs.store_as_artifact == 'true' && inputs.notify_mattermost == 'true' && inputs.upload_to_s3 == 'false' }}
+      with:
+        MATTERMOST_WEBHOOK_URL: ${{ inputs.MATTERMOST_WEBHOOK_URL }}
+        MATTERMOST_CHANNEL: ${{ inputs.MATTERMOST_CHANNEL }}
+        MATTERMOST_USERNAME: ${{ github.triggering_actor }}
+        TEXT: |
+          **AlmaLinux OS${{ env.code_name_var }} ${{ env.releasever }} ${{ inputs.arch }} Live Media Build** `${{ env.TIME_STAMP }}` generated by the GitHub [Action](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+          :almalinux: **${{ inputs.image_type }}**
+
+          - CHECKSUM(SHA256) [zipped]: [${{ env.results_name }}.iso.CHECKSUM](${{ steps.checksum-artifact.outputs.artifact-url }})
+
+          - ISO [zipped]: [${{ env.results_name }}.iso](${{ steps.iso-artifact.outputs.artifact-url }})
+
+          - Logs [zipped]: [${{ env.results_name }}-logs.tar](${{ steps.logs-artifact.outputs.artifact-url }})

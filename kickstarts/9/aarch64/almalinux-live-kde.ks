@@ -15,11 +15,11 @@ timezone US/Eastern
 network  --bootproto=dhcp --device=link --activate
 
 # Repos
-url --url=https://kitten.repo.almalinux.org/10-kitten/BaseOS/$basearch/os/
-repo --name="appstream" --baseurl=https://kitten.repo.almalinux.org/10-kitten/AppStream/$basearch/os/
-repo --name="extras" --baseurl=https://kitten.repo.almalinux.org/10-kitten/extras-common/$basearch/os/
-repo --name="crb" --baseurl=https://kitten.repo.almalinux.org/10-kitten/CRB/$basearch/os/
-repo --name="epel" --baseurl=https://dl.fedoraproject.org/pub/epel/10/Everything/$basearch/
+url --url=https://atl.mirrors.knownhost.com/almalinux/9/BaseOS/$basearch/os/
+repo --name="appstream" --baseurl=https://atl.mirrors.knownhost.com/almalinux/9/AppStream/$basearch/os/
+repo --name="extras" --baseurl=https://atl.mirrors.knownhost.com/almalinux/9/extras/$basearch/os/
+repo --name="crb" --baseurl=https://atl.mirrors.knownhost.com/almalinux/9/CRB/$basearch/os/
+repo --name="epel" --baseurl=https://dl.fedoraproject.org/pub/epel/9/Everything/$basearch/
 
 # Firewall configuration
 firewall --enabled --service=mdns
@@ -181,7 +181,7 @@ getent passwd openvpn &>/dev/null || \
 # cp $INSTALL_ROOT/usr/share/licenses/*-release/* $LIVE_ROOT/
 
 # only works on x86, x86_64
-if [ "$(uname -i)" = "i386" -o "$(uname -i)" = "x86_64" ]; then
+if [ "$(uname -m)" = "i386" -o "$(uname -m)" = "x86_64" ]; then
   if [ ! -d $LIVE_ROOT/LiveOS ]; then mkdir -p $LIVE_ROOT/LiveOS ; fi
   cp /usr/bin/livecd-iso-to-disk $LIVE_ROOT/LiveOS
 fi
@@ -205,7 +205,7 @@ anaconda-live
 -sdubby
 
 # Need aajohan-comfortaa-fonts for the SVG rnotes images
-#aajohan-comfortaa-fonts
+aajohan-comfortaa-fonts
 
 # Without this, initramfs generation during live image creation fails: #1242586
 dracut-live
@@ -215,9 +215,6 @@ glibc-all-langpacks
 
 # provide the livesys scripts
 livesys-scripts
-
-# Mandatory to build media with livemedia-creator
-memtest86+
 
 # libreoffice group
 @office-suite

@@ -1,48 +1,44 @@
-# AlmaLinux Live Media (Beta - experimental), with optional install option.
-# Build: sudo livecd-creator --cache=~/livecd-creator/package-cache -c almalinux-8-live-xfce.ks -f AlmaLinux-8-Live-XFCE
+#version=DEVEL
 # X Window System configuration information
 xconfig  --startxonboot
 # Keyboard layouts
 keyboard 'us'
-
-# System timezone
-timezone US/Eastern
+# Root password
+rootpw --plaintext rootme
 # System language
 lang en_US.UTF-8
-# Firewall configuration
-firewall --enabled --service=mdns
+# Shutdown after installation
+shutdown
+# System timezone
+timezone US/Eastern
+# Network information
+network  --bootproto=dhcp --device=link --activate
 
 # Repos
-url --url=https://atl.mirrors.knownhost.com/almalinux/8/BaseOS/$basearch/os/
-repo --name="appstream" --baseurl=https://atl.mirrors.knownhost.com/almalinux/8/AppStream/$basearch/os/
-repo --name="extras" --baseurl=https://atl.mirrors.knownhost.com/almalinux/8/extras/$basearch/os/
-repo --name="powertools" --baseurl=https://atl.mirrors.knownhost.com/almalinux/8/PowerTools/$basearch/os/
-repo --name="epel" --baseurl=https://dl.fedoraproject.org/pub/epel/8/Everything/$basearch/
+url --url=https://atl.mirrors.knownhost.com/almalinux/9/BaseOS/$basearch/os/
+repo --name="appstream" --baseurl=https://atl.mirrors.knownhost.com/almalinux/9/AppStream/$basearch/os/
+repo --name="extras" --baseurl=https://atl.mirrors.knownhost.com/almalinux/9/extras/$basearch/os/
+repo --name="crb" --baseurl=https://atl.mirrors.knownhost.com/almalinux/9/CRB/$basearch/os/
+repo --name="epel" --baseurl=https://dl.fedoraproject.org/pub/epel/9/Everything/$basearch/
 
-# TODO: remove next when epel is updated
-# repo --name="epel-next" --baseurl=https://dl.fedoraproject.org/pub/epel/next/8/Everything/$basearch/ --cost=1000 --install
-
-# Network information
-network --activate --bootproto=dhcp --device=link --onboot=on
-
+# Firewall configuration
+firewall --enabled --service=mdns
 # SELinux configuration
 selinux --enforcing
 
 # System services
 services --disabled="sshd" --enabled="NetworkManager,ModemManager"
-
-# livemedia-creator modifications.
-shutdown
 # System bootloader configuration
 bootloader --location=none
+# Clear the Master Boot Record
 zerombr
-# Clear blank disks or all existing partitions
+# Partition clearing information
 clearpart --all --initlabel
-rootpw rootme
 # Disk partitioning information
 part / --size=10238
 
 %post
+
 # Enable livesys services
 systemctl enable livesys.service
 systemctl enable livesys-late.service
@@ -92,7 +88,7 @@ rm -f /boot/*-rescue*
 # on next build
 generateKDEWallpapers() {
   # Declare an array for background types
-  declare -a bgtypes=("dark" "light" "abstract-dark" "abstract-light")
+  declare -a bgtypes=("dark" "light" "abstract-dark" "abstract-light" "mountains-dark" "mountains-white" "waves-dark" "waves-light" "waves-sunset")
   # Declare an array for background sizes
   declare -a sizes=("1800x1440.jpg" "2048x1536.jpg" "2560x1080.jpg" "2560x1440.jpg" "2560x1600.jpg" "3440x1440.jpg")
   ## Loop through the above array(s) types and sizes to create links and metadata
@@ -132,12 +128,12 @@ FOE
 # generateKDEWallpapers
 # Very ODD fix to get Alma background, find alternative
 rm -rf /usr/share/wallpapers/Fedora
-ln -s Alma-dark /usr/share/wallpapers/Fedora
+ln -s Alma-mountains-white /usr/share/wallpapers/Fedora
 # background end
 
 # Update default theme - this has to stay KS
 # Hack KDE Fedora package starts. TODO: need almalinux-kde-fix package
-sed -i 's/defaultWallpaperTheme=Fedora/defaultWallpaperTheme=Alma-dark/' /usr/share/plasma/desktoptheme/default/metadata.desktop
+sed -i 's/defaultWallpaperTheme=Fedora/defaultWallpaperTheme=Alma-mountains-white/' /usr/share/plasma/desktoptheme/default/metadata.desktop
 sed -i 's/defaultFileSuffix=.png/defaultFileSuffix=.jpg/' /usr/share/plasma/desktoptheme/default/metadata.desktop
 sed -i 's/defaultWidth=1920/defaultWidth=2048/' /usr/share/plasma/desktoptheme/default/metadata.desktop
 sed -i 's/defaultHeight=1080/defaultHeight=1536/' /usr/share/plasma/desktoptheme/default/metadata.desktop
@@ -154,6 +150,9 @@ systemctl disable network
 rm -f /etc/machine-id
 touch /etc/machine-id
 
+# set livesys session type
+sed -i 's/^livesys_session=.*/livesys_session="kde"/' /etc/sysconfig/livesys
+
 # set default GTK+ theme for root (see #683855, #689070, #808062)
 cat > /root/.gtkrc-2.0 << EOF
 include "/usr/share/themes/Adwaita/gtk-2.0/gtkrc"
@@ -166,11 +165,8 @@ cat > /root/.config/gtk-3.0/settings.ini << EOF
 gtk-theme-name = Adwaita
 EOF
 
-# set livesys session type
-sed -i 's/^livesys_session=.*/livesys_session="kde"/' /etc/sysconfig/livesys
-
-# enable PowerTools repo
-dnf config-manager --enable powertools
+# enable CRB repo
+dnf config-manager --enable crb
 
 # Workaround to add openvpn user and group in case they didn't added during
 # openvpn package installation
@@ -182,17 +178,16 @@ getent passwd openvpn &>/dev/null || \
 %end
 
 %post --nochroot
-cp $INSTALL_ROOT/usr/share/licenses/*-release/* $LIVE_ROOT/
+# cp $INSTALL_ROOT/usr/share/licenses/*-release/* $LIVE_ROOT/
 
 # only works on x86, x86_64
-if [ "$(uname -i)" = "i386" -o "$(uname -i)" = "x86_64" ]; then
+if [ "$(uname -m)" = "i386" -o "$(uname -m)" = "x86_64" ]; then
   if [ ! -d $LIVE_ROOT/LiveOS ]; then mkdir -p $LIVE_ROOT/LiveOS ; fi
   cp /usr/bin/livecd-iso-to-disk $LIVE_ROOT/LiveOS
 fi
 
 %end
 
-# Packages
 %packages
 # Explicitly specified mandatory packages
 kernel
@@ -206,6 +201,7 @@ anaconda-live
 @anaconda-tools
 # Anaconda has a weak dep on this and we don't want it on livecds, see
 # https://fedoraproject.org/wiki/Changes/RemoveDeviceMapperMultipathFromWorkstationLiveCD
+-fcoe-utils
 -sdubby
 
 # Need aajohan-comfortaa-fonts for the SVG rnotes images
@@ -257,9 +253,6 @@ fuse
 
 # minimization
 -hplip
-
-# Do not install the kdepim-addons package because of a dependency issue on AlmaLinux OS 9.3 builds.
--kdepim-addons
 
 # Add alsa-sof-firmware to all images PR #51
 alsa-sof-firmware

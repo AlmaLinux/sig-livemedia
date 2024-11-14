@@ -13,11 +13,11 @@ lang en_US.UTF-8
 firewall --enabled --service=mdns
 
 # Repos
-url --url=https://atl.mirrors.knownhost.com/almalinux/8/BaseOS/$basearch/os/
-repo --name="appstream" --baseurl=https://atl.mirrors.knownhost.com/almalinux/8/AppStream/$basearch/os/
-repo --name="extras" --baseurl=https://atl.mirrors.knownhost.com/almalinux/8/extras/$basearch/os/
-repo --name="powertools" --baseurl=https://atl.mirrors.knownhost.com/almalinux/8/PowerTools/$basearch/os/
-repo --name="epel" --baseurl=https://dl.fedoraproject.org/pub/epel/8/Everything/$basearch/
+url --url=https://kitten.repo.almalinux.org/10-kitten/BaseOS/x86_64_v2/os/
+repo --name="appstream" --baseurl=https://kitten.repo.almalinux.org/10-kitten/AppStream/x86_64_v2/os/
+repo --name="extras" --baseurl=https://kitten.repo.almalinux.org/10-kitten/extras-common/x86_64_v2/os/
+repo --name="crb" --baseurl=https://kitten.repo.almalinux.org/10-kitten/CRB/x86_64_v2/os/
+
 
 # Network information
 network --activate --bootproto=dhcp --device=link --onboot=on
@@ -115,10 +115,11 @@ anaconda-live
 @anaconda-tools
 # Anaconda has a weak dep on this and we don't want it on livecds, see
 # https://fedoraproject.org/wiki/Changes/RemoveDeviceMapperMultipathFromWorkstationLiveCD
+-fcoe-utils
 -sdubby
 
 # Need aajohan-comfortaa-fonts for the SVG rnotes images
-aajohan-comfortaa-fonts
+#aajohan-comfortaa-fonts
 
 # Without this, initramfs generation during live image creation fails: #1242586
 dracut-live
@@ -129,11 +130,12 @@ glibc-all-langpacks
 # provide the livesys scripts
 livesys-scripts
 
-# Mandatory to build media with livemedia-creator
+# Memtest boot option
 memtest86+
 
 # firefox
-@internet-browser
+#@internet-browser
+firefox
 
 # Workstation environment group
 @^workstation-product-environment
@@ -145,9 +147,9 @@ memtest86+
 @gnome-desktop
 
 # OpenVPN
-openvpn
-NetworkManager-openvpn
-NetworkManager-openvpn-gnome
+#openvpn
+#NetworkManager-openvpn
+#NetworkManager-openvpn-gnome
 
 # Exclude unwanted packages from @anaconda-tools group
 -gfs2-utils
