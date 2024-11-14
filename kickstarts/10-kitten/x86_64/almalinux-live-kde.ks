@@ -197,7 +197,8 @@ kernel-modules-extra
 # The point of a live image is to install
 anaconda
 anaconda-install-env-deps
-anaconda-live
+# TODO: "Install to Hard Drive" temporary disabled because of https://github.com/rhinstaller/anaconda/discussions/5997
+#anaconda-live
 @anaconda-tools
 # Anaconda has a weak dep on this and we don't want it on livecds, see
 # https://fedoraproject.org/wiki/Changes/RemoveDeviceMapperMultipathFromWorkstationLiveCD
