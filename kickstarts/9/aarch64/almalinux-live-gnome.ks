@@ -130,10 +130,10 @@ glibc-all-langpacks
 # provide the livesys scripts
 livesys-scripts
 
-# libreoffice group
-@office-suite
+# firefox
+@internet-browser
 
-# Workstation environment group
+# Workstation environment group (mandatory)
 @core
 @gnome-desktop
 @standard
@@ -144,6 +144,13 @@ livesys-scripts
 @multimedia
 @networkmanager-submodules
 @print-client
+
+# Workstation environment group (optional)
+@backup-client
+@headless-management
+@internet-applications
+@remote-desktop-clients
+@smart-card
 
 # Exclude unwanted packages from @anaconda-tools group
 -gfs2-utils
