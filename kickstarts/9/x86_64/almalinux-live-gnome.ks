@@ -136,6 +136,9 @@ memtest86+
 # libreoffice group
 @office-suite
 
+# firefox
+@internet-browser
+
 # Workstation environment group
 @^workstation-product-environment
 
