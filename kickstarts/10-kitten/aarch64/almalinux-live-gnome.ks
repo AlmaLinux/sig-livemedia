@@ -134,7 +134,10 @@ livesys-scripts
 # libreoffice group
 #@office-suite
 
-# Workstation environment group
+# internet-browser group
+firefox
+
+# Workstation environment group (mandatory)
 @core
 @standard
 #@base-x
@@ -144,6 +147,19 @@ livesys-scripts
 @multimedia
 @networkmanager-submodules
 @print-client
+
+# Workstation environment group (optional)
+#@backup-client
+@headless-management
+# internet-applications group
+#evolution
+#evolution-ews
+#evolution-help
+#evolution-mapi
+#hexchat
+thunderbird
+@remote-desktop-clients
+@smart-card
 
 # GNOME specific
 @gnome-desktop
