@@ -13,10 +13,15 @@ lang en_US.UTF-8
 firewall --enabled --service=mdns
 
 # Repos
-url --url=https://kitten.repo.almalinux.org/10-kitten/BaseOS/x86_64_v2/os/
-repo --name="appstream" --baseurl=https://kitten.repo.almalinux.org/10-kitten/AppStream/x86_64_v2/os/
-repo --name="extras" --baseurl=https://kitten.repo.almalinux.org/10-kitten/extras-common/x86_64_v2/os/
-repo --name="crb" --baseurl=https://kitten.repo.almalinux.org/10-kitten/CRB/x86_64_v2/os/
+# url --url=https://repo.almalinux.org/almalinux/10/BaseOS/x86_64_v2/os/
+url --url=https://vault.almalinux.org/10.0-beta/BaseOS/x86_64_v2/os/
+# repo --name="appstream" --baseurl=https://repo.almalinux.org/almalinux/10/AppStream/x86_64_v2/os/
+repo --name="appstream" --baseurl=https://vault.almalinux.org/10.0-beta/AppStream/x86_64_v2/os/
+# repo --name="extras" --baseurl=https://repo.almalinux.org/almalinux/10/extras/x86_64_v2/os/
+repo --name="extras" --baseurl=https://vault.almalinux.org/10.0-beta/extras/x86_64_v2/os/
+# repo --name="crb" --baseurl=https://repo.almalinux.org/almalinux/10/CRB/x86_64_v2/os/
+repo --name="crb" --baseurl=https://vault.almalinux.org/10.0-beta/CRB/x86_64_v2/os/
+repo --name="livesys-scripts" --baseurl=https://build.almalinux.org/pulp/content/builds/AlmaLinux-Kitten-10-x86_64_v2-20702-br/
 
 # Network information
 network --activate --bootproto=dhcp --device=link --onboot=on
@@ -143,8 +148,7 @@ firefox
 @^workstation-product-environment
 
 # GNOME specific
-@gnome-desktop
-#@gnome-apps
+@gnome-apps
 
 # Exclude unwanted packages from @anaconda-tools group
 -gfs2-utils

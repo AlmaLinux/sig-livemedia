@@ -13,10 +13,16 @@ lang en_US.UTF-8
 firewall --enabled --service=mdns
 
 # Repos
-url --url=https://kitten.repo.almalinux.org/10-kitten/BaseOS/x86_64_v2/os/
-repo --name="appstream" --baseurl=https://kitten.repo.almalinux.org/10-kitten/AppStream/x86_64_v2/os/
-repo --name="extras" --baseurl=https://kitten.repo.almalinux.org/10-kitten/extras-common/x86_64_v2/os/
-repo --name="crb" --baseurl=https://kitten.repo.almalinux.org/10-kitten/CRB/x86_64_v2/os/
+# url --url=https://repo.almalinux.org/almalinux/10/BaseOS/$basearch/os/
+url --url=https://vault.almalinux.org/10.0-beta/BaseOS/$basearch/os/
+# repo --name="appstream" --baseurl=https://repo.almalinux.org/almalinux/10/AppStream/$basearch/os/
+repo --name="appstream" --baseurl=https://vault.almalinux.org/10.0-beta/AppStream/$basearch/os/
+# repo --name="extras" --baseurl=https://repo.almalinux.org/almalinux/10/extras/$basearch/os/
+repo --name="extras" --baseurl=https://vault.almalinux.org/10.0-beta/extras/$basearch/os/
+# repo --name="crb" --baseurl=https://repo.almalinux.org/almalinux/10/CRB/$basearch/os/
+repo --name="crb" --baseurl=https://vault.almalinux.org/10.0-beta/CRB/$basearch/os/
+repo --name="epel" --baseurl=https://dl.fedoraproject.org/pub/epel/10/Everything/$basearch/
+
 
 # Network information
 network --activate --bootproto=dhcp --device=link --onboot=on
@@ -111,7 +117,7 @@ kernel-modules-extra
 anaconda
 anaconda-install-env-deps
 # TODO: "Install to Hard Drive" temporary disabled because of https://github.com/rhinstaller/anaconda/discussions/5997
-#anaconda-live
+anaconda-live
 @anaconda-tools
 # Anaconda has a weak dep on this and we don't want it on livecds, see
 # https://fedoraproject.org/wiki/Changes/RemoveDeviceMapperMultipathFromWorkstationLiveCD
@@ -130,46 +136,30 @@ glibc-all-langpacks
 # provide the livesys scripts
 livesys-scripts
 
-# Memtest boot option
+# Mandatory to build media with livemedia-creator
 memtest86+
 
-# libreoffice group
-#@office-suite
-
-# internet-browser group
+# firefox
+#@internet-browser
 firefox
 
 # Workstation environment group
 @^workstation-product-environment
 
+# Workstation specific
+-@workstation-product
+
 # GNOME specific
 @gnome-desktop
-#@gnome-apps
-
-# Exclude unwanted packages from @anaconda-tools group
--gfs2-utils
--reiserfs-utils
-
-# Workstation specific
-bash-color-prompt
-exfatprogs
-#fpaste
-#iptstate
-#nss-mdns
-#ntfs-3g
-#ntfsprogs
-policycoreutils-python-utils
-psmisc
-python3-dnf-plugin-system-upgrade
-toolbox
-#unoconv
-uresourced
-whois
 
 # OpenVPN
 #openvpn
 #NetworkManager-openvpn
 #NetworkManager-openvpn-gnome
+
+# Exclude unwanted packages from @anaconda-tools group
+-gfs2-utils
+-reiserfs-utils
 
 # minimization
 -hplip
