@@ -37,10 +37,11 @@ on:
       version_major:
         description: 'AlmaLinux major version'
         required: true
-        default: '10-kitten'
+        default: '10'
         type: choice
         options:
           - 10-kitten
+          - 10
           - 9
           - 8
 
@@ -108,14 +109,30 @@ jobs:
           - version: 10-kitten
             arch: x86_64_v2
             image_type: XFCE
-          # TODO: the excludes below should be removed when EPEL for 10 provides need packages
-          - version: 10-kitten
-            arch: x86_64
+          # TODO: the excludes below should be removed when '10' provides need packages
+          - version: 10
+            arch: x86_64_v2
             image_type: KDE
+          - version: 10
+            arch: x86_64_v2
+            image_type: MATE
+          - version: 10
+            arch: x86_64_v2
+            image_type: XFCE
+          # TODO: the excludes below should be removed when EPEL for 10 provides need packages
           - version: 10-kitten
             arch: x86_64
             image_type: MATE
           - version: 10-kitten
+            arch: x86_64
+            image_type: XFCE
+          - version: 10
+            arch: x86_64
+            image_type: KDE
+          - version: 10
+            arch: x86_64
+            image_type: MATE
+          - version: 10
             arch: x86_64
             image_type: XFCE
     env:
@@ -178,9 +195,9 @@ jobs:
         run: |
           vm_box='almalinux/${{ inputs.version_major }}'
           # TODO: use official Vagrant images when available
-          if [ "${{ inputs.version_major }}" = "10-kitten" ]; then
-            vm_box='lkhn/almalinux-kitten'
-            [ "${{ matrix.arch }}" = "x86_64_v2" ] && vm_box='lkhn/almalinux-kitten-x86-64-v2'
+          if [[ "${{ inputs.version_major }}" = *'10'* ]]; then
+            vm_box='almalinux/10-kitten'
+            [ "${{ matrix.arch }}" = "x86_64_v2" ] && vm_box='almalinux/10-kitten-x86_64_v2'
           fi
           echo vm_box=${vm_box} > .env
 
@@ -233,11 +250,17 @@ jobs:
           # TODO: the excludes below should be removed when EPEL for 10 provides need packages
           - version: 10-kitten
             arch: aarch64
-            image_type: KDE
-          - version: 10-kitten
-            arch: aarch64
             image_type: MATE
           - version: 10-kitten
+            arch: aarch64
+            image_type: XFCE
+          - version: 10
+            arch: aarch64
+            image_type: KDE
+          - version: 10
+            arch: aarch64
+            image_type: MATE
+          - version: 10
             arch: aarch64
             image_type: XFCE
 
@@ -284,13 +307,20 @@ jobs:
           # TODO: the excludes below should be removed when EPEL for 10 provides need packages
           - version: 10-kitten
             arch: aarch64
-            image_type: KDE
-          - version: 10-kitten
-            arch: aarch64
             image_type: MATE
           - version: 10-kitten
             arch: aarch64
             image_type: XFCE
+          - version: 10
+            arch: aarch64
+            image_type: KDE
+          - version: 10
+            arch: aarch64
+            image_type: MATE
+          - version: 10
+            arch: aarch64
+            image_type: XFCE
+
     env:
       RUNNER: self-hosted
       TIME_STAMP: ${{ needs.init-data.outputs.time_stamp }}

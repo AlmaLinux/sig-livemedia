@@ -218,9 +218,10 @@ glibc-all-langpacks
 livesys-scripts
 
 # libreoffice group
-@office-suite
-# firefox
-@internet-browser
+#@office-suite
+
+# internet-browser group
+firefox
 
 # KDE specific
 @dial-up

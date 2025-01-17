@@ -144,7 +144,8 @@ firefox
 @^workstation-product-environment
 
 # GNOME specific
-@gnome-apps
+@gnome-desktop
+#@gnome-apps
 
 # Exclude unwanted packages from @anaconda-tools group
 -gfs2-utils
