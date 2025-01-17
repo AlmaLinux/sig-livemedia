@@ -20,6 +20,7 @@ repo --name="appstream" --baseurl=https://kitten.repo.almalinux.org/10-kitten/Ap
 repo --name="extras" --baseurl=https://kitten.repo.almalinux.org/10-kitten/extras-common/$basearch/os/
 repo --name="crb" --baseurl=https://kitten.repo.almalinux.org/10-kitten/CRB/$basearch/os/
 repo --name="epel" --baseurl=https://dl.fedoraproject.org/pub/epel/10/Everything/$basearch/
+repo --name="anaconda-albs" --baseurl=https://build.almalinux.org/pulp/content/builds/AlmaLinux-Kitten-10-x86_64-25058-br/
 
 # Firewall configuration
 firewall --enabled --service=mdns
@@ -197,8 +198,7 @@ kernel-modules-extra
 # The point of a live image is to install
 anaconda
 anaconda-install-env-deps
-# TODO: "Install to Hard Drive" temporary disabled because of https://github.com/rhinstaller/anaconda/discussions/5997
-#anaconda-live
+anaconda-live
 @anaconda-tools
 # Anaconda has a weak dep on this and we don't want it on livecds, see
 # https://fedoraproject.org/wiki/Changes/RemoveDeviceMapperMultipathFromWorkstationLiveCD
