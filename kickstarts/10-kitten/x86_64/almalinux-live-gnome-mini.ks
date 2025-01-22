@@ -148,9 +148,9 @@ firefox
 @gnome-desktop
 
 # OpenVPN
-#openvpn
-#NetworkManager-openvpn
-#NetworkManager-openvpn-gnome
+openvpn
+NetworkManager-openvpn
+NetworkManager-openvpn-gnome
 
 # Exclude unwanted packages from @anaconda-tools group
 -gfs2-utils

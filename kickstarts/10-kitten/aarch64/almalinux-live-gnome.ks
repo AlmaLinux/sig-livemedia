@@ -186,9 +186,9 @@ uresourced
 whois
 
 # OpenVPN
-#openvpn
-#NetworkManager-openvpn
-#NetworkManager-openvpn-gnome
+openvpn
+NetworkManager-openvpn
+NetworkManager-openvpn-gnome
 
 # minimization
 -hplip
