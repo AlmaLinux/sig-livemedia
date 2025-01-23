@@ -21,7 +21,6 @@ repo --name="extras" --baseurl=https://kitten.repo.almalinux.org/10-kitten/extra
 repo --name="crb" --baseurl=https://kitten.repo.almalinux.org/10-kitten/CRB/$basearch/os/
 repo --name="epel" --baseurl=https://dl.fedoraproject.org/pub/epel/10/Everything/$basearch/
 repo --name="anaconda-albs" --baseurl=https://build.almalinux.org/pulp/content/builds/AlmaLinux-Kitten-10-aarch64-25058-br/
-repo --name="almalinux-backgrounds-extras" --baseurl=https://build.almalinux.org/pulp/content/builds/AlmaLinux-Kitten-10-x86_64-25225-br/
 
 # Firewall configuration
 firewall --enabled --service=mdns
@@ -96,6 +95,15 @@ cat <<'EOF'>/home/liveuser/.config/kscreenlockerrc
 Image=/usr/share/wallpapers/Alma-default/
 PreviewImage=/usr/share/wallpapers/Alma-default/
 EOF
+# Replace live installer icon for the application and welcome center
+cd /usr/share/icons
+anaconda_installer_icon=org.fedoraproject.AnacondaInstaller.svg
+sed -i "s/Icon=.*$/Icon=\/usr\/share\/icons\/hicolor\/scalable\/apps\/${anaconda_installer_icon}/g" \
+  /usr/share/applications/liveinst.desktop
+almalinux_installer_icon=../../../hicolor/scalable/apps/${anaconda_installer_icon}
+ln -sf ${almalinux_installer_icon} breeze/apps/48/${anaconda_installer_icon}
+ln -sf ${almalinux_installer_icon} breeze-dark/apps/48/${anaconda_installer_icon}
+cd - >/dev/null
 
 # Disable network service here, as doing it in the services line
 # fails due to RHBZ #1369794
