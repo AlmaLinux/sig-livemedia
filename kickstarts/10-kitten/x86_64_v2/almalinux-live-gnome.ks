@@ -17,7 +17,6 @@ url --url=https://kitten.repo.almalinux.org/10-kitten/BaseOS/x86_64_v2/os/
 repo --name="appstream" --baseurl=https://kitten.repo.almalinux.org/10-kitten/AppStream/x86_64_v2/os/
 repo --name="extras" --baseurl=https://kitten.repo.almalinux.org/10-kitten/extras-common/x86_64_v2/os/
 repo --name="crb" --baseurl=https://kitten.repo.almalinux.org/10-kitten/CRB/x86_64_v2/os/
-repo --name="anaconda-albs" --baseurl=https://build.almalinux.org/pulp/content/builds/AlmaLinux-Kitten-10-x86_64_v2-25058-br/
 
 # Network information
 network --activate --bootproto=dhcp --device=link --onboot=on

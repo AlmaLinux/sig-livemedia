@@ -18,7 +18,6 @@ repo --name="appstream" --baseurl=https://kitten.repo.almalinux.org/10-kitten/Ap
 repo --name="extras" --baseurl=https://kitten.repo.almalinux.org/10-kitten/extras-common/$basearch/os/
 repo --name="crb" --baseurl=https://kitten.repo.almalinux.org/10-kitten/CRB/$basearch/os/
 repo --name="epel" --baseurl=https://dl.fedoraproject.org/pub/epel/10/Everything/$basearch/
-repo --name="anaconda-albs" --baseurl=https://build.almalinux.org/pulp/content/builds/AlmaLinux-Kitten-10-x86_64-25058-br/
 
 # Network information
 network --activate --bootproto=dhcp --device=link --onboot=on
