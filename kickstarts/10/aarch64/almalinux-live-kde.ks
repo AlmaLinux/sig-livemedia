@@ -99,14 +99,8 @@ Image=/usr/share/wallpapers/Alma-default/
 PreviewImage=/usr/share/wallpapers/Alma-default/
 EOF
 # Replace live installer icon for the application and welcome center
-cd /usr/share/icons
-anaconda_installer_icon=org.fedoraproject.AnacondaInstaller.svg
-sed -i "s/Icon=.*$/Icon=\/usr\/share\/icons\/hicolor\/scalable\/apps\/${anaconda_installer_icon}/g" \
+sed -i "s/Icon=.*$/Icon=\/usr\/share\/icons\/hicolor\/scalable\/apps\/org.fedoraproject.AnacondaInstaller.svg/g" \
   /usr/share/applications/liveinst.desktop
-almalinux_installer_icon=../../../hicolor/scalable/apps/${anaconda_installer_icon}
-ln -sf ${almalinux_installer_icon} breeze/apps/48/${anaconda_installer_icon}
-ln -sf ${almalinux_installer_icon} breeze-dark/apps/48/${anaconda_installer_icon}
-cd - >/dev/null
 
 # Disable network service here, as doing it in the services line
 # fails due to RHBZ #1369794
