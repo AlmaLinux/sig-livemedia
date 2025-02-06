@@ -18,7 +18,6 @@ repo --name="appstream" --baseurl=https://kitten.repo.almalinux.org/10-kitten/Ap
 repo --name="extras" --baseurl=https://kitten.repo.almalinux.org/10-kitten/extras-common/x86_64_v2/os/
 repo --name="crb" --baseurl=https://kitten.repo.almalinux.org/10-kitten/CRB/x86_64_v2/os/
 
-
 # Network information
 network --activate --bootproto=dhcp --device=link --onboot=on
 
@@ -111,8 +110,7 @@ kernel-modules-extra
 # The point of a live image is to install
 anaconda
 anaconda-install-env-deps
-# TODO: "Install to Hard Drive" temporary disabled because of https://github.com/rhinstaller/anaconda/discussions/5997
-#anaconda-live
+anaconda-live
 @anaconda-tools
 # Anaconda has a weak dep on this and we don't want it on livecds, see
 # https://fedoraproject.org/wiki/Changes/RemoveDeviceMapperMultipathFromWorkstationLiveCD
@@ -148,9 +146,9 @@ firefox
 @gnome-desktop
 
 # OpenVPN
-#openvpn
-#NetworkManager-openvpn
-#NetworkManager-openvpn-gnome
+# openvpn
+# NetworkManager-openvpn
+# NetworkManager-openvpn-gnome
 
 # Exclude unwanted packages from @anaconda-tools group
 -gfs2-utils
