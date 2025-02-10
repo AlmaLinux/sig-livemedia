@@ -241,7 +241,7 @@ livesys-scripts
 # Additional packages that are not default in kde-* groups, but useful
 fuse
 
-# EPEL config
+# EPEL repo
 epel-release
 
 ### space issues

@@ -171,7 +171,7 @@ toolbox
 uresourced
 whois
 
-# EPEL config
+# EPEL repo
 epel-release
 
 # OpenVPN

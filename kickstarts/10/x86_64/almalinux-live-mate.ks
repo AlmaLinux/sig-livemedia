@@ -297,7 +297,7 @@ tigervnc
 # minimization
 -hplip
 
-# EPEL config
+# EPEL repo
 epel-release
 
 # OpenVPN
