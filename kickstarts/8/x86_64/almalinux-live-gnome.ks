@@ -160,6 +160,9 @@ toolbox
 unoconv
 whois
 
+# EPEL repo
+epel-release
+
 # OpenVPN
 openvpn
 NetworkManager-openvpn

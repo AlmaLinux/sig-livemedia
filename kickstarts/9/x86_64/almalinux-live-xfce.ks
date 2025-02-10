@@ -253,6 +253,9 @@ parole
 -xfce4-sensors-plugin
 -xfce4-eyes-plugin
 
+# EPEL repo
+epel-release
+
 # OpenVPN
 openvpn
 NetworkManager-openvpn

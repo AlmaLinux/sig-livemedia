@@ -154,6 +154,9 @@ firefox
 # GNOME specific
 @gnome-desktop
 
+# EPEL repo
+epel-release
+
 # OpenVPN
 openvpn
 NetworkManager-openvpn

@@ -241,6 +241,9 @@ livesys-scripts
 # Additional packages that are not default in kde-* groups, but useful
 fuse
 
+# EPEL repo
+epel-release
+
 ### space issues
 -ktorrent			# kget has also basic torrent features (~3 megs)
 -digikam			# digikam has duplicate functionality with gwenview (~28 megs)
