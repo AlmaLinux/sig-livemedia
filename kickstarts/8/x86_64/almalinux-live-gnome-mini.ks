@@ -144,6 +144,9 @@ memtest86+
 # GNOME specific
 @gnome-desktop
 
+# EPEL config
+epel-release
+
 # OpenVPN
 openvpn
 NetworkManager-openvpn

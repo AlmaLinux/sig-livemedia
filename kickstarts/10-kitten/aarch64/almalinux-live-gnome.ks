@@ -184,6 +184,9 @@ toolbox
 uresourced
 whois
 
+# EPEL config
+epel-release
+
 # OpenVPN
 openvpn
 NetworkManager-openvpn

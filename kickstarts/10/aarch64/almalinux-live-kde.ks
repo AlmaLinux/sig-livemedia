@@ -203,6 +203,9 @@ firefox
 # Additional packages that are not default in kde-* groups, but useful
 fuse
 
+# EPEL config
+epel-release
+
 # OpenVPN
 openvpn
 NetworkManager-openvpn
