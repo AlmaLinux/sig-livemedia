@@ -19,7 +19,7 @@ url --url=https://repo.almalinux.org/almalinux/10/BaseOS/$basearch/os/
 repo --name="appstream" --baseurl=https://repo.almalinux.org/almalinux/10/AppStream/$basearch/os/
 repo --name="extras" --baseurl=https://repo.almalinux.org/almalinux/10/extras-common/$basearch/os/
 repo --name="crb" --baseurl=https://repo.almalinux.org/almalinux/10/CRB/$basearch/os/
-repo --name="epel" --baseurl=https://dl.fedoraproject.org/pub/epel/10/Everything/$basearch/
+repo --name="epel" --baseurl=https://dl.fedoraproject.org/pub/epel/10z/Everything/$basearch/
 
 # Firewall configuration
 firewall --enabled --service=mdns
@@ -124,17 +124,6 @@ getent group openvpn &>/dev/null || groupadd -r openvpn
 getent passwd openvpn &>/dev/null || \
     /usr/sbin/useradd -r -g openvpn -s /sbin/nologin -c OpenVPN \
         -d /etc/openvpn openvpn
-
-%end
-
-%post --nochroot
-# cp $INSTALL_ROOT/usr/share/licenses/*-release/* $LIVE_ROOT/
-
-# only works on x86_64
-# if [ "$(uname -m)" = "x86_64" ]; then
-#   if [ ! -d $LIVE_ROOT/LiveOS ]; then mkdir -p $LIVE_ROOT/LiveOS ; fi
-#   cp /usr/bin/livecd-iso-to-disk $LIVE_ROOT/LiveOS
-# fi
 
 %end
 
