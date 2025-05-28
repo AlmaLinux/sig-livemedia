@@ -20,7 +20,6 @@ sudo dnf -y install epel-release
 sudo dnf -y --enablerepo="epel" install anaconda-tui \
                 livecd-tools \
                 lorax \
-                subscription-manager \
                 pykickstart \
                 efibootmgr \
                 efi-filesystem \
