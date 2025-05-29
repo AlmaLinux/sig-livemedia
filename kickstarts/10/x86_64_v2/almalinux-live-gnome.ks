@@ -13,15 +13,11 @@ lang en_US.UTF-8
 firewall --enabled --service=mdns
 
 # Repos
-# url --url=https://repo.almalinux.org/almalinux/10/BaseOS/x86_64_v2/os/
-url --url=https://vault.almalinux.org/10.0-beta/BaseOS/x86_64_v2/os/
-# repo --name="appstream" --baseurl=https://repo.almalinux.org/almalinux/10/AppStream/x86_64_v2/os/
-repo --name="appstream" --baseurl=https://vault.almalinux.org/10.0-beta/AppStream/x86_64_v2/os/
-# repo --name="extras" --baseurl=https://repo.almalinux.org/almalinux/10/extras/x86_64_v2/os/
-repo --name="extras" --baseurl=https://vault.almalinux.org/10.0-beta/extras/x86_64_v2/os/
-# repo --name="crb" --baseurl=https://repo.almalinux.org/almalinux/10/CRB/x86_64_v2/os/
-repo --name="crb" --baseurl=https://vault.almalinux.org/10.0-beta/CRB/x86_64_v2/os/
-repo --name="livesys-scripts" --baseurl=https://build.almalinux.org/pulp/content/builds/AlmaLinux-Kitten-10-x86_64_v2-20702-br/
+url --url=https://repo.almalinux.org/almalinux/10/BaseOS/x86_64_v2/os/
+repo --name="appstream" --baseurl=https://repo.almalinux.org/almalinux/10/AppStream/x86_64_v2/os/
+repo --name="extras" --baseurl=https://repo.almalinux.org/almalinux/10/extras/x86_64_v2/os/
+repo --name="crb" --baseurl=https://repo.almalinux.org/almalinux/10/CRB/x86_64_v2/os/
+repo --name="epel" --baseurl=https://repo.almalinux.org/almalinux-epel/10z/x86_64_v2/
 
 # Network information
 network --activate --bootproto=dhcp --device=link --onboot=on
@@ -103,6 +99,9 @@ getent passwd openvpn &>/dev/null || \
     /usr/sbin/useradd -r -g openvpn -s /sbin/nologin -c OpenVPN \
         -d /etc/openvpn openvpn
 
+# TODO: To place Firefox into Task Manager
+# This should be removed when upstream fixes the livesys-scripts package
+sed -i  's/org.mozilla.firefox.desktop/firefox.desktop/g' /usr/libexec/livesys/sessions.d/livesys-gnome
 %end
 
 # Packages
@@ -115,8 +114,7 @@ kernel-modules-extra
 # The point of a live image is to install
 anaconda
 anaconda-install-env-deps
-# TODO: "Install to Hard Drive" temporary disabled because of https://github.com/rhinstaller/anaconda/discussions/5997
-#anaconda-live
+anaconda-live
 @anaconda-tools
 # Anaconda has a weak dep on this and we don't want it on livecds, see
 # https://fedoraproject.org/wiki/Changes/RemoveDeviceMapperMultipathFromWorkstationLiveCD
@@ -148,7 +146,8 @@ firefox
 @^workstation-product-environment
 
 # GNOME specific
-@gnome-apps
+@gnome-desktop
+#@gnome-apps
 
 # Exclude unwanted packages from @anaconda-tools group
 -gfs2-utils
@@ -170,10 +169,13 @@ toolbox
 uresourced
 whois
 
+# EPEL repo
+epel-release
+
 # OpenVPN
-# openvpn
-# NetworkManager-openvpn
-# NetworkManager-openvpn-gnome
+openvpn
+NetworkManager-openvpn
+NetworkManager-openvpn-gnome
 
 # minimization
 -hplip

@@ -15,15 +15,11 @@ timezone US/Eastern
 network  --bootproto=dhcp --device=link --activate
 
 # Repos
-# url --url=https://repo.almalinux.org/almalinux/10/BaseOS/$basearch/os/
-url --url=https://vault.almalinux.org/10.0-beta/BaseOS/$basearch/os/
-# repo --name="appstream" --baseurl=https://repo.almalinux.org/almalinux/10/AppStream/$basearch/os/
-repo --name="appstream" --baseurl=https://vault.almalinux.org/10.0-beta/AppStream/$basearch/os/
-# repo --name="extras" --baseurl=https://repo.almalinux.org/almalinux/10/extras-common/$basearch/os/
-repo --name="extras" --baseurl=https://vault.almalinux.org/10.0-beta/extras/$basearch/os/
-# repo --name="crb" --baseurl=https://repo.almalinux.org/almalinux/10/CRB/$basearch/os/
-repo --name="crb" --baseurl=https://vault.almalinux.org/10.0-beta/CRB/$basearch/os/
-repo --name="epel" --baseurl=https://dl.fedoraproject.org/pub/epel/10/Everything/$basearch/
+url --url=https://repo.almalinux.org/almalinux/10/BaseOS/$basearch/os/
+repo --name="appstream" --baseurl=https://repo.almalinux.org/almalinux/10/AppStream/$basearch/os/
+repo --name="extras" --baseurl=https://repo.almalinux.org/almalinux/10/extras/$basearch/os/
+repo --name="crb" --baseurl=https://repo.almalinux.org/almalinux/10/CRB/$basearch/os/
+repo --name="epel" --baseurl=https://dl.fedoraproject.org/pub/epel/10z/Everything/$basearch/
 
 # Firewall configuration
 firewall --enabled --service=mdns
@@ -98,6 +94,11 @@ cat <<'EOF'>/home/liveuser/.config/kscreenlockerrc
 Image=/usr/share/wallpapers/Alma-default/
 PreviewImage=/usr/share/wallpapers/Alma-default/
 EOF
+# Login screen theme
+cat <<'EOF'>/etc/sddm.conf.d/kde_settings.conf
+[Theme]
+Current=breeze
+EOF
 # Replace live installer icon for the application and welcome center
 sed -i "s/Icon=.*$/Icon=\/usr\/share\/icons\/hicolor\/scalable\/apps\/org.fedoraproject.AnacondaInstaller.svg/g" \
   /usr/share/applications/liveinst.desktop
@@ -113,18 +114,6 @@ touch /etc/machine-id
 # set livesys session type
 sed -i 's/^livesys_session=.*/livesys_session="kde"/' /etc/sysconfig/livesys
 
-# set default GTK+ theme for root (see #683855, #689070, #808062)
-cat > /root/.gtkrc-2.0 << EOF
-include "/usr/share/themes/Adwaita/gtk-2.0/gtkrc"
-include "/etc/gtk-2.0/gtkrc"
-gtk-theme-name="Adwaita"
-EOF
-mkdir -p /root/.config/gtk-3.0
-cat > /root/.config/gtk-3.0/settings.ini << EOF
-[Settings]
-gtk-theme-name = Adwaita
-EOF
-
 # enable CRB repo
 dnf config-manager --enable crb
 
@@ -137,17 +126,6 @@ getent passwd openvpn &>/dev/null || \
 
 %end
 
-%post --nochroot
-# cp $INSTALL_ROOT/usr/share/licenses/*-release/* $LIVE_ROOT/
-
-# only works on x86_64
-# if [ "$(uname -m)" = "x86_64" ]; then
-#   if [ ! -d $LIVE_ROOT/LiveOS ]; then mkdir -p $LIVE_ROOT/LiveOS ; fi
-#   cp /usr/bin/livecd-iso-to-disk $LIVE_ROOT/LiveOS
-# fi
-
-%end
-
 %packages
 # Explicitly specified mandatory packages
 kernel
@@ -157,8 +135,7 @@ kernel-modules-extra
 # The point of a live image is to install
 anaconda
 anaconda-install-env-deps
-# TODO: "Install to Hard Drive" temporary disabled because of https://github.com/rhinstaller/anaconda/discussions/5997
-#anaconda-live
+anaconda-live
 @anaconda-tools
 # Anaconda has a weak dep on this and we don't want it on livecds, see
 # https://fedoraproject.org/wiki/Changes/RemoveDeviceMapperMultipathFromWorkstationLiveCD

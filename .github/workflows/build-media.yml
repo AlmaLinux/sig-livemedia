@@ -112,6 +112,12 @@ jobs:
           # TODO: the excludes below should be removed when '10' provides need packages
           - version: 10
             arch: x86_64_v2
+            image_type: GNOME
+          - version: 10
+            arch: x86_64_v2
+            image_type: GNOME-Mini
+          - version: 10
+            arch: x86_64_v2
             image_type: KDE
           - version: 10
             arch: x86_64_v2
@@ -126,9 +132,6 @@ jobs:
           - version: 10-kitten
             arch: x86_64
             image_type: XFCE
-          - version: 10
-            arch: x86_64
-            image_type: KDE
           - version: 10
             arch: x86_64
             image_type: MATE
@@ -257,9 +260,6 @@ jobs:
             image_type: XFCE
           - version: 10
             arch: aarch64
-            image_type: KDE
-          - version: 10
-            arch: aarch64
             image_type: MATE
           - version: 10
             arch: aarch64
@@ -312,9 +312,6 @@ jobs:
           - version: 10-kitten
             arch: aarch64
             image_type: XFCE
-          - version: 10
-            arch: aarch64
-            image_type: KDE
           - version: 10
             arch: aarch64
             image_type: MATE
