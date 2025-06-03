@@ -1,16 +1,18 @@
-# AlmaLinux Live Media (Beta - experimental), with optional install option.
-# Build: sudo livecd-creator --cache=~/livecd-creator/package-cache -c almalinux-8-live-gnome.ks -f AlmaLinux-8-Live-gnome
+#version=DEVEL
 # X Window System configuration information
 xconfig  --startxonboot
 # Keyboard layouts
 keyboard 'us'
-
-# System timezone
-timezone US/Eastern
+# Root password
+rootpw --plaintext rootme
 # System language
 lang en_US.UTF-8
-# Firewall configuration
-firewall --enabled --service=mdns
+# Shutdown after installation
+shutdown
+# System timezone
+timezone US/Eastern
+# Network information
+network  --bootproto=dhcp --device=link --activate
 
 # Repos
 url --url=https://kitten.repo.almalinux.org/10-kitten/BaseOS/x86_64_v2/os/
@@ -19,29 +21,30 @@ repo --name="extras" --baseurl=https://kitten.repo.almalinux.org/10-kitten/extra
 repo --name="crb" --baseurl=https://kitten.repo.almalinux.org/10-kitten/CRB/x86_64_v2/os/
 repo --name="epel" --baseurl=https://epel.repo.almalinux.org/10/x86_64_v2/
 
-# Network information
-network --activate --bootproto=dhcp --device=link --onboot=on
-
+# Firewall configuration
+firewall --enabled --service=mdns
 # SELinux configuration
 selinux --enforcing
 
 # System services
 services --disabled="sshd" --enabled="NetworkManager,ModemManager"
-
-# livemedia-creator modifications.
-shutdown
 # System bootloader configuration
 bootloader --location=none
-# Clear blank disks or all existing partitions
+# Clear the Master Boot Record
+zerombr
+# Partition clearing information
 clearpart --all --initlabel
-rootpw rootme
 # Disk partitioning information
 part / --size=10238
 
 %post
+
 # Enable livesys services
 systemctl enable livesys.service
 systemctl enable livesys-late.service
+
+# Enable sddm since EPEL packages it disabled by default
+systemctl enable sddm.service
 
 # enable tmpfs for /tmp
 systemctl enable tmp.mount
@@ -68,18 +71,48 @@ rm -f /var/lib/rpm/__db*
 # make sure there aren't core files lying around
 rm -f /core*
 
+# remove random seed, the newly installed instance should make it's own
+rm -f /var/lib/systemd/random-seed
+
 # convince readahead not to collect
 # FIXME: for systemd
 
 echo 'File created by kickstart. See systemd-update-done.service(8).' \
     | tee /etc/.updated >/var/.updated
 
-# Remove random-seed
-rm /var/lib/systemd/random-seed
-
-# Remove the rescue kernel and image to save space
-# Installation will recreate these on the target
+# Drop the rescue kernel and initramfs, we don't need them on the live media itself.
+# See bug 1317709
 rm -f /boot/*-rescue*
+
+# Theme wallpapers
+rm -f /usr/share/wallpapers/Fedora
+ln -s Alma-default /usr/share/wallpapers/Fedora
+
+# Login screen theme and wallpapers
+cat <<'EOF'>/etc/sddm.conf.d/kde_settings.conf
+[Theme]
+Current=breeze
+EOF
+sed -i 's#background=.*$#background=/usr/share/backgrounds/almalinux-day.jpg#g' \
+  /usr/share/sddm/themes/breeze/theme.conf
+
+# TODO: revise I and II once installer icon is on the separate package
+# like Fedora does at https://src.fedoraproject.org/rpms/kf6-breeze-icons/c/728493c525b4e4e7be5caccba41f66e8d816ee38
+
+# I. Fix org.fedoraproject.AnacondaInstaller.svg broken symlinks
+cp -a /usr/share/icons/hicolor/scalable/apps/org.fedoraproject.AnacondaInstaller.svg \
+  /usr/share/icons/hicolor/48x48/apps/
+# II. Replace live installer icon for the application and welcome center
+cp -a /usr/share/icons/hicolor/scalable/apps/org.fedoraproject.AnacondaInstaller.svg \
+  /usr/share/icons/hicolor/48x48/apps/org.almalinux.AnacondaInstaller.svg
+sed -i 's#Icon=.*$#Icon=org.almalinux.AnacondaInstaller#g' \
+  /usr/share/applications/liveinst.desktop
+
+# Show liveinst.desktop on desktop and in menu
+sed -i 's/NoDisplay=true/NoDisplay=false/' /usr/share/applications/liveinst.desktop
+mkdir /home/liveuser/Desktop
+cp -a /usr/share/applications/liveinst.desktop /home/liveuser/Desktop/liveinst.desktop
+chmod +x /home/liveuser/Desktop/liveinst.desktop
 
 # Disable network service here, as doing it in the services line
 # fails due to RHBZ #1369794
@@ -90,7 +123,10 @@ rm -f /etc/machine-id
 touch /etc/machine-id
 
 # set livesys session type
-sed -i 's/^livesys_session=.*/livesys_session="gnome"/' /etc/sysconfig/livesys
+sed -i 's/^livesys_session=.*/livesys_session="kde"/' /etc/sysconfig/livesys
+
+# enable CRB repo
+dnf config-manager --enable crb
 
 # Workaround to add openvpn user and group in case they didn't added during
 # openvpn package installation
@@ -99,12 +135,8 @@ getent passwd openvpn &>/dev/null || \
     /usr/sbin/useradd -r -g openvpn -s /sbin/nologin -c OpenVPN \
         -d /etc/openvpn openvpn
 
-# TODO: To place Firefox into Task Manager
-# This should be removed when upstream fixes the livesys-scripts package
-sed -i  's/org.mozilla.firefox.desktop/firefox.desktop/g' /usr/libexec/livesys/sessions.d/livesys-gnome
 %end
 
-# Packages
 %packages
 # Explicitly specified mandatory packages
 kernel
@@ -136,18 +168,31 @@ livesys-scripts
 # Mandatory to build media with livemedia-creator
 memtest86+
 
-# firefox
-#@internet-browser
+# libreoffice group
+#@office-suite
+
+# internet-browser group
 firefox
 
-# Workstation environment group
-@^workstation-product-environment
+# KDE specific
+@dial-up
+@standard
 
-# Workstation specific
--@workstation-product
+# install env-group to resolve RhBug:1891500
+@^kde-desktop-environment
+-kde-connect
+-kdeconnectd
+-kde-connect-libs
 
-# GNOME specific
-@gnome-desktop
+@kde-apps
+@kde-media
+
+# drop tracker stuff pulled in by gtk3 (pagureio:fedora-kde/SIG#124)
+-tracker-miners
+-tracker
+
+# Additional packages that are not default in kde-* groups, but useful
+fuse
 
 # EPEL repo
 epel-release
@@ -155,12 +200,17 @@ epel-release
 # OpenVPN
 openvpn
 NetworkManager-openvpn
-NetworkManager-openvpn-gnome
 
-# Exclude unwanted packages from @anaconda-tools group
--gfs2-utils
--reiserfs-utils
+### space issues
+-ktorrent			# kget has also basic torrent features (~3 megs)
+-digikam			# digikam has duplicate functionality with gwenview (~28 megs)
+-kipi-plugins			# ~8 megs + drags in Marble
+-krusader			# ~4 megs
+-k3b				# ~15 megs
 
 # minimization
 -hplip
+
+# Add alsa-sof-firmware to all images PR #51
+alsa-sof-firmware
 %end

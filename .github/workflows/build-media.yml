@@ -102,9 +102,6 @@ jobs:
           # TODO: the excludes below should be removed when '10-kitten' provides need packages
           - version: 10-kitten
             arch: x86_64_v2
-            image_type: KDE
-          - version: 10-kitten
-            arch: x86_64_v2
             image_type: MATE
           - version: 10-kitten
             arch: x86_64_v2
