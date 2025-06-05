@@ -87,16 +87,32 @@ rm -f /boot/*-rescue*
 # Theme wallpapers
 rm -f /usr/share/wallpapers/Fedora
 ln -s Alma-default /usr/share/wallpapers/Fedora
-# Locked screen wallpapers
-mkdir -p /home/liveuser/.config && chown -R liveuser:liveuser /home/liveuser/.config
-cat <<'EOF'>/home/liveuser/.config/kscreenlockerrc
-[Greeter][Wallpaper][org.kde.image][General]
-Image=/usr/share/wallpapers/Alma-default/
-PreviewImage=/usr/share/wallpapers/Alma-default/
+
+# Login screen theme and wallpapers
+cat <<'EOF'>/etc/sddm.conf.d/kde_settings.conf
+[Theme]
+Current=breeze
 EOF
-# Replace live installer icon for the application and welcome center
-sed -i "s/Icon=.*$/Icon=\/usr\/share\/icons\/hicolor\/scalable\/apps\/org.fedoraproject.AnacondaInstaller.svg/g" \
+sed -i 's#background=.*$#background=/usr/share/backgrounds/almalinux-day.jpg#g' \
+  /usr/share/sddm/themes/breeze/theme.conf
+
+# TODO: revise I and II once installer icon is on the separate package
+# like Fedora does at https://src.fedoraproject.org/rpms/kf6-breeze-icons/c/728493c525b4e4e7be5caccba41f66e8d816ee38
+
+# I. Fix org.fedoraproject.AnacondaInstaller.svg broken symlinks
+cp -a /usr/share/icons/hicolor/scalable/apps/org.fedoraproject.AnacondaInstaller.svg \
+  /usr/share/icons/hicolor/48x48/apps/
+# II. Replace live installer icon for the application and welcome center
+cp -a /usr/share/icons/hicolor/scalable/apps/org.fedoraproject.AnacondaInstaller.svg \
+  /usr/share/icons/hicolor/48x48/apps/org.almalinux.AnacondaInstaller.svg
+sed -i 's#Icon=.*$#Icon=org.almalinux.AnacondaInstaller#g' \
   /usr/share/applications/liveinst.desktop
+
+# Show liveinst.desktop on desktop and in menu
+sed -i 's/NoDisplay=true/NoDisplay=false/' /usr/share/applications/liveinst.desktop
+mkdir /home/liveuser/Desktop
+cp -a /usr/share/applications/liveinst.desktop /home/liveuser/Desktop/liveinst.desktop
+chmod +x /home/liveuser/Desktop/liveinst.desktop
 
 # Disable network service here, as doing it in the services line
 # fails due to RHBZ #1369794
@@ -109,18 +125,6 @@ touch /etc/machine-id
 # set livesys session type
 sed -i 's/^livesys_session=.*/livesys_session="kde"/' /etc/sysconfig/livesys
 
-# set default GTK+ theme for root (see #683855, #689070, #808062)
-cat > /root/.gtkrc-2.0 << EOF
-include "/usr/share/themes/Adwaita/gtk-2.0/gtkrc"
-include "/etc/gtk-2.0/gtkrc"
-gtk-theme-name="Adwaita"
-EOF
-mkdir -p /root/.config/gtk-3.0
-cat > /root/.config/gtk-3.0/settings.ini << EOF
-[Settings]
-gtk-theme-name = Adwaita
-EOF
-
 # enable CRB repo
 dnf config-manager --enable crb
 
@@ -130,17 +134,6 @@ getent group openvpn &>/dev/null || groupadd -r openvpn
 getent passwd openvpn &>/dev/null || \
     /usr/sbin/useradd -r -g openvpn -s /sbin/nologin -c OpenVPN \
         -d /etc/openvpn openvpn
-
-%end
-
-%post --nochroot
-# cp $INSTALL_ROOT/usr/share/licenses/*-release/* $LIVE_ROOT/
-
-# only works on x86_64
-# if [ "$(uname -m)" = "x86_64" ]; then
-#   if [ ! -d $LIVE_ROOT/LiveOS ]; then mkdir -p $LIVE_ROOT/LiveOS ; fi
-#   cp /usr/bin/livecd-iso-to-disk $LIVE_ROOT/LiveOS
-# fi
 
 %end
 

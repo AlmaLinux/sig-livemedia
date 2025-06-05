@@ -99,6 +99,9 @@ getent passwd openvpn &>/dev/null || \
     /usr/sbin/useradd -r -g openvpn -s /sbin/nologin -c OpenVPN \
         -d /etc/openvpn openvpn
 
+# TODO: To place Firefox into Task Manager
+# This should be removed when upstream fixes the livesys-scripts package
+sed -i  's/org.mozilla.firefox.desktop/firefox.desktop/g' /usr/libexec/livesys/sessions.d/livesys-gnome
 %end
 
 # Packages
@@ -154,7 +157,7 @@ firefox
 bash-color-prompt
 exfatprogs
 fpaste
-#iptstate
+iptstate
 nss-mdns
 #ntfs-3g
 #ntfsprogs

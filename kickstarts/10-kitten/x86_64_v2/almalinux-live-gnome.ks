@@ -17,6 +17,7 @@ url --url=https://kitten.repo.almalinux.org/10-kitten/BaseOS/x86_64_v2/os/
 repo --name="appstream" --baseurl=https://kitten.repo.almalinux.org/10-kitten/AppStream/x86_64_v2/os/
 repo --name="extras" --baseurl=https://kitten.repo.almalinux.org/10-kitten/extras-common/x86_64_v2/os/
 repo --name="crb" --baseurl=https://kitten.repo.almalinux.org/10-kitten/CRB/x86_64_v2/os/
+repo --name="epel" --baseurl=https://epel.repo.almalinux.org/10/x86_64_v2/
 
 # Network information
 network --activate --bootproto=dhcp --device=link --onboot=on
@@ -98,6 +99,9 @@ getent passwd openvpn &>/dev/null || \
     /usr/sbin/useradd -r -g openvpn -s /sbin/nologin -c OpenVPN \
         -d /etc/openvpn openvpn
 
+# TODO: To place Firefox into Task Manager
+# This should be removed when upstream fixes the livesys-scripts package
+sed -i  's/org.mozilla.firefox.desktop/firefox.desktop/g' /usr/libexec/livesys/sessions.d/livesys-gnome
 %end
 
 # Packages
@@ -129,7 +133,7 @@ glibc-all-langpacks
 # provide the livesys scripts
 livesys-scripts
 
-# Memtest boot option
+# Mandatory to build media with livemedia-creator
 memtest86+
 
 # libreoffice group
@@ -152,9 +156,9 @@ firefox
 # Workstation specific
 bash-color-prompt
 exfatprogs
-#fpaste
-#iptstate
-#nss-mdns
+fpaste
+iptstate
+nss-mdns
 #ntfs-3g
 #ntfsprogs
 policycoreutils-python-utils
@@ -165,10 +169,13 @@ toolbox
 uresourced
 whois
 
+# EPEL repo
+epel-release
+
 # OpenVPN
-# openvpn
-# NetworkManager-openvpn
-# NetworkManager-openvpn-gnome
+openvpn
+NetworkManager-openvpn
+NetworkManager-openvpn-gnome
 
 # minimization
 -hplip
