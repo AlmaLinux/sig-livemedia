@@ -157,7 +157,7 @@ firefox
 bash-color-prompt
 exfatprogs
 fpaste
-iptstate
+# iptstate
 nss-mdns
 #ntfs-3g
 #ntfsprogs

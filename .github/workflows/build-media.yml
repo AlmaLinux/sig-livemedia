@@ -99,6 +99,10 @@ jobs:
             arch: x86_64_v2
           - version: 9
             arch: x86_64_v2
+          - image_type: GNOME-Mini
+            version: 10
+          - image_type: GNOME-Mini
+            version: 10-kitten
           # TODO: the excludes below should be removed when '10-kitten' provides need packages
           - version: 10-kitten
             arch: x86_64_v2
@@ -107,15 +111,6 @@ jobs:
             arch: x86_64_v2
             image_type: XFCE
           # TODO: the excludes below should be removed when '10' provides need packages
-          - version: 10
-            arch: x86_64_v2
-            image_type: GNOME
-          - version: 10
-            arch: x86_64_v2
-            image_type: GNOME-Mini
-          - version: 10
-            arch: x86_64_v2
-            image_type: KDE
           - version: 10
             arch: x86_64_v2
             image_type: MATE
