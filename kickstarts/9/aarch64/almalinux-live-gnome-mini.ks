@@ -13,10 +13,10 @@ lang en_US.UTF-8
 firewall --enabled --service=mdns
 
 # Repos
-url --url=https://atl.mirrors.knownhost.com/almalinux/9/BaseOS/$basearch/os/
-repo --name="appstream" --baseurl=https://atl.mirrors.knownhost.com/almalinux/9/AppStream/$basearch/os/
-repo --name="extras" --baseurl=https://atl.mirrors.knownhost.com/almalinux/9/extras/$basearch/os/
-repo --name="crb" --baseurl=https://atl.mirrors.knownhost.com/almalinux/9/CRB/$basearch/os/
+url --url=https://aws.repo.almalinux.org/9/BaseOS/$basearch/os/
+repo --name="appstream" --baseurl=https://aws.repo.almalinux.org/9/AppStream/$basearch/os/
+repo --name="extras" --baseurl=https://aws.repo.almalinux.org/9/extras/$basearch/os/
+repo --name="crb" --baseurl=https://aws.repo.almalinux.org/9/CRB/$basearch/os/
 repo --name="epel" --baseurl=https://dl.fedoraproject.org/pub/epel/9/Everything/$basearch/
 
 
