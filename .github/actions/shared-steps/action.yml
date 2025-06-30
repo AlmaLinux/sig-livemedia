@@ -117,31 +117,12 @@ runs:
         mkdir -p ${results_path}
         echo "results_path=${results_path}" >> $GITHUB_ENV
 
-        # Run/copy with local shell or vagrant+openssh
-        case ${{ env.RUNNER }} in
-          self-hosted)
-            mkdir -p /vagrant
-            run="sh -c"
-            copy_to='cp -av ${source} ${target}'
-            copy_from=$copy_to
-            ;;
-          github-hosted)
-            run="sudo vagrant ssh almalinux -c"
-            copy_to='sudo vagrant scp ${source} almalinux:${target}'
-            copy_from='sudo vagrant scp almalinux:${source} ${target}'
-            ;;
-        esac
-        echo "run=${run}" >> $GITHUB_ENV
-        echo "copy_to=${copy_to}" >> $GITHUB_ENV
-        echo "copy_from=${copy_from}" >> $GITHUB_ENV
-
         echo -e "[Debug]\nKickstart file: ${kickstart}\nVolume ID: ${volid}\nISO name: ${results_name}.iso\n"
 
     - name: Create media creator script
       shell: bash
       run: |
-        cat <<'EOF'>./livemedia-creator.sh
-        [ "${{ env.RUNNER }}" = "github-hosted" ] && cd /vagrant
+        cat << 'EOF' > livemedia-creator.sh
         livemedia-creator \
         --ks=./kickstarts/${{ inputs.version_major }}/${{ inputs.arch }}/${{ env.kickstart }} \
         --no-virt \
@@ -156,29 +137,24 @@ runs:
         --logfile ${{ env.RESULT_DIR }}/logs/livemedia.log ${{ env.livemedia_creator_opts }}
         EOF
 
-        # Put the script into common place
-        source="./livemedia-creator.sh"
-        target="/vagrant/"
-        ${{ env.copy_to }}
-
     - name: Install livemedia-creator
       shell: bash
       run: |
         # Install need packages
         enable_repo=${{ env.dnf_crb_repo }}
-        ${{ env.run }} "sudo dnf update -y"
-        ${{ env.run }} "sudo dnf install -y --enablerepo=${enable_repo,,} ${{ env.need_pkgs }}"
+        sudo dnf update -y
+        sudo dnf install -y --enablerepo=${enable_repo,,} ${{ env.need_pkgs }}
 
     - name: Set SElinux current mode into permissive
       shell: bash
       if: inputs.version_major == '10-kitten'
       run: |
-        ${{ env.run }} "sudo setenforce 0"
+        sudo setenforce 0
 
     - name: Build media
       shell: bash
       run: |
-        ${{ env.run }} "sudo bash /vagrant/livemedia-creator.sh"
+        sudo bash livemedia-creator.sh
 
     - name: Get ISO media
       if: inputs.store_as_artifact == 'true' || inputs.upload_to_s3 == 'true'
@@ -188,7 +164,7 @@ runs:
         # Get media into the host
         source="${{ env.RESULT_DIR }}/iso_${{ inputs.image_type }}/${{ env.results_name }}.iso"
         target="${{ env.results_path }}/"
-        ${{ env.copy_from }}
+        cp -av ${source} ${target}
 
         # Compute SHA256 digest for the .iso
         cd ${{ env.results_path }} && sha256sum ${{ env.results_name }}.iso > ${{ env.results_name }}.iso.CHECKSUM
@@ -198,13 +174,13 @@ runs:
       shell: bash
       run: |
         # Pack and compress logs in the VM
-        ${{ env.run }} "sudo sh -c 'cd ${{ env.RESULT_DIR }}; tar -cvf ${{ env.results_name }}-logs.tar logs/'"
-        ${{ env.run }} "sudo sh -c 'cd ${{ env.RESULT_DIR }}; zstd -T0 -19 ${{ env.results_name }}-logs.tar -o ${{ env.results_name }}-logs.tar.zst'"
+        sudo sh -c 'cd ${{ env.RESULT_DIR }}; tar -cvf ${{ env.results_name }}-logs.tar logs/'
+        sudo sh -c 'cd ${{ env.RESULT_DIR }}; zstd -T0 -19 ${{ env.results_name }}-logs.tar -o ${{ env.results_name }}-logs.tar.zst'
 
         # Get logs into the host
         source="${{ env.RESULT_DIR }}/${{ env.results_name }}-logs.tar*"
         target="${{ env.results_path }}/"
-        ${{ env.copy_from }}
+        cp -av ${source} ${target}
 
     - name: Store logs as artifact
       uses: actions/upload-artifact@v4

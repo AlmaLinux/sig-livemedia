@@ -15,10 +15,10 @@ timezone US/Eastern
 network  --bootproto=dhcp --device=link --activate
 
 # Repos
-url --url=https://repo.almalinux.org/almalinux/10/BaseOS/$basearch/os/
-repo --name="appstream" --baseurl=https://repo.almalinux.org/almalinux/10/AppStream/$basearch/os/
-repo --name="extras" --baseurl=https://repo.almalinux.org/almalinux/10/extras/$basearch/os/
-repo --name="crb" --baseurl=https://repo.almalinux.org/almalinux/10/CRB/$basearch/os/
+url --url=https://aws.repo.almalinux.org/10/BaseOS/$basearch/os/
+repo --name="appstream" --baseurl=https://aws.repo.almalinux.org/10/AppStream/$basearch/os/
+repo --name="extras" --baseurl=https://aws.repo.almalinux.org/10/extras/$basearch/os/
+repo --name="crb" --baseurl=https://aws.repo.almalinux.org/10/CRB/$basearch/os/
 repo --name="epel" --baseurl=https://dl.fedoraproject.org/pub/epel/10z/Everything/$basearch/
 
 # Firewall configuration

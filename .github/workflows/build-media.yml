@@ -82,21 +82,23 @@ jobs:
           time_stamp=$(date -u '+%Y%m%d%H%M%S')
           echo "time_stamp=${time_stamp}" >> $GITHUB_OUTPUT
 
-  build-x86_64:
+  build:
     name: ${{ matrix.version }} ${{ matrix.arch }} ${{ matrix.image_type }}
     needs: [init-data]
-    runs-on: ubuntu-24.04
+    runs-on: runs-on=${{github.run_id}}/runner=cpu-32/image=almalinux-${{ matrix.version }}-${{ matrix.arch == 'x86_64_v2' && 'x86_64' || matrix.arch }}/extras=tmpfs
     strategy:
       fail-fast: false
       matrix:
         # Set image types matrix based on boolean inputs.* with true value
         image_type: ${{ fromJSON(format('["{0}", "{1}", "{2}", "{3}", "{4}"]', ( inputs.GNOME && 'GNOME' ), ( inputs.GNOME-Mini && 'GNOME-Mini' ), ( inputs.KDE && 'KDE' ), ( inputs.MATE && 'MATE' ), ( inputs.XFCE && 'XFCE' ) )) }}
         version: ${{ fromJSON(format('["{0}"]', inputs.version_major)) }}
-        arch: [x86_64, x86_64_v2]
+        arch: [aarch64, x86_64, x86_64_v2]
         exclude:
           - image_type: 'false'
           - version: 8
             arch: x86_64_v2
+          - version: 8
+            arch: aarch64
           - version: 9
             arch: x86_64_v2
           - image_type: GNOME-Mini
@@ -130,173 +132,6 @@ jobs:
           - version: 10
             arch: x86_64
             image_type: XFCE
-    env:
-      RUNNER: github-hosted
-      TIME_STAMP: ${{ needs.init-data.outputs.time_stamp }}
-      RESULT_DIR: /sig-livemedia
-
-    steps:
-      - name: Checkout ${{ github.action_repository }}
-        uses: actions/checkout@v4
-
-      - name: Install KVM Packages and Start libvirt
-        run: |
-          sudo apt-get -y update
-          sudo apt-get -y install qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils
-          sudo systemctl enable --now libvirtd
-          sudo adduser "$(id -un)" libvirt
-          sudo adduser "$(id -un)" kvm
-
-      - name: Enable KVM group perms
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-
-      - name: Install the Vagrant and need plugins
-        run: |
-          # Use Vagrant packages provided by Hashicorp as ubuntu-24.04 doesn't build ones
-          wget -O - https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-          sudo apt-get -y update
-          sudo apt-get -y install vagrant
-
-          sudo vagrant plugin install vagrant-reload
-          sudo vagrant plugin install vagrant-env
-          sudo vagrant plugin install vagrant-scp
-
-      - name: Install Libvirt Plugins
-        run: |
-          sudo cp /etc/apt/sources.list.d/ubuntu.sources /etc/apt/sources.list.d/ubuntu.sources."$(date +"%F")"
-          sudo sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources
-          sudo apt-get -y update
-
-          sudo apt-get -y install nfs-kernel-server
-          sudo systemctl enable --now nfs-server
-
-          sudo apt-get -y build-dep ruby-libvirt
-          sudo apt-get -y install ebtables dnsmasq-base
-          sudo apt-get -y install libxslt-dev libxml2-dev libvirt-dev zlib1g-dev ruby-dev
-          sudo vagrant plugin install vagrant-libvirt
-
-      - name: Create 'mnt' Storage Pull
-        run: |
-          sudo virsh pool-define-as --name mnt --type dir --target /mnt
-          sudo virsh pool-autostart mnt
-          sudo virsh pool-start mnt
-          sudo virsh pool-list
-
-      - name: Run vagrant up
-        run: |
-          vm_box='almalinux/${{ inputs.version_major }}'
-          # TODO: use official Vagrant images when available
-          if [[ "${{ inputs.version_major }}" = *'10'* ]]; then
-            vm_box='almalinux/10-kitten'
-            [ "${{ matrix.arch }}" = "x86_64_v2" ] && vm_box='almalinux/10-kitten-x86_64_v2'
-          fi
-          echo vm_box=${vm_box} > .env
-
-          cp -av ci/vagrant/Vagrantfile ./
-
-          # TODO to solve "undefined method `exists?'" error
-          ruby_version=$(sudo /opt/vagrant/embedded/bin/ruby -e 'print "#{ RUBY_VERSION }"')
-          sudo find /root/.vagrant.d/gems/${ruby_version}/gems -name dotenv.rb -exec sed -i 's/exists?/exist?/g' {} \;
-
-          sudo vagrant up --no-tty almalinux
-
-      - name: Extend disk space on ${{ env.RESULT_DIR }}
-        run: |
-          # Create file-system and mount additional disk inside the VM
-          sudo vagrant ssh almalinux -c "sudo mkfs.xfs -f /dev/vdb"
-          sudo vagrant ssh almalinux -c "sudo sh -c 'mkdir -p ${{ env.RESULT_DIR }}; mount /dev/vdb ${{ env.RESULT_DIR }}'"
-
-      - uses: ./.github/actions/shared-steps
-        name: ${{ matrix.version }} ${{ matrix.arch }} ${{ matrix.image_type }}
-        with:
-          image_type: ${{ matrix.image_type }}
-          version_major: ${{ inputs.version_major }}
-          arch: ${{ matrix.arch }}
-          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
-          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          AWS_S3_BUCKET: ${{ vars.AWS_S3_BUCKET }}
-          MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
-          MATTERMOST_CHANNEL: ${{ vars.MATTERMOST_CHANNEL }}
-          iteration: ${{ inputs.iteration }}
-          store_as_artifact: ${{ inputs.store_as_artifact }}
-          upload_to_s3: ${{ inputs.upload_to_s3 }}
-          notify_mattermost: ${{ inputs.notify_mattermost }}
-
-
-  start-aarch64-runner:
-    name: ${{ inputs.version_major != '8' && format('Runner for {0} {1} {2}', inputs.version_major, matrix.arch, matrix.image_type) || format('{0} aarch64 runner [EXCLUDED]', inputs.version_major) }}
-    runs-on: ubuntu-24.04
-    needs: [init-data]
-    strategy:
-      fail-fast: false
-      matrix:
-        # Set image types matrix based on boolean inputs.* with true value
-        image_type: ${{ fromJSON(format('["{0}", "{1}", "{2}", "{3}", "{4}"]', ( inputs.GNOME && 'GNOME' ), ( inputs.GNOME-Mini && 'GNOME-Mini' ), ( inputs.KDE && 'KDE' ), ( inputs.MATE && 'MATE' ), ( inputs.XFCE && 'XFCE' ) )) }}
-        version: ${{ fromJSON(format('["{0}"]', inputs.version_major)) }}
-        arch: [aarch64]
-        exclude:
-          - image_type: 'false'
-          - version: 8
-            arch: aarch64
-          # TODO: the excludes below should be removed when EPEL for 10 provides need packages
-          - version: 10-kitten
-            arch: aarch64
-            image_type: MATE
-          - version: 10-kitten
-            arch: aarch64
-            image_type: XFCE
-          - version: 10
-            arch: aarch64
-            image_type: MATE
-          - version: 10
-            arch: aarch64
-            image_type: XFCE
-
-    steps:
-      - name: Setup and start the runner
-        if: ${{ inputs.version_major != '8' }}
-        id: start-ec2-runner
-        uses: NextChapterSoftware/ec2-action-builder@v1.7
-        with:
-          github_token: ${{ secrets.GIT_HUB_TOKEN }}
-          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws_region: ${{ secrets.AWS_REGION }}
-          ec2_ami_id: ${{ secrets[format('EC2_AMI_ID_AL{0}',  ( matrix.version == '10-kitten' && '10_KITTEN' || matrix.version))] }}
-          ec2_subnet_id: ${{ secrets.EC2_SUBNET_ID}}
-          ec2_security_group_id: ${{ secrets.EC2_SECURITY_GROUP_ID }}
-
-          ec2_instance_type: t4g.medium       # 2 vCPU and 4 GiM Memory
-          ec2_root_disk_size_gb: "24"         # override default size which is too small for images
-          ec2_root_disk_ebs_class: "gp3"      # use faster and cheeper storage instead of default 'gp2'
-          ec2_instance_ttl: 60                # Optional (default is 60 minutes)
-          ec2_spot_instance_strategy: None    # Other options are: SpotOnly, BestEffort, MaxPerformance
-          ec2_instance_tags: >                # Required for IAM role resource permission scoping
-            [
-                {"Key": "Project", "Value": "GitHub Actions Self-hosted Runners"}
-            ]
-
-  build-aarch64:
-    name: ${{ inputs.version_major != '8' && format('{0} {1} {2}', inputs.version_major, matrix.arch, matrix.image_type) || format('{0} aarch64 [EXCLUDED]', inputs.version_major) }}
-    runs-on: ${{ inputs.version_major != '8' && github.run_id || 'ubuntu-24.04' }}
-    if: ${{ always() && contains(join(needs.start-aarch64-runner.result, ','), 'success') }}
-    needs: [init-data, start-aarch64-runner]
-    strategy:
-      fail-fast: false
-      matrix:
-        # Set image types matrix based on boolean inputs.* with true value
-        image_type: ${{ fromJSON(format('["{0}", "{1}", "{2}", "{3}", "{4}"]', ( inputs.GNOME && 'GNOME' ), ( inputs.GNOME-Mini && 'GNOME-Mini' ), ( inputs.KDE && 'KDE' ), ( inputs.MATE && 'MATE' ), ( inputs.XFCE && 'XFCE' ) )) }}
-        version: ${{ fromJSON(format('["{0}"]', inputs.version_major)) }}
-        arch: [aarch64]
-        exclude:
-          - image_type: 'false'
-          - version: 8
-            arch: aarch64
           # TODO: the excludes below should be removed when EPEL for 10 provides need packages
           - version: 10-kitten
             arch: aarch64
@@ -317,13 +152,20 @@ jobs:
       RESULT_DIR: /sig-livemedia
 
     steps:
+      - name: Install cloudwatch
+        run: |
+          sudo dnf install -y https://amazoncloudwatch-agent.s3.amazonaws.com/redhat/${{ matrix.arch == 'aarch64' && 'arm64' || 'amd64' }}/latest/amazon-cloudwatch-agent.rpm
+
+      - uses: runs-on/action@v2
+        with:
+          show_costs: summary
+          metrics: cpu,network,memory,disk,io
+
       - name: Checkout ${{ github.action_repository }}
-        if: inputs.version_major != '8'
         uses: actions/checkout@v4
 
       - uses: ./.github/actions/shared-steps
         name: ${{ matrix.version }} ${{ matrix.arch }} ${{ matrix.image_type }}
-        if: inputs.version_major != '8'
         with:
           image_type: ${{ matrix.image_type }}
           version_major: ${{ inputs.version_major }}
@@ -338,3 +180,4 @@ jobs:
           store_as_artifact: ${{ inputs.store_as_artifact }}
           upload_to_s3: ${{ inputs.upload_to_s3 }}
           notify_mattermost: ${{ inputs.notify_mattermost }}
+
