@@ -99,6 +99,7 @@ jobs:
             arch: x86_64_v2
           - version: 9
             arch: x86_64_v2
+          # 10 and Kitten, GNOME and GNOME-Mini images are almost the same by size because of lack of some packages, like libreoffice group
           - image_type: GNOME-Mini
             version: 10
           - image_type: GNOME-Mini
@@ -212,6 +213,7 @@ jobs:
 
       - uses: ./.github/actions/shared-steps
         name: ${{ matrix.version }} ${{ matrix.arch }} ${{ matrix.image_type }}
+        if: matrix.image_type != ''
         with:
           image_type: ${{ matrix.image_type }}
           version_major: ${{ inputs.version_major }}
@@ -243,6 +245,11 @@ jobs:
           - image_type: 'false'
           - version: 8
             arch: aarch64
+          # 10 and Kitten, GNOME and GNOME-Mini images are almost the same by size because of lack of some packages, like libreoffice group
+          - image_type: GNOME-Mini
+            version: 10
+          - image_type: GNOME-Mini
+            version: 10-kitten
           # TODO: the excludes below should be removed when EPEL for 10 provides need packages
           - version: 10-kitten
             arch: aarch64
@@ -258,6 +265,28 @@ jobs:
             image_type: XFCE
 
     steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4.0.2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Get AlmaLinux ${{ inputs.version_major }} aarch64 AMI most recent ID
+        run: |
+          os_version="${{ inputs.version_major }}"
+          if [[ "${os_version}" == "10-kitten" ]]; then
+            os_version="Kitten 10"
+          fi
+          AMI_ID=$(aws ec2 describe-images --owners 764336703387 --query "Images | max_by(@, &CreationDate) | ImageId" --filters "Name=name,Values=AlmaLinux OS ${os_version}*aarch64" --region ${{ secrets.AWS_REGION }} --output text)
+          if [[ "${AMI_ID}" == "" || "${AMI_ID}" == "None" ]]; then
+            echo "[Error] Failed to get AMI ID for AlmaLinux ${os_version} aarch64."
+            exit 1
+          else
+            echo "[Debug] AMI ID: '${AMI_ID}'"
+          fi
+          echo "AMI_ID=${AMI_ID}" >> $GITHUB_ENV
+
       - name: Setup and start the runner
         if: ${{ inputs.version_major != '8' }}
         id: start-ec2-runner
@@ -267,7 +296,7 @@ jobs:
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws_region: ${{ secrets.AWS_REGION }}
-          ec2_ami_id: ${{ secrets[format('EC2_AMI_ID_AL{0}',  ( matrix.version == '10-kitten' && '10_KITTEN' || matrix.version))] }}
+          ec2_ami_id: ${{ env.AMI_ID }}
           ec2_subnet_id: ${{ secrets.EC2_SUBNET_ID}}
           ec2_security_group_id: ${{ secrets.EC2_SECURITY_GROUP_ID }}
 
@@ -297,6 +326,11 @@ jobs:
           - image_type: 'false'
           - version: 8
             arch: aarch64
+          # 10 and Kitten, GNOME and GNOME-Mini images are almost the same by size because of lack of some packages, like libreoffice group
+          - image_type: GNOME-Mini
+            version: 10
+          - image_type: GNOME-Mini
+            version: 10-kitten
           # TODO: the excludes below should be removed when EPEL for 10 provides need packages
           - version: 10-kitten
             arch: aarch64
@@ -323,7 +357,7 @@ jobs:
 
       - uses: ./.github/actions/shared-steps
         name: ${{ matrix.version }} ${{ matrix.arch }} ${{ matrix.image_type }}
-        if: inputs.version_major != '8'
+        if: inputs.version_major != '8' && matrix.image_type != ''
         with:
           image_type: ${{ matrix.image_type }}
           version_major: ${{ inputs.version_major }}
