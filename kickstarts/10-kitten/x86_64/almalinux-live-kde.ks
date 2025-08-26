@@ -180,9 +180,6 @@ firefox
 
 # install env-group to resolve RhBug:1891500
 @^kde-desktop-environment
--kde-connect
--kdeconnectd
--kde-connect-libs
 
 @kde-apps
 @kde-media
