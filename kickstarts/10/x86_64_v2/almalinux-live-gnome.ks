@@ -17,7 +17,7 @@ url --url=https://repo.almalinux.org/almalinux/10/BaseOS/x86_64_v2/os/
 repo --name="appstream" --baseurl=https://repo.almalinux.org/almalinux/10/AppStream/x86_64_v2/os/
 repo --name="extras" --baseurl=https://repo.almalinux.org/almalinux/10/extras/x86_64_v2/os/
 repo --name="crb" --baseurl=https://repo.almalinux.org/almalinux/10/CRB/x86_64_v2/os/
-repo --name="epel" --baseurl=https://repo.almalinux.org/almalinux-epel/10z/x86_64_v2/
+repo --name="epel" --baseurl=https://repo.almalinux.org/almalinux-epel/10.1z/x86_64_v2/
 
 # Network information
 network --activate --bootproto=dhcp --device=link --onboot=on
