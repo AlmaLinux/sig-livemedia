@@ -61,7 +61,7 @@ runs:
             need_pkgs="${need_pkgs} libblockdev-nvme"
             ;;
           10)
-            version_minor=".0"
+            version_minor=".1"
             releasever=${{ inputs.version_major }}${version_minor}
             results_name="AlmaLinux-${releasever}-${{ inputs.arch }}-Live-${{ inputs.image_type }}"
             volid="AlmaLinux-${releasever//./_}-${{ inputs.arch }}" # TODO 'Live' skipped to fit into 32 chars
@@ -171,7 +171,7 @@ runs:
 
     - name: Set SElinux current mode into permissive
       shell: bash
-      if: inputs.version_major == '10-kitten'
+      if: contains(inputs.version_major, '10')
       run: |
         ${{ env.run }} "sudo setenforce 0"
 

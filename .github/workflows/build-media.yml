@@ -190,7 +190,6 @@ jobs:
       - name: Run vagrant up
         run: |
           vm_box='almalinux/${{ inputs.version_major }}'
-          # TODO: use official Vagrant images when available
           if [[ "${{ inputs.version_major }}" = *'10'* ]]; then
             vm_box='almalinux/10-kitten'
             [ "${{ matrix.arch }}" = "x86_64_v2" ] && vm_box='almalinux/10-kitten-x86_64_v2'
