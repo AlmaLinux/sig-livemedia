@@ -52,7 +52,7 @@ Arguments:
 
 Examples:
   $0 9 GNOME              # Build AlmaLinux 9.8 GNOME Live Media
-  $0 10 KDE               # Build AlmaLinux 10.1 KDE Live Media
+  $0 10 KDE               # Build AlmaLinux 10.2 KDE Live Media
   $0 10-kitten GNOME-Mini # Build AlmaLinux Kitten GNOME-Mini Live Media
   $0 8 MATE               # Build AlmaLinux 8.10 MATE Live Media
 
@@ -136,7 +136,7 @@ case "${VERSION_MAJOR}" in
         CODE_NAME=""
         ;;
     10)
-        VERSION_MINOR=".1"
+        VERSION_MINOR=".2"
         RELEASEVER="${VERSION_MAJOR}${VERSION_MINOR}"
         DNF_REPO="crb"
         NEED_PKGS="lorax lorax-templates-almalinux anaconda unzip zstd libblockdev-nvme"

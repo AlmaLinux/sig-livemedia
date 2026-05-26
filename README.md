@@ -76,7 +76,7 @@ chmod +x build-livemedia.sh
 # Build AlmaLinux 9.8 GNOME Live Media
 sudo ./build-livemedia.sh 9 GNOME
 
-# Build AlmaLinux 10.1 KDE Live Media
+# Build AlmaLinux 10.2 KDE Live Media
 sudo ./build-livemedia.sh 10 KDE
 
 # Build AlmaLinux Kitten GNOME-Mini Live Media
@@ -91,7 +91,7 @@ BUILD_X86_64_V2=1 sudo ./build-livemedia.sh 10 KDE
 
 **Features:**
 - **Automated setup**: Installs required packages and prepares build environment
-- **Smart versioning**: Automatically maps major versions to current releases (8→8.10, 9→9.8, 10→10.1)
+- **Smart versioning**: Automatically maps major versions to current releases (8→8.10, 9→9.8, 10→10.2)
 - **Architecture detection**: Supports x86_64, aarch64, and x86_64_v2 automatically
 - **Comprehensive logging**: Creates detailed logs in `./results/` directory
 - **Error handling**: Validates inputs and provides helpful error messages
@@ -197,7 +197,7 @@ sudo livemedia-creator \
     --logfile ./livemedia.log
 ```
 
-#### AlmaLinux 10.1 Examples
+#### AlmaLinux 10.2 Examples
 
 **GNOME Live Media:**
 ```sh
@@ -208,9 +208,9 @@ sudo livemedia-creator \
     --project "Live AlmaLinux" \
     --make-iso \
     --iso-only \
-    --iso-name "AlmaLinux-10.1-x86_64-Live-GNOME.iso" \
-    --releasever "10.1" \
-    --volid "AlmaLinux-10_1-x86_64" \
+    --iso-name "AlmaLinux-10.2-x86_64-Live-GNOME.iso" \
+    --releasever "10.2" \
+    --volid "AlmaLinux-10_2-x86_64" \
     --nomacboot \
     --logfile ./livemedia.log
 ```
@@ -224,9 +224,9 @@ sudo livemedia-creator \
     --project "Live AlmaLinux" \
     --make-iso \
     --iso-only \
-    --iso-name "AlmaLinux-10.1-x86_64-Live-KDE.iso" \
-    --releasever "10.1" \
-    --volid "AlmaLinux-10_1-x86_64" \
+    --iso-name "AlmaLinux-10.2-x86_64-Live-KDE.iso" \
+    --releasever "10.2" \
+    --volid "AlmaLinux-10_2-x86_64" \
     --nomacboot \
     --logfile ./livemedia.log
 ```
@@ -263,9 +263,9 @@ sudo livemedia-creator \
     --project "Live AlmaLinux" \
     --make-iso \
     --iso-only \
-    --iso-name "AlmaLinux-10.1-x86_64_v2-Live-KDE.iso" \
-    --releasever "10.1" \
-    --volid "AlmaLinux-10_1-x86_64_v2-KDE" \
+    --iso-name "AlmaLinux-10.2-x86_64_v2-Live-KDE.iso" \
+    --releasever "10.2" \
+    --volid "AlmaLinux-10_2-x86_64_v2-KDE" \
     --nomacboot \
     --logfile ./livemedia.log
 ```
