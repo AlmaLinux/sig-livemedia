@@ -84,10 +84,6 @@ echo 'File created by kickstart. See systemd-update-done.service(8).' \
 # See bug 1317709
 rm -f /boot/*-rescue*
 
-# Theme wallpapers
-rm -f /usr/share/wallpapers/Fedora
-ln -s Alma-default /usr/share/wallpapers/Fedora
-
 # Login screen theme and wallpapers
 cat <<'EOF'>/etc/sddm.conf.d/kde_settings.conf
 [Theme]
