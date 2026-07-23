@@ -51,10 +51,10 @@ Arguments:
   desktop_environment   Desktop environment (GNOME, GNOME-Mini, KDE, XFCE, MATE)
 
 Examples:
-  $0 9 GNOME              # Build AlmaLinux 9.8 GNOME Live Media
-  $0 10 KDE               # Build AlmaLinux 10.2 KDE Live Media
+  $0 9 GNOME              # Build AlmaLinux 9 (latest minor release) GNOME Live Media
+  $0 10 KDE               # Build AlmaLinux 10 (latest minor release) KDE Live Media
   $0 10-kitten GNOME-Mini # Build AlmaLinux Kitten GNOME-Mini Live Media
-  $0 8 MATE               # Build AlmaLinux 8.10 MATE Live Media
+  $0 8 MATE               # Build AlmaLinux 8 (latest minor release) MATE Live Media
 
 Supported desktop environments:
   - GNOME       Full-featured desktop environment
@@ -73,6 +73,7 @@ Environment variables:
   BUILD_X86_64_V2=1   Build for x86_64_v2 architecture (AlmaLinux 10/10-kitten only)
   DATE_STAMP          Override date stamp for 10-kitten builds (default: current date)
   ITERATION           Override build iteration for 10-kitten builds (default: 0)
+  PUNGI_REPOS=1       Build from PUNGI pre-release repositories (AlmaLinux 9 and 10 only)
 
 Requirements:
   - AlmaLinux system (8, 9, or 10)
@@ -117,27 +118,22 @@ case "$(echo "${DESKTOP_ENV}" | tr '[:lower:]' '[:upper:]')" in
         ;;
 esac
 
-# Set version-specific variables
+# Set version-specific variables (the minor version of 8/9/10 is derived
+# from the almalinux-release package in the BaseOS repository below)
 case "${VERSION_MAJOR}" in
     8)
-        VERSION_MINOR=".10"
-        RELEASEVER="${VERSION_MAJOR}${VERSION_MINOR}"
         DNF_REPO="powertools"
         NEED_PKGS="lorax lorax-templates-almalinux anaconda unzip zstd"
         LIVEMEDIA_OPTS='--anaconda-arg="--product AlmaLinux"'
         CODE_NAME=""
         ;;
     9)
-        VERSION_MINOR=".8"
-        RELEASEVER="${VERSION_MAJOR}${VERSION_MINOR}"
         DNF_REPO="crb"
         NEED_PKGS="lorax lorax-templates-almalinux anaconda unzip zstd libblockdev-nvme"
         LIVEMEDIA_OPTS=""
         CODE_NAME=""
         ;;
     10)
-        VERSION_MINOR=".2"
-        RELEASEVER="${VERSION_MAJOR}${VERSION_MINOR}"
         DNF_REPO="crb"
         NEED_PKGS="lorax lorax-templates-almalinux anaconda unzip zstd libblockdev-nvme"
         LIVEMEDIA_OPTS=""
@@ -206,6 +202,42 @@ fi
 KICKSTART_FILE="almalinux-live-$(echo "${DESKTOP_ENV}" | tr '[:upper:]' '[:lower:]').ks"
 KICKSTART_PATH="./kickstarts/${VERSION_MAJOR}/${ARCH}/${KICKSTART_FILE}"
 
+# Derive the minor version of AlmaLinux 8/9/10 from the almalinux-release
+# package in the BaseOS repository the image is built from, so the ISO name,
+# the volume ID, --releasever and the image content agree without hardcoding
+# the minor version. AlmaLinux 8 is always built from the GA repository
+# (repo.almalinux.org); AlmaLinux 9 and 10 are built either from the GA
+# repository or, with PUNGI_REPOS=1, from the PUNGI pre-release compose,
+# which ships the next almalinux-release (e.g. 10.3 while repo.almalinux.org
+# still carries 10.2). The derived version also selects the matching
+# almalinux-epel/<major>.<minor>z repository for the PUNGI rewrite below.
+if [[ "${PUNGI_REPOS:-}" == "1" ]]; then
+    case "${VERSION_MAJOR}" in
+        9|10)
+            ;;
+        *)
+            error "PUNGI_REPOS is supported for AlmaLinux 9 and 10 only, not for '${VERSION_MAJOR}'"
+            ;;
+    esac
+
+    # Host names dash the underscores: x86_64 -> x86-64, x86_64_v2 -> x86-64-v2
+    PUNGI_URL="https://${ARCH//_/-}-pungi-${VERSION_MAJOR}.almalinux.dev/almalinux/${VERSION_MAJOR}/${ARCH}/latest_result_almalinux/compose"
+    BASEOS_REPO="${PUNGI_URL}/BaseOS/${ARCH}/os"
+else
+    BASEOS_REPO="https://repo.almalinux.org/almalinux/${VERSION_MAJOR}/BaseOS/${ARCH}/os"
+fi
+
+if [[ "${VERSION_MAJOR}" != "10-kitten" ]]; then
+    PRIMARY_HREF=$(curl -sf "${BASEOS_REPO}/repodata/repomd.xml" | grep -oE 'repodata/[^"]*-primary\.xml\.gz' | head -n 1) || PRIMARY_HREF=
+    RELEASEVER=$(curl -sf "${BASEOS_REPO}/${PRIMARY_HREF}" | gunzip \
+        | python3 -c 'import re,sys; print(re.search(r"<name>almalinux-release</name>.*?ver=\"([^\"]+)\"", sys.stdin.read(), re.S).group(1))') || RELEASEVER=
+    if [[ ! "${RELEASEVER}" =~ ^${VERSION_MAJOR}\.[0-9]+$ ]]; then
+        error "Failed to derive the almalinux-release version from ${BASEOS_REPO}: '${RELEASEVER}'"
+    fi
+    VERSION_MINOR=".${RELEASEVER#*.}"
+    log "AlmaLinux release version from ${BASEOS_REPO}: ${RELEASEVER}"
+fi
+
 # Check if we're building Kitten with date stamp
 if [[ "${VERSION_MAJOR}" == "10-kitten" ]]; then
     ISO_NAME="AlmaLinux-Kitten-10-${DATE_STAMP}.${ITERATION}-${ARCH}-Live-${DESKTOP_ENV}.iso"
@@ -265,6 +297,40 @@ if [[ ! -f "${KICKSTART_PATH}" ]]; then
 fi
 
 log "Using kickstart: ${KICKSTART_PATH}"
+
+# Build from the PUNGI pre-release repositories
+# (https://<arch>-pungi-<major>.almalinux.dev) instead of the public ones.
+# This allows building images before an AlmaLinux version is publicly
+# released. The rewrite is done on a copy of the kickstart stored next to
+# the build logs, so the kickstart in the working tree stays untouched and
+# the exact kickstart used ships with the logs.
+#
+# The PUNGI compose mirrors the public repository layout (same
+# <Repo>/<arch>/os paths for BaseOS, AppStream, extras and CRB), so the
+# rewrite is a prefix substitution over the 'url --url' and the
+# appstream/extras/crb 'repo --baseurl' lines pointing at those
+# repositories. The epel repo stays on its public host, except the
+# almalinux-epel one (x86_64_v2 kickstarts): it is switched from the
+# released <major>z path to the pre-release <major>.<minor>z one, with the
+# minor version derived from the PUNGI compose above.
+if [[ "${PUNGI_REPOS:-}" == "1" ]]; then
+    PUNGI_KICKSTART="${RESULT_DIR}/logs/${KICKSTART_FILE}"
+    cp -f "${KICKSTART_PATH}" "${PUNGI_KICKSTART}"
+    KICKSTART_PATH="${PUNGI_KICKSTART}"
+
+    log "Rewriting kickstart copy ${KICKSTART_PATH} to the PUNGI pre-release repositories: ${PUNGI_URL}"
+    PUBLIC_REPO_RE="https://(atl\.mirrors\.knownhost\.com|repo\.almalinux\.org)/almalinux/${VERSION_MAJOR}/(BaseOS|AppStream|extras|CRB)/"
+    sed -E -i \
+        -e "/^(url |repo --name=\"(appstream|extras|crb)\" )/s#${PUBLIC_REPO_RE}#${PUNGI_URL}/\\2/#" \
+        -e "/^repo --name=\"epel\" /s#https://repo\.almalinux\.org/almalinux-epel/${VERSION_MAJOR}z/#https://repo.almalinux.org/almalinux-epel/${VERSION_MAJOR}${VERSION_MINOR}z/#" \
+        "${KICKSTART_PATH}"
+
+    # Verify no url/baseurl of the base repositories still points at the public ones
+    LEFTOVER=$(grep -E "^(url |repo --name=\"(appstream|extras|crb)\" ).*${PUBLIC_REPO_RE}" "${KICKSTART_PATH}" || true)
+    if [[ -n "${LEFTOVER}" ]]; then
+        error "Public repository URLs remain after the PUNGI rewrite:\n${LEFTOVER}"
+    fi
+fi
 
 # Check if result directory from previous build exists (livemedia-creator will fail if it does)
 ISO_RESULT_DIR="${RESULT_DIR}/iso_${DESKTOP_ENV}"
