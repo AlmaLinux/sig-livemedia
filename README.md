@@ -459,12 +459,16 @@ The following desktop environments are supported:
 | 8       | x86_64      | ✅    | ✅         | ✅  | ✅   | ✅   |
 | 9       | x86_64      | ✅    | ✅         | ✅  | ✅   | ✅   |
 | 9       | aarch64     | ✅    | ✅         | ✅  | ✅   | ✅   |
-| 10      | x86_64      | ✅    | ✅         | ✅  | ✅   | ✅   |
-| 10      | aarch64     | ✅    | ✅         | ✅  | ✅   | ✅   |
-| 10      | x86_64_v2   | ✅    | ✅         | ✅  | ❌   | ❌   |
-| 10-kitten | x86_64    | ✅    | ✅         | ✅  | ✅   | ✅   |
-| 10-kitten | aarch64   | ✅    | ✅         | ✅  | ✅   | ✅   |
-| 10-kitten | x86_64_v2 | ✅    | ✅         | ✅  | ❌   | ❌   |
+| 10      | x86_64      | ✅    | ❌¹        | ✅  | ❌²  | ❌²  |
+| 10      | aarch64     | ✅    | ❌¹        | ✅  | ❌²  | ❌²  |
+| 10      | x86_64_v2   | ✅    | ❌¹        | ✅  | ❌   | ❌   |
+| 10-kitten | x86_64    | ✅    | ❌¹        | ✅  | ❌²  | ❌²  |
+| 10-kitten | aarch64   | ✅    | ❌¹        | ✅  | ❌²  | ❌²  |
+| 10-kitten | x86_64_v2 | ✅    | ❌¹        | ✅  | ❌   | ❌   |
+
+¹ Not built for AlmaLinux 10 and Kitten: the GNOME-Mini image is almost the same size as GNOME because some packages (e.g. the libreoffice group) are not available; the kickstart is still provided for local builds.
+
+² Temporarily not built until EPEL for AlmaLinux 10 provides the needed packages; the kickstarts are still provided for local builds.
 
 #### Troubleshooting
 * For AlmaLinux 10, SELinux may need to be set to permissive: `sudo setenforce 0`
