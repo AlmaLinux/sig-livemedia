@@ -1,0 +1,277 @@
+#version=DEVEL
+# X Window System configuration information
+xconfig  --startxonboot
+# Keyboard layouts
+keyboard 'us'
+# Root password
+rootpw --plaintext rootme
+# System language
+lang en_US.UTF-8
+# Shutdown after installation
+shutdown
+# System timezone
+timezone US/Eastern
+# Network information
+network  --bootproto=dhcp --device=link --activate
+
+# Repos
+url --url=https://kitten.repo.almalinux.org/10-kitten/BaseOS/$basearch/os/
+repo --name="appstream" --baseurl=https://kitten.repo.almalinux.org/10-kitten/AppStream/$basearch/os/
+repo --name="extras" --baseurl=https://kitten.repo.almalinux.org/10-kitten/extras-common/$basearch/os/
+repo --name="crb" --baseurl=https://kitten.repo.almalinux.org/10-kitten/CRB/$basearch/os/
+repo --name="epel" --baseurl=https://dl.fedoraproject.org/pub/epel/10/Everything/$basearch/
+repo --name="almalinux-nvidia" --baseurl="https://nvidia.repo.almalinux.org/cuda/10/$basearch/"
+
+# Firewall configuration
+firewall --enabled --service=mdns
+# SELinux configuration
+selinux --enforcing
+
+# System services
+services --disabled="sshd" --enabled="NetworkManager,ModemManager"
+# System bootloader configuration
+bootloader --location=none
+# Clear the Master Boot Record
+zerombr
+# Partition clearing information
+clearpart --all --initlabel
+# Disk partitioning information
+part / --size=10238
+
+
+%post --nochroot
+# Back up original resolv.conf in chroot if it exists
+if [ -L $ANA_INSTALL_PATH/etc/resolv.conf ]; then
+    readlink $ANA_INSTALL_PATH/etc/resolv.conf > $ANA_INSTALL_PATH/etc/resolv.conf.orig_link
+    rm -f $ANA_INSTALL_PATH/etc/resolv.conf
+elif [ -f $ANA_INSTALL_PATH/etc/resolv.conf ]; then
+    cp -p $ANA_INSTALL_PATH/etc/resolv.conf $ANA_INSTALL_PATH/etc/resolv.conf.orig
+    rm -f $ANA_INSTALL_PATH/etc/resolv.conf
+else
+    touch $ANA_INSTALL_PATH/etc/resolv.conf.orig_none
+fi
+
+# Copy host DNS configuration to chroot to enable package downloads in %post
+cat /etc/resolv.conf > $ANA_INSTALL_PATH/etc/resolv.conf
+%end
+
+%post
+# Record all running process PIDs at the start of %post to identify background daemons
+INITIAL_PIDS=$(ps -A -o pid=)
+
+# Tell DNF not to use system dbus/user daemons during the live install phase
+export DNF_NO_PLUGINS=1
+
+
+# Enable livesys services
+systemctl enable livesys.service
+systemctl enable livesys-late.service
+
+# Enable sddm since EPEL packages it disabled by default
+systemctl enable sddm.service
+
+# enable tmpfs for /tmp
+systemctl enable tmp.mount
+
+# make it so that we don't do writing to the overlay for things which
+# are just tmpdirs/caches
+# note https://bugzilla.redhat.com/show_bug.cgi?id=1135475
+cat >> /etc/fstab << EOF
+vartmp   /var/tmp    tmpfs   defaults   0  0
+EOF
+
+# work around for poor key import UI in PackageKit
+rm -f /var/lib/rpm/__db*
+# import AlmaLinux PGP key
+rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux
+echo "Packages within this LiveCD"
+rpm -qa
+# Note that running rpm recreates the rpm db files which aren't needed or wanted
+rm -f /var/lib/rpm/__db*
+
+# go ahead and pre-make the man -k cache (#455968)
+/usr/bin/mandb
+
+# make sure there aren't core files lying around
+rm -f /core*
+
+# remove random seed, the newly installed instance should make it's own
+rm -f /var/lib/systemd/random-seed
+
+# convince readahead not to collect
+# FIXME: for systemd
+
+echo 'File created by kickstart. See systemd-update-done.service(8).' \
+    | tee /etc/.updated >/var/.updated
+
+# Drop the rescue kernel and initramfs, we don't need them on the live media itself.
+# See bug 1317709
+rm -f /boot/*-rescue*
+
+# Theme wallpapers
+rm -f /usr/share/wallpapers/Fedora
+ln -s Alma-default /usr/share/wallpapers/Fedora
+
+# Login screen theme and wallpapers
+cat <<'EOF'>/etc/sddm.conf.d/kde_settings.conf
+[Theme]
+Current=breeze
+EOF
+sed -i 's#background=.*$#background=/usr/share/backgrounds/almalinux-day.jpg#g' \
+  /usr/share/sddm/themes/breeze/theme.conf
+
+# TODO: revise I and II once installer icon is on the separate package
+# like Fedora does at https://src.fedoraproject.org/rpms/kf6-breeze-icons/c/728493c525b4e4e7be5caccba41f66e8d816ee38
+
+# I. Fix org.fedoraproject.AnacondaInstaller.svg broken symlinks
+cp -a /usr/share/icons/hicolor/scalable/apps/org.fedoraproject.AnacondaInstaller.svg \
+  /usr/share/icons/hicolor/48x48/apps/
+# II. Replace live installer icon for the application and welcome center
+cp -a /usr/share/icons/hicolor/scalable/apps/org.fedoraproject.AnacondaInstaller.svg \
+  /usr/share/icons/hicolor/48x48/apps/org.almalinux.AnacondaInstaller.svg
+sed -i 's#Icon=.*$#Icon=org.almalinux.AnacondaInstaller#g' \
+  /usr/share/applications/liveinst.desktop
+
+# Show liveinst.desktop on desktop and in menu
+sed -i 's/NoDisplay=true/NoDisplay=false/' /usr/share/applications/liveinst.desktop
+mkdir /home/liveuser/Desktop
+cp -a /usr/share/applications/liveinst.desktop /home/liveuser/Desktop/liveinst.desktop
+chmod +x /home/liveuser/Desktop/liveinst.desktop
+
+# Disable network service here, as doing it in the services line
+# fails due to RHBZ #1369794
+systemctl disable network
+
+# Remove machine-id on pre generated images
+rm -f /etc/machine-id
+touch /etc/machine-id
+
+# set livesys session type
+sed -i 's/^livesys_session=.*/livesys_session="kde"/' /etc/sysconfig/livesys
+
+# enable CRB repo
+dnf config-manager --enable crb
+
+# Workaround to add openvpn user and group in case they didn't added during
+# openvpn package installation
+getent group openvpn &>/dev/null || groupadd -r openvpn
+getent passwd openvpn &>/dev/null || \
+    /usr/sbin/useradd -r -g openvpn -s /sbin/nologin -c OpenVPN \
+        -d /etc/openvpn openvpn
+
+
+# Install NVIDIA drivers here to avoid %pretrans /bin/sh dependency issue during image build.
+# Install them in %post after the base system is created and /bin/sh exists.
+dnf install -y --enablerepo=almalinux-nvidia --enablerepo=crb nvidia-open libva-nvidia-driver
+
+# Restore original resolv.conf configuration
+if [ -f /etc/resolv.conf.orig_link ]; then
+    ORIG_TARGET=$(cat /etc/resolv.conf.orig_link)
+    rm -f /etc/resolv.conf /etc/resolv.conf.orig_link
+    ln -sf "$ORIG_TARGET" /etc/resolv.conf
+elif [ -f /etc/resolv.conf.orig ]; then
+    mv -f /etc/resolv.conf.orig /etc/resolv.conf
+elif [ -f /etc/resolv.conf.orig_none ]; then
+    rm -f /etc/resolv.conf /etc/resolv.conf.orig_none
+fi
+
+# Regenerate initramfs to include the NVIDIA kernel modules on the Live Media
+/usr/bin/dracut --regenerate-all --force
+
+# Clean up any background processes started during this %post script to prevent unmount failures
+echo "=== Cleaning up background chroot processes ==="
+CURRENT_PIDS=$(ps -A -o pid=)
+for pid in $CURRENT_PIDS; do
+    if [[ "$pid" != "$$" ]] && [[ "$pid" != "$PPID" ]]; then
+        if ! echo "$INITIAL_PIDS" | grep -q -w "$pid"; then
+            if kill -0 "$pid" 2>/dev/null; then
+                echo "Terminating leftover process PID $pid: $(ps -p "$pid" -o args= || echo "$pid")"
+                kill -9 "$pid" 2>/dev/null || true
+            fi
+        fi
+    fi
+done
+echo "==============================================="
+
+%end
+
+%packages
+# Explicitly specified mandatory packages
+kernel
+kernel-modules
+kernel-modules-extra
+
+# The point of a live image is to install
+anaconda
+anaconda-install-env-deps
+anaconda-live
+@anaconda-tools
+# Anaconda has a weak dep on this and we don't want it on livecds, see
+# https://fedoraproject.org/wiki/Changes/RemoveDeviceMapperMultipathFromWorkstationLiveCD
+-fcoe-utils
+-sdubby
+
+# Need aajohan-comfortaa-fonts for the SVG rnotes images
+#aajohan-comfortaa-fonts
+
+# Plymouth bgrt/spinner instead of text theme
+plymouth-system-theme
+
+# Without this, initramfs generation during live image creation fails: #1242586
+dracut-live
+
+# anaconda needs the locales available to run for different locales
+glibc-all-langpacks
+
+# provide the livesys scripts
+livesys-scripts
+
+# Mandatory to build media with livemedia-creator
+memtest86+
+
+# libreoffice group
+#@office-suite
+
+# internet-browser group
+firefox
+
+# KDE specific
+@dial-up
+@standard
+
+# install env-group to resolve RhBug:1891500
+@^kde-desktop-environment
+
+@kde-apps
+@kde-media
+
+# drop tracker stuff pulled in by gtk3 (pagureio:fedora-kde/SIG#124)
+-tracker-miners
+-tracker
+
+# Additional packages that are not default in kde-* groups, but useful
+fuse
+
+# EPEL repo
+epel-release
+
+# OpenVPN
+openvpn
+NetworkManager-openvpn
+
+### space issues
+-ktorrent			# kget has also basic torrent features (~3 megs)
+-digikam			# digikam has duplicate functionality with gwenview (~28 megs)
+-kipi-plugins			# ~8 megs + drags in Marble
+-krusader			# ~4 megs
+-k3b				# ~15 megs
+
+# minimization
+-hplip
+
+# Add alsa-sof-firmware to all images PR #51
+alsa-sof-firmware
+# Official NVIDIA GPU Driver Stack
+almalinux-release-nvidia-driver
+
+%end

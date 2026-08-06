@@ -41,6 +41,10 @@ inputs:
   notify_mattermost:
     description: "Whether to send notification to Mattermost"
     required: true
+  with_nvidia:
+    description: "Whether to include NVIDIA GPU drivers for x86_64 builds"
+    required: true
+    default: "false"
 
 runs:
   using: "composite"
@@ -79,6 +83,15 @@ runs:
             echo "Almalinux ${{ inputs.version_major }} is not supported!" && false
             ;;
         esac
+
+        if [ "${{ inputs.with_nvidia }}" = "true" ]; then
+          results_name="${results_name}-NVIDIA"
+          iso_dir="iso_${{ inputs.version_major }}_${{ inputs.arch }}_${{ inputs.image_type }}-NVIDIA"
+        else
+          iso_dir="iso_${{ inputs.image_type }}"
+        fi
+
+        echo "iso_dir=${iso_dir}" >> $GITHUB_ENV
 
         # AlmaLinux "code" name
         echo "code_name_var=${code_name_var}" >> $GITHUB_ENV
@@ -134,7 +147,11 @@ runs:
         build_env="RESULT_DIR=${{ env.RESULT_DIR }}"
         [ "${{ inputs.arch }}" = "x86_64_v2" ] && build_env="${build_env} BUILD_X86_64_V2=1"
         [ "${{ inputs.version_major }}" = "10-kitten" ] && build_env="${build_env} DATE_STAMP=${{ env.date_stamp }} ITERATION=${{ inputs.iteration }}"
-        ${{ env.run }} "cd ${{ env.build_work_dir }} && sudo ${build_env} bash /vagrant/build-livemedia.sh ${{ inputs.version_major }} ${{ inputs.image_type }}"
+        
+        nvidia_flag=""
+        [ "${{ inputs.with_nvidia }}" = "true" ] && nvidia_flag="--with-nvidia"
+        
+        ${{ env.run }} "cd ${{ env.build_work_dir }} && sudo ${build_env} bash /vagrant/build-livemedia.sh ${{ inputs.version_major }} ${{ inputs.image_type }} ${nvidia_flag}"
 
     - name: Get ISO media
       if: inputs.store_as_artifact == 'true' || inputs.upload_to_s3 == 'true'
@@ -142,7 +159,7 @@ runs:
       shell: bash
       run: |
         # Get media into the host
-        source="${{ env.RESULT_DIR }}/iso_${{ inputs.image_type }}/${{ env.results_name }}.iso"
+        source="${{ env.RESULT_DIR }}/${{ env.iso_dir }}/${{ env.results_name }}.iso"
         target="${{ env.results_path }}/"
         ${{ env.copy_from }}
 

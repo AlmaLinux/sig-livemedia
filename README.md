@@ -7,28 +7,31 @@ This git repository contains Kickstarts and other scripts needed to produce the 
 Live media ISO files are available for download from the official AlmaLinux repositories:
 
 **AlmaLinux 8:**
-- x86_64: https://repo.almalinux.org/almalinux/8/live/x86_64/
+
+- x86_64: <https://repo.almalinux.org/almalinux/8/live/x86_64/>
 
 **AlmaLinux 9:**
-- x86_64: https://repo.almalinux.org/almalinux/9/live/x86_64/
-- aarch64: https://repo.almalinux.org/almalinux/9/live/aarch64/
+
+- x86_64: <https://repo.almalinux.org/almalinux/9/live/x86_64/>
+- aarch64: <https://repo.almalinux.org/almalinux/9/live/aarch64/>
 
 **AlmaLinux 10:**
-- x86_64: https://repo.almalinux.org/almalinux/10/live/x86_64/
-- x86_64_v2: https://repo.almalinux.org/almalinux/10/live/x86_64_v2/
-- aarch64: https://repo.almalinux.org/almalinux/10/live/aarch64/
+
+- x86_64: <https://repo.almalinux.org/almalinux/10/live/x86_64/>
+- x86_64_v2: <https://repo.almalinux.org/almalinux/10/live/x86_64_v2/>
+- aarch64: <https://repo.almalinux.org/almalinux/10/live/aarch64/>
 
 **AlmaLinux Kitten (Development):**
-- x86_64: https://kitten.repo.almalinux.org/10-kitten/live/x86_64/
-- x86_64_v2: https://kitten.repo.almalinux.org/10-kitten/live/x86_64_v2/
-- aarch64: https://kitten.repo.almalinux.org/10-kitten/live/aarch64/
 
-For faster downloads, use mirrors at https://mirrors.almalinux.org to find a location closer to you. Refer to the project wiki https://wiki.almalinux.org/LiveMedia.html#about-live-media for detailed installation and usage instructions.
+- x86_64: <https://kitten.repo.almalinux.org/10-kitten/live/x86_64/>
+- x86_64_v2: <https://kitten.repo.almalinux.org/10-kitten/live/x86_64_v2/>
+- aarch64: <https://kitten.repo.almalinux.org/10-kitten/live/aarch64/>
+
+For faster downloads, use mirrors at <https://mirrors.almalinux.org> to find a location closer to you. Refer to the project wiki <https://wiki.almalinux.org/LiveMedia.html#about-live-media> for detailed installation and usage instructions.
 
 ## Build Live Media
 
 Building AlmaLinux Live media requires an AlmaLinux system (physical or virtual). The build process takes `20-50 minutes` depending on CPU cores and internet speed. You need minimum `15GB` workspace for temporary files. Resulting ISO size ranges from `1.4GB` to `2.4GB` depending on desktop environment.
-
 
 ### Build Environments
 
@@ -43,24 +46,28 @@ This project contains number of `KickStart` files to build live media for AlmaLi
 #### Install Required Packages
 
 **For AlmaLinux 8:**
+
 ```sh
 sudo dnf update -y
 sudo dnf install -y --enablerepo=powertools lorax lorax-templates-almalinux anaconda unzip zstd
 ```
 
 **For AlmaLinux 9:**
+
 ```sh
 sudo dnf update -y
 sudo dnf install -y --enablerepo=crb lorax lorax-templates-almalinux anaconda unzip zstd libblockdev-nvme
 ```
 
 **For AlmaLinux 10:**
+
 ```sh
 sudo dnf update -y
 sudo dnf install -y --enablerepo=crb lorax lorax-templates-almalinux anaconda unzip zstd libblockdev-nvme
 ```
 
 **Note:** For AlmaLinux 10, you may need to temporarily set SELinux to permissive mode:
+
 ```sh
 sudo setenforce 0
 ```
@@ -85,11 +92,15 @@ sudo ./build-livemedia.sh 10-kitten GNOME-Mini
 # To build media with x86_64_v2 packages for AlmaLinux 10+ (optional)
 BUILD_X86_64_V2=1 sudo ./build-livemedia.sh 10 KDE
 
+# Build AlmaLinux 10.2 x86_64 GNOME Live Media with NVIDIA GPU drivers
+sudo ./build-livemedia.sh 10 GNOME --with-nvidia
+
 # Show all available options
 ./build-livemedia.sh --help
 ```
 
 **Features:**
+
 - **Automated setup**: Installs required packages and prepares build environment
 - **Smart versioning**: Automatically maps major versions to current releases (8→8.10, 9→9.8, 10→10.2)
 - **Architecture detection**: Supports x86_64, aarch64, and x86_64_v2 automatically
@@ -98,6 +109,7 @@ BUILD_X86_64_V2=1 sudo ./build-livemedia.sh 10 KDE
 - **Checksum generation**: Automatically creates SHA256 checksums for built ISOs
 
 **Supported combinations:**
+
 - **Versions**: 8, 9, 10, 10-kitten
 - **Desktop Environments**: GNOME, GNOME-Mini, KDE, XFCE, MATE
 - **Architecture**: Version-specific support (see table below)
@@ -113,6 +125,7 @@ For advanced users or custom builds, you can use `livemedia-creator` directly. T
 #### AlmaLinux 8.10 Examples
 
 **GNOME Live Media:**
+
 ```sh
 sudo livemedia-creator \
     --ks=./kickstarts/8/x86_64/almalinux-live-gnome.ks \
@@ -130,6 +143,7 @@ sudo livemedia-creator \
 ```
 
 **GNOME-Mini Live Media:**
+
 ```sh
 sudo livemedia-creator \
     --ks=./kickstarts/8/x86_64/almalinux-live-gnome-mini.ks \
@@ -147,6 +161,7 @@ sudo livemedia-creator \
 ```
 
 **KDE Live Media:**
+
 ```sh
 sudo livemedia-creator \
     --ks=./kickstarts/8/x86_64/almalinux-live-kde.ks \
@@ -166,6 +181,7 @@ sudo livemedia-creator \
 #### AlmaLinux 9.8 Examples
 
 **GNOME Live Media:**
+
 ```sh
 sudo livemedia-creator \
     --ks=./kickstarts/9/x86_64/almalinux-live-gnome.ks \
@@ -182,6 +198,7 @@ sudo livemedia-creator \
 ```
 
 **MATE Live Media:**
+
 ```sh
 sudo livemedia-creator \
     --ks=./kickstarts/9/x86_64/almalinux-live-mate.ks \
@@ -200,6 +217,7 @@ sudo livemedia-creator \
 #### AlmaLinux 10.2 Examples
 
 **GNOME Live Media:**
+
 ```sh
 sudo livemedia-creator \
     --ks=./kickstarts/10/x86_64/almalinux-live-gnome.ks \
@@ -216,6 +234,7 @@ sudo livemedia-creator \
 ```
 
 **KDE Live Media:**
+
 ```sh
 sudo livemedia-creator \
     --ks=./kickstarts/10/x86_64/almalinux-live-kde.ks \
@@ -236,6 +255,7 @@ sudo livemedia-creator \
 For different architectures, adjust the kickstart path and output names accordingly:
 
 **For aarch64 (ARM64):**
+
 ```sh
 sudo livemedia-creator \
     --ks=./kickstarts/9/aarch64/almalinux-live-gnome.ks \
@@ -277,11 +297,13 @@ AlmaLinux Live Media can be customized by editing the corresponding kickstart (`
 ### Kickstart File Structure
 
 Kickstart files are organized as:
+
 ```
 kickstarts/{version}/{architecture}/almalinux-live-{desktop}.ks
 ```
 
 **Examples:**
+
 - `kickstarts/9/x86_64/almalinux-live-gnome.ks` - AlmaLinux 9 GNOME for x86_64
 - `kickstarts/10/aarch64/almalinux-live-kde.ks` - AlmaLinux 10 KDE for aarch64
 - `kickstarts/8/x86_64/almalinux-live-mate.ks` - AlmaLinux 8 MATE for x86_64
@@ -333,6 +355,7 @@ repo --name="local-repo" --baseurl=file:///path/to/local/repo
 #### 3. System Configuration
 
 **Keyboard and Language:**
+
 ```bash
 # Keyboard layout
 keyboard us
@@ -345,12 +368,14 @@ timezone America/New_York --isUtc
 ```
 
 **Network Configuration:**
+
 ```bash
 # Enable NetworkManager
 network --onboot=yes --device=link --bootproto=dhcp --hostname=almalinux-live
 ```
 
 **Services Management:**
+
 ```bash
 # Enable services
 services --enabled=NetworkManager,sshd,chronyd
@@ -418,9 +443,11 @@ fi
 
 1. **Edit the appropriate kickstart file** for your target version/architecture/desktop
 2. **Build with your modifications** using the build script:
+
    ```bash
    sudo ./build-livemedia.sh 9 GNOME
    ```
+
 3. **Test the resulting ISO** in a virtual machine before deployment
 4. **Check logs** in `./results/logs/` if the build fails
 
@@ -431,6 +458,7 @@ fi
 - **Use package groups** (@core, @base, etc.) when possible for easier maintenance
 - **Document your changes** in comments within the kickstart file
 - **Validate syntax** using `ksvalidator` if available:
+
   ```bash
   ksvalidator kickstarts/9/x86_64/almalinux-live-gnome.ks
   ```
@@ -438,14 +466,18 @@ fi
 ### Additional Notes
 
 #### Build Tips
-* **Recommended approach:** Use the `build-livemedia.sh` script for automated, error-free builds
-* **Performance:** The build process benefits from multiple CPU cores and faster storage (SSD recommended)
-* **Network:** Builds require downloading packages; a stable internet connection is essential
-* **Storage:** Ensure at least 15GB free space for temporary files and output ISOs
-* **Logs:** The build script automatically creates comprehensive logs; manual builds should use `--logfile` parameter
+
+- **Recommended approach:** Use the `build-livemedia.sh` script for automated, error-free builds
+
+- **Performance:** The build process benefits from multiple CPU cores and faster storage (SSD recommended)
+- **Network:** Builds require downloading packages; a stable internet connection is essential
+- **Storage:** Ensure at least 15GB free space for temporary files and output ISOs
+- **Logs:** The build script automatically creates comprehensive logs; manual builds should use `--logfile` parameter
 
 #### Available Desktop Environments
+
 The following desktop environments are supported:
+
 - **GNOME** - Full-featured desktop environment
 - **GNOME-Mini** - Minimal GNOME variant
 - **KDE** - Modern Plasma desktop
@@ -470,13 +502,31 @@ The following desktop environments are supported:
 
 ² Temporarily not built until EPEL for AlmaLinux 10 provides the needed packages; the kickstarts are still provided for local builds.
 
+#### NVIDIA GPU Driver Support
+
+You can build Live Media ISOs with the official NVIDIA GPU driver stack pre-installed by passing the `--with-nvidia` flag:
+
+- **Supported OS Versions**: AlmaLinux 9, 10, and 10-kitten.
+- **Supported Architectures**: `x86_64` only.
+- **Unsupported configurations**: NVIDIA support is **not** available for AlmaLinux 8 or non-`x86_64` architectures.
+- **Local Build Dependency Warning (DNF5 Host)**: Because DNF5 on AlmaLinux 10 host machines does not download `filelists` metadata by default, building an AlmaLinux 9 image on an AlmaLinux 10 host will fail to resolve some file paths. Enable filelists on the host first by running:
+
+  ```sh
+  echo "optional_metadata_types = filelists" | sudo tee -a /etc/dnf/dnf.conf
+  sudo dnf makecache
+  ```
+
 #### Troubleshooting
-* For AlmaLinux 10, SELinux may need to be set to permissive: `sudo setenforce 0`
-* Volume IDs are limited to 32 characters due to ISO9660 specification
-* Repository mirrors: Use https://mirrors.almalinux.org to find optimal mirrors
+
+- For AlmaLinux 10, SELinux may need to be set to permissive: `sudo setenforce 0`
+
+- Volume IDs are limited to 32 characters due to ISO9660 specification
+- Repository mirrors: Use <https://mirrors.almalinux.org> to find optimal mirrors
 
 #### CI/CD Integration
+
 This repository includes GitHub Actions workflows that automatically build live media images. The workflows support:
+
 - Multiple AlmaLinux versions (8, 9, 10, 10-kitten)
 - Multiple architectures and desktop environments
 - GitHub Actions artifact publishing

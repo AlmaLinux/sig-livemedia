@@ -43,10 +43,20 @@ on:
         default: '10'
         type: choice
         options:
-          - 10-kitten
-          - 10
-          - 9
-          - 8
+          - '10-kitten'
+          - '10'
+          - '9'
+          - '8'
+
+      architecture:
+        description: 'Architecture to build'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - 'all'
+          - 'x86_64'
+          - 'aarch64'
 
       iteration:
         description: 'Kitten 10 build iteration'
@@ -71,6 +81,12 @@ on:
         type: boolean
         default: false
 
+      with_nvidia:
+        description: 'Include NVIDIA GPU drivers (AlmaLinux 9/10/10-kitten on x86_64 only)'
+        required: true
+        type: boolean
+        default: false
+
 jobs:
   init-data:
     name: Initialize common data
@@ -89,49 +105,50 @@ jobs:
     name: ${{ matrix.version }} ${{ matrix.arch }} ${{ matrix.image_type }}
     needs: [init-data]
     runs-on: ubuntu-24.04
+    if: ${{ inputs.architecture != 'aarch64' }}
     strategy:
       fail-fast: false
       matrix:
         # Set image types matrix based on boolean inputs.* with true value
         image_type: ${{ fromJSON(format('["{0}", "{1}", "{2}", "{3}", "{4}"]', ( inputs.GNOME && 'GNOME' ), ( inputs.GNOME-Mini && 'GNOME-Mini' ), ( inputs.KDE && 'KDE' ), ( inputs.MATE && 'MATE' ), ( inputs.XFCE && 'XFCE' ) )) }}
         version: ${{ fromJSON(format('["{0}"]', inputs.version_major)) }}
-        arch: [x86_64, x86_64_v2]
+        arch: ${{ fromJSON(inputs.with_nvidia && '["x86_64"]' || '["x86_64", "x86_64_v2"]') }}
         exclude:
           - image_type: 'false'
-          - version: 8
+          - version: '8'
             arch: x86_64_v2
-          - version: 9
+          - version: '9'
             arch: x86_64_v2
           # 10 and Kitten, GNOME and GNOME-Mini images are almost the same by size because of lack of some packages, like libreoffice group
           - image_type: GNOME-Mini
-            version: 10
+            version: '10'
           - image_type: GNOME-Mini
-            version: 10-kitten
+            version: '10-kitten'
           # TODO: the excludes below should be removed when '10-kitten' provides need packages
-          - version: 10-kitten
+          - version: '10-kitten'
             arch: x86_64_v2
             image_type: MATE
-          - version: 10-kitten
+          - version: '10-kitten'
             arch: x86_64_v2
             image_type: XFCE
           # TODO: the excludes below should be removed when '10' provides need packages
-          - version: 10
+          - version: '10'
             arch: x86_64_v2
             image_type: MATE
-          - version: 10
+          - version: '10'
             arch: x86_64_v2
             image_type: XFCE
           # TODO: the excludes below should be removed when EPEL for 10 provides need packages
-          - version: 10-kitten
+          - version: '10-kitten'
             arch: x86_64
             image_type: MATE
-          - version: 10-kitten
+          - version: '10-kitten'
             arch: x86_64
             image_type: XFCE
-          - version: 10
+          - version: '10'
             arch: x86_64
             image_type: MATE
-          - version: 10
+          - version: '10'
             arch: x86_64
             image_type: XFCE
     env:
@@ -230,12 +247,14 @@ jobs:
           store_as_artifact: ${{ inputs.store_as_artifact }}
           upload_to_s3: ${{ inputs.upload_to_s3 }}
           notify_mattermost: ${{ inputs.notify_mattermost }}
+          with_nvidia: ${{ inputs.with_nvidia }}
 
 
   start-aarch64-runner:
-    name: ${{ inputs.version_major != '8' && format('Runner for {0} {1} {2}', inputs.version_major, matrix.arch, matrix.image_type) || format('{0} aarch64 runner [EXCLUDED]', inputs.version_major) }}
+    name: Runner for aarch64
     runs-on: ubuntu-24.04
     needs: [init-data]
+    if: ${{ inputs.architecture != 'x86_64' }}
     strategy:
       fail-fast: false
       matrix:
@@ -245,24 +264,24 @@ jobs:
         arch: [aarch64]
         exclude:
           - image_type: 'false'
-          - version: 8
+          - version: '8'
             arch: aarch64
           # 10 and Kitten, GNOME and GNOME-Mini images are almost the same by size because of lack of some packages, like libreoffice group
           - image_type: GNOME-Mini
-            version: 10
+            version: '10'
           - image_type: GNOME-Mini
-            version: 10-kitten
+            version: '10-kitten'
           # TODO: the excludes below should be removed when EPEL for 10 provides need packages
-          - version: 10-kitten
+          - version: '10-kitten'
             arch: aarch64
             image_type: MATE
-          - version: 10-kitten
+          - version: '10-kitten'
             arch: aarch64
             image_type: XFCE
-          - version: 10
+          - version: '10'
             arch: aarch64
             image_type: MATE
-          - version: 10
+          - version: '10'
             arch: aarch64
             image_type: XFCE
 
@@ -275,6 +294,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Get AlmaLinux ${{ inputs.version_major }} aarch64 AMI most recent ID
+        id: get-ami-id
         run: |
           os_version="${{ inputs.version_major }}"
           if [[ "${os_version}" == "10-kitten" ]]; then
@@ -287,7 +307,7 @@ jobs:
           else
             echo "[Debug] AMI ID: '${AMI_ID}'"
           fi
-          echo "AMI_ID=${AMI_ID}" >> $GITHUB_ENV
+          echo "ami_id=${AMI_ID}" >> $GITHUB_OUTPUT
 
       - name: Setup and start the runner
         if: ${{ inputs.version_major != '8' }}
@@ -298,7 +318,7 @@ jobs:
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws_region: ${{ secrets.AWS_REGION }}
-          ec2_ami_id: ${{ env.AMI_ID }}
+          ec2_ami_id: ${{ steps.get-ami-id.outputs.ami_id }}
           ec2_subnet_id: ${{ secrets.EC2_SUBNET_ID}}
           ec2_security_group_id: ${{ secrets.EC2_SECURITY_GROUP_ID }}
 
@@ -313,9 +333,9 @@ jobs:
             ]
 
   build-aarch64:
-    name: ${{ inputs.version_major != '8' && format('{0} {1} {2}', inputs.version_major, matrix.arch, matrix.image_type) || format('{0} aarch64 [EXCLUDED]', inputs.version_major) }}
+    name: Build aarch64 images
     runs-on: ${{ inputs.version_major != '8' && github.run_id || 'ubuntu-24.04' }}
-    if: ${{ always() && contains(join(needs.start-aarch64-runner.result, ','), 'success') }}
+    if: ${{ inputs.architecture != 'x86_64' && always() && contains(join(needs.start-aarch64-runner.result, ','), 'success') }}
     needs: [init-data, start-aarch64-runner]
     strategy:
       fail-fast: false
@@ -326,24 +346,24 @@ jobs:
         arch: [aarch64]
         exclude:
           - image_type: 'false'
-          - version: 8
+          - version: '8'
             arch: aarch64
           # 10 and Kitten, GNOME and GNOME-Mini images are almost the same by size because of lack of some packages, like libreoffice group
           - image_type: GNOME-Mini
-            version: 10
+            version: '10'
           - image_type: GNOME-Mini
-            version: 10-kitten
+            version: '10-kitten'
           # TODO: the excludes below should be removed when EPEL for 10 provides need packages
-          - version: 10-kitten
+          - version: '10-kitten'
             arch: aarch64
             image_type: MATE
-          - version: 10-kitten
+          - version: '10-kitten'
             arch: aarch64
             image_type: XFCE
-          - version: 10
+          - version: '10'
             arch: aarch64
             image_type: MATE
-          - version: 10
+          - version: '10'
             arch: aarch64
             image_type: XFCE
 
@@ -374,3 +394,4 @@ jobs:
           store_as_artifact: ${{ inputs.store_as_artifact }}
           upload_to_s3: ${{ inputs.upload_to_s3 }}
           notify_mattermost: ${{ inputs.notify_mattermost }}
+          with_nvidia: ${{ inputs.with_nvidia }}

@@ -44,15 +44,17 @@ show_help() {
     cat << EOF
 AlmaLinux Live Media Builder
 
-Usage: $0 <version_major> <desktop_environment>
+Usage: $0 <version_major> <desktop_environment> [--with-nvidia]
 
 Arguments:
   version_major         AlmaLinux major version (8, 9, 10, 10-kitten)
   desktop_environment   Desktop environment (GNOME, GNOME-Mini, KDE, XFCE, MATE)
+  --with-nvidia         Optional: Include NVIDIA GPU drivers (AlmaLinux 9, 10, 10-kitten only)
 
 Examples:
   $0 9 GNOME              # Build AlmaLinux 9.8 GNOME Live Media
   $0 10 KDE               # Build AlmaLinux 10.2 KDE Live Media
+  $0 10 GNOME --with-nvidia # Build AlmaLinux 10.2 GNOME with NVIDIA drivers
   $0 10-kitten GNOME-Mini # Build AlmaLinux Kitten GNOME-Mini Live Media
   $0 8 MATE               # Build AlmaLinux 8.10 MATE Live Media
 
@@ -66,13 +68,14 @@ Supported desktop environments:
 Architecture support:
   - AlmaLinux 8: x86_64
   - AlmaLinux 9: x86_64, aarch64
-  - AlmaLinux 10/10-kitten: x86_64, aarch64, x86_64_v2
+  - AlmaLinux 10: x86_64, aarch64, x86_64_v2
+  - AlmaLinux 10-kitten: x86_64, aarch64, x86_64_v2
 
 Environment variables:
   RESULT_DIR          Override default results directory (default: \$(pwd)/results)
-  BUILD_X86_64_V2=1   Build for x86_64_v2 architecture (AlmaLinux 10/10-kitten only)
-  DATE_STAMP          Override date stamp for 10-kitten builds (default: current date)
-  ITERATION           Override build iteration for 10-kitten builds (default: 0)
+  BUILD_X86_64_V2=1   Build with x86_64_v2 packages (10/10-kitten only)
+  DATE_STAMP=YYYYMMDD   Override default date stamp for Kitten build
+  ITERATION=N           Override default build iteration for Kitten build (default: 0)
 
 Requirements:
   - AlmaLinux system (8, 9, or 10)
@@ -82,19 +85,36 @@ Requirements:
 EOF
 }
 
-# Validate arguments
-if [[ $# -ne 2 ]]; then
-    show_help
-    exit 1
-fi
-
 if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
     show_help
     exit 0
 fi
 
+# Validate arguments
+if [[ $# -ne 2 ]] && [[ $# -ne 3 ]]; then
+    show_help
+    exit 1
+fi
+
 VERSION_MAJOR="$1"
 DESKTOP_ENV="$2"
+WITH_NVIDIA=false
+
+# Check for optional --with-nvidia flag
+if [[ $# -eq 3 ]]; then
+    if [[ "$3" == "--with-nvidia" ]]; then
+        WITH_NVIDIA=true
+    else
+        error "Invalid option: $3. Only --with-nvidia is supported."
+    fi
+fi
+
+# NVIDIA is only available for AlmaLinux 9, 10 and 10-kitten
+if [[ "${WITH_NVIDIA}" == true ]]; then
+    if [[ ! "${VERSION_MAJOR}" =~ ^(9|10) ]]; then
+        error "NVIDIA drivers are only available for AlmaLinux 9, 10 and 10-kitten"
+    fi
+fi
 
 # Validate version
 case "${VERSION_MAJOR}" in
@@ -202,20 +222,43 @@ if [[ "${ARCH}" == "x86_64_v2" ]]; then
     esac
 fi
 
+# Validate NVIDIA support on requested architecture
+if [[ "${WITH_NVIDIA}" == true ]]; then
+    if [[ "${ARCH}" != "x86_64" ]]; then
+        error "NVIDIA drivers are only supported on x86_64 architecture"
+    fi
+fi
+
 # Set file names and paths
-KICKSTART_FILE="almalinux-live-$(echo "${DESKTOP_ENV}" | tr '[:upper:]' '[:lower:]').ks"
+if [[ "${WITH_NVIDIA}" == true ]]; then
+    KICKSTART_FILE="almalinux-live-$(echo "${DESKTOP_ENV}" | tr '[:upper:]' '[:lower:]')-nvidia.ks"
+else
+    KICKSTART_FILE="almalinux-live-$(echo "${DESKTOP_ENV}" | tr '[:upper:]' '[:lower:]').ks"
+fi
 KICKSTART_PATH="./kickstarts/${VERSION_MAJOR}/${ARCH}/${KICKSTART_FILE}"
 
 # Check if we're building Kitten with date stamp
+NVIDIA_SUFFIX=""
+if [[ "${WITH_NVIDIA}" == true ]]; then
+    NVIDIA_SUFFIX="-NVIDIA"
+fi
+
 if [[ "${VERSION_MAJOR}" == "10-kitten" ]]; then
-    ISO_NAME="AlmaLinux-Kitten-10-${DATE_STAMP}.${ITERATION}-${ARCH}-Live-${DESKTOP_ENV}.iso"
+    ISO_NAME="AlmaLinux-Kitten-10-${DATE_STAMP}.${ITERATION}-${ARCH}-Live-${DESKTOP_ENV}${NVIDIA_SUFFIX}.iso"
     VOLID="AlmaLinux-10-${ARCH}"
 elif [[ "${VERSION_MAJOR}" == "10" ]]; then
-    ISO_NAME="AlmaLinux-${RELEASEVER}-${ARCH}-Live-${DESKTOP_ENV}.iso"
+    ISO_NAME="AlmaLinux-${RELEASEVER}-${ARCH}-Live-${DESKTOP_ENV}${NVIDIA_SUFFIX}.iso"
     VOLID="AlmaLinux-${RELEASEVER//./_}-${ARCH}" # TODO 'Live' skipped to fit into 32 chars
 else
-    ISO_NAME="AlmaLinux-${RELEASEVER}-${ARCH}-Live-${DESKTOP_ENV}.iso"
+    ISO_NAME="AlmaLinux-${RELEASEVER}-${ARCH}-Live-${DESKTOP_ENV}${NVIDIA_SUFFIX}.iso"
     VOLID="AlmaLinux-${RELEASEVER//./_}-${ARCH}-Live"
+fi
+
+# Define output directory path
+if [[ "${WITH_NVIDIA}" == true ]]; then
+    ISO_RESULT_DIR="${RESULT_DIR}/iso_${VERSION_MAJOR}_${ARCH}_${DESKTOP_ENV}-NVIDIA"
+else
+    ISO_RESULT_DIR="${RESULT_DIR}/iso_${DESKTOP_ENV}"
 fi
 
 # Handle volume ID length (ISO9660 32-char limit)
@@ -242,7 +285,7 @@ if [[ ${#VOLID} -gt 32 ]]; then
 fi
 
 # Create results directory structure
-# Note: Don't create iso_${DESKTOP_ENV} - livemedia-creator expects to create it
+# Note: Don't create ISO_RESULT_DIR - livemedia-creator expects to create it
 mkdir -p "${RESULT_DIR}"
 mkdir -p "${RESULT_DIR}/logs"
 
@@ -267,12 +310,10 @@ fi
 log "Using kickstart: ${KICKSTART_PATH}"
 
 # Check if result directory from previous build exists (livemedia-creator will fail if it does)
-ISO_RESULT_DIR="${RESULT_DIR}/iso_${DESKTOP_ENV}"
 if [[ -d "${ISO_RESULT_DIR}" ]]; then
     warning "Result directory from previous build exists: ${ISO_RESULT_DIR}"
-    warning "livemedia-creator will fail if this directory exists."
-    warning "Please remove it manually: rm -rf \"${ISO_RESULT_DIR}\""
-    error "Cannot proceed with existing result directory"
+    log "Automatically removing old result directory to proceed..."
+    rm -rf "${ISO_RESULT_DIR}"
 fi
 
 # Check if running as root
@@ -306,7 +347,7 @@ fi
 LIVEMEDIA_CMD="livemedia-creator \
 --ks=${KICKSTART_PATH} \
 --no-virt \
---resultdir ${RESULT_DIR}/iso_${DESKTOP_ENV} \
+--resultdir ${ISO_RESULT_DIR} \
 --project \"Live AlmaLinux${CODE_NAME}\" \
 --make-iso \
 --iso-only \
@@ -334,14 +375,14 @@ if eval "${LIVEMEDIA_CMD}"; then
     # Generate checksum
     log "Generating SHA256 checksum..."
     (
-        cd "${RESULT_DIR}/iso_${DESKTOP_ENV}"
+        cd "${ISO_RESULT_DIR}"
         sha256sum "${ISO_NAME}" > "${ISO_NAME}.CHECKSUM"
     )
 
     # Display results
-    ISO_SIZE=$(du -h "${RESULT_DIR}/iso_${DESKTOP_ENV}/${ISO_NAME}" | cut -f1)
-    success "ISO created: ${RESULT_DIR}/iso_${DESKTOP_ENV}/${ISO_NAME} (${ISO_SIZE})"
-    success "Checksum: ${RESULT_DIR}/iso_${DESKTOP_ENV}/${ISO_NAME}.CHECKSUM"
+    ISO_SIZE=$(du -h "${ISO_RESULT_DIR}/${ISO_NAME}" | cut -f1)
+    success "ISO created: ${ISO_RESULT_DIR}/${ISO_NAME} (${ISO_SIZE})"
+    success "Checksum: ${ISO_RESULT_DIR}/${ISO_NAME}.CHECKSUM"
     success "Logs: ${RESULT_DIR}/logs/"
 
     log "Build completed at: $(date)"
