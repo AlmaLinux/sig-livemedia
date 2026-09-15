@@ -56,23 +56,35 @@ runs:
         date_stamp=${date_stamp::-6}
 
         case ${{ inputs.version_major }} in
-          8)
-            version_minor=".10"
-            releasever=${{ inputs.version_major }}${version_minor}
-            results_name="AlmaLinux-${releasever}-${{ inputs.arch }}-Live-${{ inputs.image_type }}"
-            ;;
-          9)
-            version_minor=".8"
-            releasever=${{ inputs.version_major }}${version_minor}
-            results_name="AlmaLinux-${releasever}-${{ inputs.arch }}-Live-${{ inputs.image_type }}"
-            ;;
-          10)
-            version_minor=".2"
-            releasever=${{ inputs.version_major }}${version_minor}
+          8|9|10)
+            # Derive the minor version from the almalinux-release package in the
+            # BaseOS repository the ISO is built from (build-livemedia.sh does the
+            # same), so the ISO/S3 names and the notifications match the image
+            # content without hardcoding the minor version. AlmaLinux 8 is always
+            # built from the GA repository (repo.almalinux.org); AlmaLinux 9 and 10
+            # either from the GA repository or, with pungi_repos, from the PUNGI
+            # pre-release compose, which ships the next almalinux-release (e.g.
+            # 10.3 while repo.almalinux.org still carries 10.2).
+            if [ "${{ inputs.pungi_repos }}" = "true" ]; then
+              if [[ ! "${{ inputs.version_major }}" =~ ^(9|10)$ ]]; then
+                echo "::error::pungi_repos is supported for AlmaLinux 9 and 10 only, not for '${{ inputs.version_major }}'"
+                exit 1
+              fi
+              baseos_repo="https://$(echo '${{ inputs.arch }}' | tr '_' '-')-pungi-${{ inputs.version_major }}.almalinux.dev/almalinux/${{ inputs.version_major }}/${{ inputs.arch }}/latest_result_almalinux/compose/BaseOS/${{ inputs.arch }}/os"
+            else
+              baseos_repo="https://repo.almalinux.org/almalinux/${{ inputs.version_major }}/BaseOS/${{ inputs.arch }}/os"
+            fi
+            primary_href=$(curl -sf "${baseos_repo}/repodata/repomd.xml" | grep -oE 'repodata/[^"]*-primary\.xml\.gz' | head -n 1) || primary_href=
+            releasever=$(curl -sf "${baseos_repo}/${primary_href}" | gunzip \
+              | python3 -c 'import re,sys; print(re.search(r"<name>almalinux-release</name>.*?ver=\"([^\"]+)\"", sys.stdin.read(), re.S).group(1))') || releasever=
+            if [[ ! "${releasever}" =~ ^${{ inputs.version_major }}\.[0-9]+$ ]]; then
+              echo "::error::Failed to derive the almalinux-release version from ${baseos_repo}: '${releasever}'"
+              exit 1
+            fi
+            echo "[Debug] almalinux-release version from ${baseos_repo}: ${releasever}"
             results_name="AlmaLinux-${releasever}-${{ inputs.arch }}-Live-${{ inputs.image_type }}"
             ;;
           10-kitten)
-            version_minor=
             releasever=10
             code_name_var=" Kitten"
             results_name="AlmaLinux-Kitten-10-${date_stamp}.${{ inputs.iteration }}-${{ inputs.arch }}-Live-${{ inputs.image_type }}"
