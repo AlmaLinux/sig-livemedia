@@ -166,8 +166,9 @@ glibc-all-langpacks
 # provide the livesys scripts
 livesys-scripts
 
-# libreoffice group
-@office-suite
+# libreoffice group: not installed - without the libreoffice-gtk3/x11 display
+# backend (not available for aarch64 in AlmaLinux 9) LibreOffice can not start
+#@office-suite
 # firefox
 @internet-browser
 
