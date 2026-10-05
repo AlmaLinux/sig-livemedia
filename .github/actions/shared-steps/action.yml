@@ -163,7 +163,7 @@ runs:
         ${{ env.copy_from }}
 
     - name: Store logs as artifact
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       id: logs-artifact
       if: success() || failure()
       with:
@@ -171,7 +171,7 @@ runs:
         path: ${{ env.results_path }}/*.tar
 
     - name: Store CHECKSUM as artifact
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       id: checksum-artifact
       if: steps.get-media.outcome == 'success' && inputs.store_as_artifact == 'true'
       with:
@@ -179,7 +179,7 @@ runs:
         path: ${{ env.results_path }}/${{ env.results_name }}.iso.CHECKSUM
 
     - name: Store ISO as artifact
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       id: iso-artifact
       if: steps.get-media.outcome == 'success' && inputs.store_as_artifact == 'true'
       with:
@@ -217,7 +217,7 @@ runs:
 
     - name: Put S3 Bucket download URLs
       if: steps.get-media.outcome == 'success' && inputs.upload_to_s3 == 'true'
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       with:
         result-encoding: string
         script: |
@@ -231,7 +231,7 @@ runs:
               .write()
 
     - name: Send notification to Mattermost (AWS S3 links)
-      uses: mattermost/action-mattermost-notify@master
+      uses: mattermost/action-mattermost-notify@v2.1.0
       if: ${{ steps.get-media.outcome == 'success' && inputs.upload_to_s3 == 'true' && inputs.notify_mattermost == 'true' }}
       with:
         MATTERMOST_WEBHOOK_URL: ${{ inputs.MATTERMOST_WEBHOOK_URL }}
@@ -249,7 +249,7 @@ runs:
           - Logs: [${{ env.results_name }}-logs.tar.zst](https://${{ inputs.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.TIME_STAMP }}/${{ env.results_name }}-logs.tar.zst)
 
     - name: Send notification to Mattermost (Artifacts)
-      uses: mattermost/action-mattermost-notify@master
+      uses: mattermost/action-mattermost-notify@v2.1.0
       if: ${{ steps.get-media.outcome == 'success' && inputs.store_as_artifact == 'true' && inputs.notify_mattermost == 'true' && inputs.upload_to_s3 == 'false' }}
       with:
         MATTERMOST_WEBHOOK_URL: ${{ inputs.MATTERMOST_WEBHOOK_URL }}
