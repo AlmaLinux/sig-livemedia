@@ -73,10 +73,10 @@ For a simplified build process, use the included `build-livemedia.sh` script tha
 # Make the script executable
 chmod +x build-livemedia.sh
 
-# Build AlmaLinux 9.8 GNOME Live Media
+# Build AlmaLinux 9 (latest minor release) GNOME Live Media
 sudo ./build-livemedia.sh 9 GNOME
 
-# Build AlmaLinux 10.2 KDE Live Media
+# Build AlmaLinux 10 (latest minor release) KDE Live Media
 sudo ./build-livemedia.sh 10 KDE
 
 # Build AlmaLinux Kitten GNOME-Mini Live Media
@@ -85,13 +85,16 @@ sudo ./build-livemedia.sh 10-kitten GNOME-Mini
 # To build media with x86_64_v2 packages for AlmaLinux 10+ (optional)
 BUILD_X86_64_V2=1 sudo ./build-livemedia.sh 10 KDE
 
+# To build from the PUNGI pre-release repositories (AlmaLinux 9 and 10 only, optional)
+PUNGI_REPOS=1 sudo ./build-livemedia.sh 10 GNOME
+
 # Show all available options
 ./build-livemedia.sh --help
 ```
 
 **Features:**
 - **Automated setup**: Installs required packages and prepares build environment
-- **Smart versioning**: Automatically maps major versions to current releases (8→8.10, 9→9.8, 10→10.2)
+- **Smart versioning**: Derives the minor version from the `almalinux-release` package in the BaseOS repository the image is built from - the GA repository `repo.almalinux.org` for AlmaLinux 8, 9 and 10, or the PUNGI pre-release compose for AlmaLinux 9 and 10 with `PUNGI_REPOS=1` - so nothing needs to be edited on a new minor release
 - **Architecture detection**: Supports x86_64, aarch64, and x86_64_v2 automatically
 - **Comprehensive logging**: Creates detailed logs in `./results/` directory
 - **Error handling**: Validates inputs and provides helpful error messages
@@ -103,6 +106,14 @@ BUILD_X86_64_V2=1 sudo ./build-livemedia.sh 10 KDE
 - **Architecture**: Version-specific support (see table below)
 
 The script handles all the complexity shown in the manual examples below and follows the same build process used in the CI workflows.
+
+### Build from PUNGI pre-release repositories
+
+Before an AlmaLinux version is publicly released, its packages are only available from the PUNGI compose hosts (`https://<arch>-pungi-<major>.almalinux.dev`). To build Live media from those composes instead of the public repositories, set `PUNGI_REPOS=1` as shown in the Quick Start above.
+
+The `build-livemedia.sh` script rewrites a copy of the used kickstart, stored next to the build logs in `<results>/logs/` (the kickstart in the working tree stays untouched): the `url --url` and the `appstream`/`extras`/`crb` `repo --baseurl` lines pointing at the `BaseOS`, `AppStream`, `extras` and `CRB` repositories are switched to the PUNGI compose, which mirrors the public repository layout for them, keeping the image content identical to a GA build. The `epel` repository stays on its public host; only the `almalinux-epel` one (x86_64_v2 kickstarts) is switched from the released `<major>z` path to the pre-release `<major>.<minor>z` one. The release version (used for the ISO name, the volume ID and `--releasever`) is derived from the `almalinux-release` package in the compose, so a pre-release build is named after the upcoming minor version (e.g. 10.3 while the public repositories still carry 10.2). AlmaLinux 8 (no PUNGI hosts exist) and AlmaLinux Kitten (a rolling stream whose public repositories already are the latest compose) are not supported.
+
+The Build Live images workflow automates this with the **Build from PUNGI pre-release repositories** input. The run name and the Mattermost notifications carry PUNGI warnings, so pre-release builds are unmistakable.
 
 ### Manual Build using `livemedia-creator`
 
@@ -479,5 +490,6 @@ The following desktop environments are supported:
 This repository includes GitHub Actions workflows that automatically build live media images. The workflows support:
 - Multiple AlmaLinux versions (8, 9, 10, 10-kitten)
 - Multiple architectures and desktop environments
+- Building from the PUNGI pre-release repositories (AlmaLinux 9 and 10 only)
 - GitHub Actions artifact publishing
 - S3 upload and Mattermost notifications

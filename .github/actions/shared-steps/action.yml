@@ -24,22 +24,24 @@ inputs:
     description: "AWS S3 bucket name for artifact storage"
     required: true
   MATTERMOST_WEBHOOK_URL:
-    description: "Mattermost webhook URL for notifications"
-    required: true
+    description: "Mattermost webhook URL for notifications (notification is skipped when empty)"
+    required: false
+    default: ""
   MATTERMOST_CHANNEL:
-    description: "Mattermost channel for notifications"
-    required: true
+    description: "Mattermost channel for notifications (notification is skipped when empty)"
+    required: false
+    default: ""
   iteration:
     description: "Build iteration number for versioning"
+    required: true
+  pungi_repos:
+    description: "Whether to build from PUNGI pre-release repositories (AlmaLinux 9 and 10 only)"
     required: true
   store_as_artifact:
     description: "Whether to store ISO as GitHub Actions artifact"
     required: true
   upload_to_s3:
     description: "Whether to upload artifacts to S3"
-    required: true
-  notify_mattermost:
-    description: "Whether to send notification to Mattermost"
     required: true
 
 runs:
@@ -54,23 +56,35 @@ runs:
         date_stamp=${date_stamp::-6}
 
         case ${{ inputs.version_major }} in
-          8)
-            version_minor=".10"
-            releasever=${{ inputs.version_major }}${version_minor}
-            results_name="AlmaLinux-${releasever}-${{ inputs.arch }}-Live-${{ inputs.image_type }}"
-            ;;
-          9)
-            version_minor=".8"
-            releasever=${{ inputs.version_major }}${version_minor}
-            results_name="AlmaLinux-${releasever}-${{ inputs.arch }}-Live-${{ inputs.image_type }}"
-            ;;
-          10)
-            version_minor=".2"
-            releasever=${{ inputs.version_major }}${version_minor}
+          8|9|10)
+            # Derive the minor version from the almalinux-release package in the
+            # BaseOS repository the ISO is built from (build-livemedia.sh does the
+            # same), so the ISO/S3 names and the notifications match the image
+            # content without hardcoding the minor version. AlmaLinux 8 is always
+            # built from the GA repository (repo.almalinux.org); AlmaLinux 9 and 10
+            # either from the GA repository or, with pungi_repos, from the PUNGI
+            # pre-release compose, which ships the next almalinux-release (e.g.
+            # 10.3 while repo.almalinux.org still carries 10.2).
+            if [ "${{ inputs.pungi_repos }}" = "true" ]; then
+              if [[ ! "${{ inputs.version_major }}" =~ ^(9|10)$ ]]; then
+                echo "::error::pungi_repos is supported for AlmaLinux 9 and 10 only, not for '${{ inputs.version_major }}'"
+                exit 1
+              fi
+              baseos_repo="https://$(echo '${{ inputs.arch }}' | tr '_' '-')-pungi-${{ inputs.version_major }}.almalinux.dev/almalinux/${{ inputs.version_major }}/${{ inputs.arch }}/latest_result_almalinux/compose/BaseOS/${{ inputs.arch }}/os"
+            else
+              baseos_repo="https://repo.almalinux.org/almalinux/${{ inputs.version_major }}/BaseOS/${{ inputs.arch }}/os"
+            fi
+            primary_href=$(curl -sf "${baseos_repo}/repodata/repomd.xml" | grep -oE 'repodata/[^"]*-primary\.xml\.gz' | head -n 1) || primary_href=
+            releasever=$(curl -sf "${baseos_repo}/${primary_href}" | gunzip \
+              | python3 -c 'import re,sys; print(re.search(r"<name>almalinux-release</name>.*?ver=\"([^\"]+)\"", sys.stdin.read(), re.S).group(1))') || releasever=
+            if [[ ! "${releasever}" =~ ^${{ inputs.version_major }}\.[0-9]+$ ]]; then
+              echo "::error::Failed to derive the almalinux-release version from ${baseos_repo}: '${releasever}'"
+              exit 1
+            fi
+            echo "[Debug] almalinux-release version from ${baseos_repo}: ${releasever}"
             results_name="AlmaLinux-${releasever}-${{ inputs.arch }}-Live-${{ inputs.image_type }}"
             ;;
           10-kitten)
-            version_minor=
             releasever=10
             code_name_var=" Kitten"
             results_name="AlmaLinux-Kitten-10-${date_stamp}.${{ inputs.iteration }}-${{ inputs.arch }}-Live-${{ inputs.image_type }}"
@@ -134,6 +148,7 @@ runs:
         build_env="RESULT_DIR=${{ env.RESULT_DIR }}"
         [ "${{ inputs.arch }}" = "x86_64_v2" ] && build_env="${build_env} BUILD_X86_64_V2=1"
         [ "${{ inputs.version_major }}" = "10-kitten" ] && build_env="${build_env} DATE_STAMP=${{ env.date_stamp }} ITERATION=${{ inputs.iteration }}"
+        [ "${{ inputs.pungi_repos }}" = "true" ] && build_env="${build_env} PUNGI_REPOS=1"
         ${{ env.run }} "cd ${{ env.build_work_dir }} && sudo ${build_env} bash /vagrant/build-livemedia.sh ${{ inputs.version_major }} ${{ inputs.image_type }}"
 
     - name: Get ISO media
@@ -232,13 +247,14 @@ runs:
 
     - name: Send notification to Mattermost (AWS S3 links)
       uses: mattermost/action-mattermost-notify@v2.1.0
-      if: ${{ steps.get-media.outcome == 'success' && inputs.upload_to_s3 == 'true' && inputs.notify_mattermost == 'true' }}
+      if: ${{ steps.get-media.outcome == 'success' && inputs.upload_to_s3 == 'true' && inputs.MATTERMOST_WEBHOOK_URL != '' && inputs.MATTERMOST_CHANNEL != '' }}
       with:
         MATTERMOST_WEBHOOK_URL: ${{ inputs.MATTERMOST_WEBHOOK_URL }}
         MATTERMOST_CHANNEL: ${{ inputs.MATTERMOST_CHANNEL }}
         MATTERMOST_USERNAME: ${{ github.triggering_actor }}
         TEXT: |
           **AlmaLinux OS${{ env.code_name_var }} ${{ env.releasever }} ${{ inputs.arch }} Live Media Build** `${{ env.TIME_STAMP }}` generated by the GitHub [Action](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          ${{ inputs.pungi_repos == 'true' && ':warning: Built from **PUNGI pre-release repositories**' || '' }}
 
           :almalinux: **${{ inputs.image_type }}**
 
@@ -250,13 +266,14 @@ runs:
 
     - name: Send notification to Mattermost (Artifacts)
       uses: mattermost/action-mattermost-notify@v2.1.0
-      if: ${{ steps.get-media.outcome == 'success' && inputs.store_as_artifact == 'true' && inputs.notify_mattermost == 'true' && inputs.upload_to_s3 == 'false' }}
+      if: ${{ steps.get-media.outcome == 'success' && inputs.store_as_artifact == 'true' && inputs.upload_to_s3 == 'false' && inputs.MATTERMOST_WEBHOOK_URL != '' && inputs.MATTERMOST_CHANNEL != '' }}
       with:
         MATTERMOST_WEBHOOK_URL: ${{ inputs.MATTERMOST_WEBHOOK_URL }}
         MATTERMOST_CHANNEL: ${{ inputs.MATTERMOST_CHANNEL }}
         MATTERMOST_USERNAME: ${{ github.triggering_actor }}
         TEXT: |
           **AlmaLinux OS${{ env.code_name_var }} ${{ env.releasever }} ${{ inputs.arch }} Live Media Build** `${{ env.TIME_STAMP }}` generated by the GitHub [Action](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          ${{ inputs.pungi_repos == 'true' && ':warning: Built from **PUNGI pre-release repositories**' || '' }}
 
           :almalinux: **${{ inputs.image_type }}**
 

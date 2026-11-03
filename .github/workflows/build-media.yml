@@ -1,7 +1,7 @@
 name: Build Live images
 
 run-name: >-
-  Build AlmaLinux ${{ inputs.version_major == '10-kitten' && 'Kitten 10' || inputs.version_major }} Live images:${{ inputs.GNOME && ' GNOME' || '' }}${{ inputs.GNOME-Mini && ' GNOME-Mini' || '' }}${{ inputs.KDE && ' KDE' || '' }}${{ inputs.MATE && ' MATE' || '' }}${{ inputs.XFCE && ' XFCE' || '' }}
+  Build AlmaLinux ${{ inputs.version_major == '10-kitten' && 'Kitten 10' || inputs.version_major }} Live images:${{ inputs.GNOME && ' GNOME' || '' }}${{ inputs.GNOME-Mini && ' GNOME-Mini' || '' }}${{ inputs.KDE && ' KDE' || '' }}${{ inputs.MATE && ' MATE' || '' }}${{ inputs.XFCE && ' XFCE' || '' }}${{ inputs.pungi_repos && ' (PUNGI)' || '' }}
 
 on:
   workflow_dispatch:
@@ -53,6 +53,12 @@ on:
         required: true
         default: '0'
 
+      pungi_repos:
+        description: "Build from PUNGI pre-release repositories (AlmaLinux 9 and 10 only)"
+        required: true
+        type: boolean
+        default: false
+
       store_as_artifact:
         description: "Store ISO to the workflow Artifacts"
         required: true
@@ -65,12 +71,6 @@ on:
         type: boolean
         default: true
 
-      notify_mattermost:
-        description: "Send notification to Mattermost"
-        required: true
-        type: boolean
-        default: false
-
 jobs:
   init-data:
     name: Initialize common data
@@ -78,6 +78,20 @@ jobs:
     outputs:
       time_stamp: ${{ steps.time-stamp.outputs.time_stamp }}
     steps:
+      - name: Validate inputs
+        run: |
+          # PUNGI pre-release repositories exist for AlmaLinux 9 and 10 only
+          if [ "${{ inputs.pungi_repos }}" = "true" ]; then
+            case "${{ inputs.version_major }}" in
+              9|10)
+                ;;
+              *)
+                echo "[Error] 'pungi_repos' is supported for AlmaLinux 9 and 10 only, not for '${{ inputs.version_major }}'."
+                exit 1
+                ;;
+            esac
+          fi
+
       - name: Date+time stamp
         id: time-stamp
         run: |
@@ -227,9 +241,9 @@ jobs:
           MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
           MATTERMOST_CHANNEL: ${{ vars.MATTERMOST_CHANNEL }}
           iteration: ${{ inputs.iteration }}
+          pungi_repos: ${{ inputs.pungi_repos }}
           store_as_artifact: ${{ inputs.store_as_artifact }}
           upload_to_s3: ${{ inputs.upload_to_s3 }}
-          notify_mattermost: ${{ inputs.notify_mattermost }}
 
 
   start-aarch64-runner:
@@ -371,6 +385,6 @@ jobs:
           MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
           MATTERMOST_CHANNEL: ${{ vars.MATTERMOST_CHANNEL }}
           iteration: ${{ inputs.iteration }}
+          pungi_repos: ${{ inputs.pungi_repos }}
           store_as_artifact: ${{ inputs.store_as_artifact }}
           upload_to_s3: ${{ inputs.upload_to_s3 }}
-          notify_mattermost: ${{ inputs.notify_mattermost }}
