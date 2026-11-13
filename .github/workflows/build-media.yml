@@ -71,6 +71,12 @@ on:
         required: true
         default: '0'
 
+      time_stamp:
+        description: 'Date+time stamp, like 20261113154803 (empty: current UTC date and time)'
+        required: false
+        type: string
+        default: ''
+
       pungi_repos:
         description: "Build from PUNGI pre-release repositories (AlmaLinux 9 and 10 only)"
         required: true
@@ -137,9 +143,23 @@ jobs:
 
       - name: Date+time stamp
         id: time-stamp
+        env:
+          INPUT_TIME_STAMP: ${{ inputs.time_stamp }}
         run: |
-          # date+time stamp, YYYYMMDDhhmmss
-          time_stamp=$(date -u '+%Y%m%d%H%M%S')
+          # date+time stamp, YYYYMMDDhhmmss: the 'time_stamp' input if set
+          # (e.g. to rebuild into the S3 location of a previous run),
+          # the current UTC date and time otherwise
+          if [ -n "${INPUT_TIME_STAMP}" ]; then
+            time_stamp="${INPUT_TIME_STAMP}"
+            if [[ ! "${time_stamp}" =~ ^[0-9]{14}$ ]] || \
+               ! date -u -d "${time_stamp:0:8} ${time_stamp:8:2}:${time_stamp:10:2}:${time_stamp:12:2}" >/dev/null 2>&1; then
+              echo "[Error] 'time_stamp' must be a valid date and time in the YYYYMMDDhhmmss format, like 20261113154803, got '${time_stamp}'."
+              exit 1
+            fi
+          else
+            time_stamp=$(date -u '+%Y%m%d%H%M%S')
+          fi
+          echo "[Debug] Date+time stamp: ${time_stamp}"
           echo "time_stamp=${time_stamp}" >> $GITHUB_OUTPUT
 
   build-x86_64:
