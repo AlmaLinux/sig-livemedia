@@ -490,6 +490,7 @@ The following desktop environments are supported:
 This repository includes GitHub Actions workflows that automatically build live media images. The workflows support:
 - Multiple AlmaLinux versions (8, 9, 10, 10-kitten)
 - Multiple architectures and desktop environments
+- Building only the selected desktop environments and architectures (all by default), e.g. to rebuild a single image
 - Building from the PUNGI pre-release repositories (AlmaLinux 9 and 10 only)
 - GitHub Actions artifact publishing
 - S3 upload and Mattermost notifications
