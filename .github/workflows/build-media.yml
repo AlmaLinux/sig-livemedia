@@ -1,7 +1,7 @@
 name: Build Live images
 
 run-name: >-
-  Build AlmaLinux ${{ inputs.version_major == '10-kitten' && 'Kitten 10' || inputs.version_major }} Live images:${{ inputs.GNOME && ' GNOME' || '' }}${{ inputs.GNOME-Mini && ' GNOME-Mini' || '' }}${{ inputs.KDE && ' KDE' || '' }}${{ inputs.MATE && ' MATE' || '' }}${{ inputs.XFCE && ' XFCE' || '' }}${{ inputs.pungi_repos && ' (PUNGI)' || '' }}
+  Build AlmaLinux ${{ inputs.version_major == '10-kitten' && 'Kitten 10' || inputs.version_major }} Live images:${{ inputs.GNOME && ' GNOME' || '' }}${{ inputs.GNOME-Mini && ' GNOME-Mini' || '' }}${{ inputs.KDE && ' KDE' || '' }}${{ inputs.MATE && ' MATE' || '' }}${{ inputs.XFCE && ' XFCE' || '' }}${{ !(inputs.x86_64 && inputs.x86_64_v2 && inputs.aarch64) && format(' on{0}{1}{2}', inputs.x86_64 && ' x86_64' || '', inputs.x86_64_v2 && ' x86_64_v2' || '', inputs.aarch64 && ' aarch64' || '') || '' }}${{ inputs.pungi_repos && ' (PUNGI)' || '' }}
 
 on:
   workflow_dispatch:
@@ -48,10 +48,34 @@ on:
           - 9
           - 8
 
+      x86_64:
+        description: 'x86_64'
+        required: true
+        type: boolean
+        default: true
+
+      x86_64_v2:
+        description: 'x86_64_v2 (AlmaLinux 10 and Kitten 10 only)'
+        required: true
+        type: boolean
+        default: true
+
+      aarch64:
+        description: 'aarch64 (AlmaLinux 9, 10 and Kitten 10 only)'
+        required: true
+        type: boolean
+        default: true
+
       iteration:
         description: 'Kitten 10 build iteration'
         required: true
         default: '0'
+
+      time_stamp:
+        description: 'Date+time stamp, like 20261113154803 (empty: current UTC date and time)'
+        required: false
+        type: string
+        default: ''
 
       pungi_repos:
         description: "Build from PUNGI pre-release repositories (AlmaLinux 9 and 10 only)"
@@ -92,16 +116,57 @@ jobs:
             esac
           fi
 
+          # At least one of the selected architectures must be built for the version:
+          #   8 - x86_64; 9 - x86_64, aarch64; 10 and Kitten 10 - x86_64, x86_64_v2, aarch64.
+          # A selected architecture the version is not built for is skipped.
+          case "${{ inputs.version_major }}" in
+            8)  available="x86_64" ;;
+            9)  available="x86_64 aarch64" ;;
+            *)  available="x86_64 x86_64_v2 aarch64" ;;
+          esac
+          selected=""
+          [ "${{ inputs.x86_64 }}" = "true" ] && selected="${selected} x86_64"
+          [ "${{ inputs.x86_64_v2 }}" = "true" ] && selected="${selected} x86_64_v2"
+          [ "${{ inputs.aarch64 }}" = "true" ] && selected="${selected} aarch64"
+          to_build=""
+          for arch in ${selected}; do
+            case " ${available} " in
+              *" ${arch} "*) to_build="${to_build} ${arch}" ;;
+              *) echo "[Info] ${arch} is not built for AlmaLinux '${{ inputs.version_major }}', skipped." ;;
+            esac
+          done
+          if [ -z "${to_build}" ]; then
+            echo "[Error] No architecture to build: selected '${selected# }', AlmaLinux '${{ inputs.version_major }}' is built for '${available}'."
+            exit 1
+          fi
+          echo "[Info] Architectures to build:${to_build}"
+
       - name: Date+time stamp
         id: time-stamp
+        env:
+          INPUT_TIME_STAMP: ${{ inputs.time_stamp }}
         run: |
-          # date+time stamp, YYYYMMDDhhmmss
-          time_stamp=$(date -u '+%Y%m%d%H%M%S')
+          # date+time stamp, YYYYMMDDhhmmss: the 'time_stamp' input if set
+          # (e.g. to rebuild into the S3 location of a previous run),
+          # the current UTC date and time otherwise
+          if [ -n "${INPUT_TIME_STAMP}" ]; then
+            time_stamp="${INPUT_TIME_STAMP}"
+            if [[ ! "${time_stamp}" =~ ^[0-9]{14}$ ]] || \
+               ! date -u -d "${time_stamp:0:8} ${time_stamp:8:2}:${time_stamp:10:2}:${time_stamp:12:2}" >/dev/null 2>&1; then
+              echo "[Error] 'time_stamp' must be a valid date and time in the YYYYMMDDhhmmss format, like 20261113154803, got '${time_stamp}'."
+              exit 1
+            fi
+          else
+            time_stamp=$(date -u '+%Y%m%d%H%M%S')
+          fi
+          echo "[Debug] Date+time stamp: ${time_stamp}"
           echo "time_stamp=${time_stamp}" >> $GITHUB_OUTPUT
 
   build-x86_64:
     name: ${{ matrix.version }} ${{ matrix.arch }} ${{ matrix.image_type }}
     needs: [init-data]
+    # x86_64_v2 is built for AlmaLinux 10 and Kitten 10 only
+    if: ${{ inputs.x86_64 || ( inputs.x86_64_v2 && startsWith(inputs.version_major, '10') ) }}
     runs-on: ubuntu-26.04
     strategy:
       fail-fast: false
@@ -109,9 +174,11 @@ jobs:
         # Set image types matrix based on boolean inputs.* with true value
         image_type: ${{ fromJSON(format('["{0}", "{1}", "{2}", "{3}", "{4}"]', ( inputs.GNOME && 'GNOME' ), ( inputs.GNOME-Mini && 'GNOME-Mini' ), ( inputs.KDE && 'KDE' ), ( inputs.MATE && 'MATE' ), ( inputs.XFCE && 'XFCE' ) )) }}
         version: ${{ fromJSON(format('["{0}"]', inputs.version_major)) }}
-        arch: [x86_64, x86_64_v2]
+        # Set architectures matrix based on boolean inputs.* with true value
+        arch: ${{ fromJSON(format('["{0}", "{1}"]', ( inputs.x86_64 && 'x86_64' ), ( inputs.x86_64_v2 && 'x86_64_v2' ) )) }}
         exclude:
           - image_type: 'false'
+          - arch: 'false'
           - version: 8
             arch: x86_64_v2
           - version: 9
@@ -250,6 +317,7 @@ jobs:
     name: ${{ inputs.version_major != '8' && format('Runner for {0} {1} {2}', inputs.version_major, matrix.arch, matrix.image_type) || format('{0} aarch64 runner [EXCLUDED]', inputs.version_major) }}
     runs-on: ubuntu-26.04
     needs: [init-data]
+    if: ${{ inputs.aarch64 }}
     strategy:
       fail-fast: false
       matrix:
